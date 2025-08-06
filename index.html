@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Graph Drawing App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <button id="node-mode" class="tool-btn active" title="Node Mode">
+                    <span class="icon">⚫</span>
+                    <span>Node</span>
+                </button>
+                <button id="edge-mode" class="tool-btn" title="Edge Mode">
+                    <span class="icon">🔗</span>
+                    <span>Edge</span>
+                </button>
+                <button id="select-mode" class="tool-btn" title="Select Mode">
+                    <span class="icon">👆</span>
+                    <span>Select</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-section">
+                <button id="undo-btn" class="tool-btn" title="Undo">
+                    <span class="icon">↶</span>
+                </button>
+                <button id="redo-btn" class="tool-btn" title="Redo">
+                    <span class="icon">↷</span>
+                </button>
+                <button id="clear-btn" class="tool-btn danger" title="Clear All">
+                    <span class="icon">🗑️</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-section">
+                <button id="new-graph-btn" class="tool-btn" title="New Graph">
+                    <span class="icon">📄</span>
+                    <span>New</span>
+                </button>
+                <button id="save-btn" class="tool-btn" title="Save Graph">
+                    <span class="icon">💾</span>
+                    <span>Save</span>
+                </button>
+                <button id="load-btn" class="tool-btn" title="Load Graph">
+                    <span class="icon">📁</span>
+                    <span>Load</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-section">
+                <button id="export-svg-btn" class="tool-btn" title="Export SVG">
+                    <span class="icon">📤</span>
+                    <span>Export</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="graph-canvas" width="800" height="600"></canvas>
+                <div id="weight-dialog" class="dialog hidden">
+                    <div class="dialog-content">
+                        <h3>Set Edge Weight</h3>
+                        <input type="number" id="weight-input" placeholder="Enter weight" step="0.1" min="0">
+                        <div class="dialog-buttons">
+                            <button id="weight-ok">OK</button>
+                            <button id="weight-cancel">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="node-dialog" class="dialog hidden">
+                    <div class="dialog-content">
+                        <h3>Edit Node</h3>
+                        <input type="text" id="node-label" placeholder="Node label">
+                        <input type="color" id="node-color" value="#3b82f6">
+                        <div class="dialog-buttons">
+                            <button id="node-ok">OK</button>
+                            <button id="node-cancel">Cancel</button>
+                            <button id="node-delete" class="danger">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Graph Info</h3>
+                    <div id="graph-info">
+                        <p>Nodes: <span id="node-count">0</span></p>
+                        <p>Edges: <span id="edge-count">0</span></p>
+                        <p>Mode: <span id="current-mode">Node</span></p>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Selected</h3>
+                    <div id="selection-info">
+                        <p>Nothing selected</p>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Instructions</h3>
+                    <div class="instructions">
+                        <p><strong>Node Mode:</strong> Click to create nodes</p>
+                        <p><strong>Edge Mode:</strong> Click two nodes to connect</p>
+                        <p><strong>Select Mode:</strong> Click to select/move nodes</p>
+                        <p><strong>Right-click:</strong> Edit node/edge properties</p>
+                        <p><strong>Drag:</strong> Move nodes or pan canvas</p>
+                        <p><strong>Scroll:</strong> Zoom in/out</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="graph.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
