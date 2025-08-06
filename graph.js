@@ -50,14 +50,14 @@ class Graph {
         };
     }
 
-    addNode(x, y, label = null, color = '#3b82f6', category = null) {
+    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20) {
         const node = {
             id: Date.now() + Math.random(),
             x: x,
             y: y,
             label: label || `Node ${this.nodes.length + 1}`,
             color: color,
-            radius: 25,
+            radius: Math.max(1, Math.min(100, radius || 20)),
             category: category
         };
         this.nodes.push(node);

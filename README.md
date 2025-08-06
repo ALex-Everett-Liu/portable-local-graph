@@ -18,6 +18,7 @@ A simple, interactive desktop application for manually drawing graphs using Node
 - **Right-click Context Menus**: Quick access to edit/delete options
 - **Keyboard Shortcuts**: Efficient editing with Ctrl+Z, Ctrl+Y, etc.
 - **Weight Visualization**: Edge thickness scales with weight values (0.1-30)
+- **Node Size Control**: Adjustable node radius from 1-100 pixels with slider control
 
 ### Data Management
 - **JSON Export/Import**: Save and load graphs as JSON files

@@ -276,10 +276,19 @@ function showNodeDialog(node) {
     const labelInput = document.getElementById('node-label');
     const colorInput = document.getElementById('node-color');
     const categoryInput = document.getElementById('node-category');
+    const sizeInput = document.getElementById('node-size');
+    const sizeDisplay = document.getElementById('size-display');
     
     labelInput.value = node.label;
     colorInput.value = node.color;
     categoryInput.value = node.category || '';
+    sizeInput.value = node.radius;
+    sizeDisplay.textContent = node.radius;
+    
+    // Update size display when slider changes
+    sizeInput.oninput = () => {
+        sizeDisplay.textContent = sizeInput.value;
+    };
     
     dialog.dataset.nodeId = node.id;
     dialog.classList.remove('hidden');
@@ -302,6 +311,7 @@ function handleNodeOK() {
     const label = document.getElementById('node-label').value;
     const color = document.getElementById('node-color').value;
     const category = document.getElementById('node-category').value;
+    const radius = parseInt(document.getElementById('node-size').value);
     
     const node = graph.nodes.find(n => n.id == nodeId);
     if (node) {
@@ -309,6 +319,7 @@ function handleNodeOK() {
         node.label = label;
         node.color = color;
         node.category = category || null;
+        node.radius = Math.max(1, Math.min(100, radius));
         graph.render();
         appState.isModified = true;
     }

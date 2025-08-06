@@ -67,7 +67,7 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | Function | Purpose | Parameters | Returns |
 |----------|---------|------------|---------|
 | `constructor(canvas, options)` | Initialize graph engine | canvas: HTMLCanvasElement, options: object | Graph instance |
-| `addNode(x, y, label, color, category)` | Create new node | x, y: number, label: string, color: string, category: string | Node object |
+| `addNode(x, y, label, color, category, radius)` | Create new node | x, y: number, label: string, color: string, category: string, radius: number | Node object |
 | `addEdge(fromNode, toNode, weight, category)` | Create new edge | fromNode, toNode: number, weight: number, category: string | Edge object |
 | `getNodeAt(x, y)` | Find node at coordinates | x, y: number | Node object or null |
 | `getEdgeAt(x, y)` | Find edge at coordinates | x, y: number | Edge object or null |
@@ -148,6 +148,23 @@ getEdgeLineWidth(weight) {
 - Weight 0.1 → 0.5px (minimum)
 - Weight 30 → 8px (maximum)
 - Optimized sensitivity for common 0.5-5 range
+
+### 6. Node Size Customization
+**Problem**: All nodes have same radius, limiting visual differentiation
+**Solution**: Configurable node radius with slider control in edit dialog
+```javascript
+addNode(x, y, label, color, category, radius) {
+    const node = {
+        radius: Math.max(1, Math.min(100, radius || 20))
+        // ... other properties
+    };
+}
+```
+**Benefits**:
+- Radius range: 1px to 100px
+- Default: 20px for new nodes
+- Real-time preview with slider control
+- Proportional scaling with zoom level
 
 ### 3. Mode-Based Interaction
 **Problem**: Different tools need different behaviors
