@@ -201,8 +201,25 @@ class Graph {
             this.ctx.fill();
             this.ctx.stroke();
             
-            this.ctx.fillStyle = '#ffffff';
+            // Calculate text width for background
             this.ctx.font = `${14 / this.scale}px Arial`;
+            const textWidth = this.ctx.measureText(node.label).width;
+            const textHeight = 14 / this.scale;
+            
+            // Only add background if text is larger than node
+            if (textWidth > node.radius * 1.5) {
+                // Draw text background
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillRect(
+                    node.x - textWidth / 2 - 4 / this.scale,
+                    node.y - textHeight / 2 - 2 / this.scale,
+                    textWidth + 8 / this.scale,
+                    textHeight + 4 / this.scale
+                );
+            }
+            
+            // Draw text
+            this.ctx.fillStyle = '#ffffff';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(node.label, node.x, node.y);
@@ -210,18 +227,26 @@ class Graph {
     }
 
     getEdgeLineWidth(weight) {
-        // Non-linear mapping from weight to line width
+        // Negative correlation: weight as distance/cost
         // weight range: 0.1-30, line width range: 0.5-8
-        // Logarithmic scale to handle the 0.5-5 main range well
+        // Higher weight = thinner line (more distant/expensive)
+        // Lower weight = thicker line (closer/cheaper)
         
         const clampedWeight = Math.max(0.1, Math.min(30, weight));
         
-        // Logarithmic mapping: more sensitivity in 0.5-5 range
-        const logWeight = Math.log(clampedWeight + 0.1) + 2.3; // Shift to positive
+        // Inverted logarithmic mapping
+        // Small weights (close) = thick lines
+        // Large weights (distant) = thin lines
+        const logWeight = Math.log(clampedWeight + 0.1) + 2.3;
         const normalized = Math.max(0, Math.min(1, (logWeight - 1.5) / 3.5));
         
+        // Invert the mapping: 1 - normalized
+        const invertedNormalized = 1 - normalized;
+        
         // Map to line width range: 0.5 to 8
-        const baseWidth = 0.5 + (normalized * 7.5);
+        // Weight 0.1 → max thickness (8px)
+        // Weight 30 → min thickness (0.5px)
+        const baseWidth = 0.5 + (invertedNormalized * 7.5);
         
         return Math.max(0.5, Math.min(8, baseWidth));
     }

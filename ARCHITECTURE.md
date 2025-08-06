@@ -135,19 +135,25 @@ distanceToLineSegment(px, py, x1, y1, x2, y2) {
 ### 5. Edge Weight Visualization
 **Problem**: Weight values need visual representation beyond text labels
 **Solution**: Non-linear mapping from weight to line thickness using logarithmic scaling
+**Two Semantics Supported**:
+- **Connection Strength** (v0.1.1): Higher weight = thicker line
+- **Distance/Cost** (v0.1.3): Higher weight = thinner line (negative correlation)
+
 ```javascript
+// Distance/Cost interpretation (negative correlation)
 getEdgeLineWidth(weight) {
     const clampedWeight = Math.max(0.1, Math.min(30, weight));
     const logWeight = Math.log(clampedWeight + 0.1) + 2.3;
     const normalized = Math.max(0, Math.min(1, (logWeight - 1.5) / 3.5));
-    return 0.5 + (normalized * 7.5);
+    const invertedNormalized = 1 - normalized;
+    return 0.5 + (invertedNormalized * 7.5);
 }
 ```
 **Benefits**: 
-- Weight 1 → 2px (default)
-- Weight 0.1 → 0.5px (minimum)
-- Weight 30 → 8px (maximum)
+- Weight 0.1 → 8px (closest/strongest)
+- Weight 30 → 0.5px (farthest/weakest)
 - Optimized sensitivity for common 0.5-5 range
+- Supports both connection strength and distance/cost semantics
 
 ### 6. Node Size Customization
 **Problem**: All nodes have same radius, limiting visual differentiation

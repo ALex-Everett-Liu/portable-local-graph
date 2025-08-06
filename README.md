@@ -17,7 +17,7 @@ A simple, interactive desktop application for manually drawing graphs using Node
 - **Zoom & Pan**: Navigate large graphs with mouse wheel and drag
 - **Right-click Context Menus**: Quick access to edit/delete options
 - **Keyboard Shortcuts**: Efficient editing with Ctrl+Z, Ctrl+Y, etc.
-- **Weight Visualization**: Edge thickness scales with weight values (0.1-30)
+- **Weight Visualization**: Edge thickness scales inversely with weight values (0.1-30), supporting both connection strength and distance/cost semantics
 - **Node Size Control**: Adjustable node radius from 1-100 pixels with slider control
 
 ### Data Management

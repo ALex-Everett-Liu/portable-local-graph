@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.3] - 2025-08-06
+
+### Added
+- **Inverted Weight Visualization**: Edge weight now represents distance/cost with negative correlation
+- **Distance-based Mapping**: Higher weight values (more distant/expensive) render thinner lines
+- **Node Label Background**: Semi-transparent backgrounds for long node labels to ensure readability
+- **Visual Semantics**: Weight 0.1 = closest/strongest (thick 8px), weight 30 = farthest/weakest (thin 0.5px)
+
+### Technical Details
+- **Negative Correlation**: Inverted logarithmic mapping from weight to line thickness
+- **Range Preserved**: Maintains 0.1-30 weight range with 0.5-8px visual range
+- **Label Readability**: Automatic text backgrounds when labels exceed node radius
+- **Zoom Compatibility**: All visual elements properly scale with canvas zoom
+
 ## [0.1.2] - 2025-08-06
 
 ### Added
