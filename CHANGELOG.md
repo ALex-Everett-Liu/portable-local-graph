@@ -7,6 +7,9 @@
 - New `category` parameter in `addNode()` method to assign categories to nodes
 - New `category` parameter in `addEdge()` method to assign categories to edges
 - Categories are now included in JSON export/import functionality
+- **UI**: Category field added to node edit dialog
+- **UI**: Category field added to edge properties dialog
+- **UI**: Edge dialog title changed from "Set Edge Weight" to "Set Edge Properties"
 
 ### Changed
 - Updated `addNode()` signature to include optional `category` parameter

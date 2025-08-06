@@ -275,9 +275,11 @@ function showNodeDialog(node) {
     const dialog = document.getElementById('node-dialog');
     const labelInput = document.getElementById('node-label');
     const colorInput = document.getElementById('node-color');
+    const categoryInput = document.getElementById('node-category');
     
     labelInput.value = node.label;
     colorInput.value = node.color;
+    categoryInput.value = node.category || '';
     
     dialog.dataset.nodeId = node.id;
     dialog.classList.remove('hidden');
@@ -286,8 +288,10 @@ function showNodeDialog(node) {
 function showEdgeDialog(edge) {
     const dialog = document.getElementById('weight-dialog');
     const weightInput = document.getElementById('weight-input');
+    const categoryInput = document.getElementById('edge-category');
     
     weightInput.value = edge.weight;
+    categoryInput.value = edge.category || '';
     dialog.dataset.edgeId = edge.id;
     dialog.classList.remove('hidden');
 }
@@ -297,12 +301,14 @@ function handleNodeOK() {
     const nodeId = dialog.dataset.nodeId;
     const label = document.getElementById('node-label').value;
     const color = document.getElementById('node-color').value;
+    const category = document.getElementById('node-category').value;
     
     const node = graph.nodes.find(n => n.id == nodeId);
     if (node) {
         saveState();
         node.label = label;
         node.color = color;
+        node.category = category || null;
         graph.render();
         appState.isModified = true;
     }
@@ -330,12 +336,14 @@ function handleWeightOK() {
     const dialog = document.getElementById('weight-dialog');
     const edgeId = dialog.dataset.edgeId;
     const weight = parseFloat(document.getElementById('weight-input').value);
+    const category = document.getElementById('edge-category').value;
     
     if (!isNaN(weight)) {
         const edge = graph.edges.find(e => e.id == edgeId);
         if (edge) {
             saveState();
             edge.weight = weight;
+            edge.category = category || null;
             graph.render();
             appState.isModified = true;
         }

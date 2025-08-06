@@ -64,8 +64,11 @@
                 <canvas id="graph-canvas" width="800" height="600"></canvas>
                 <div id="weight-dialog" class="dialog hidden">
                     <div class="dialog-content">
-                        <h3>Set Edge Weight</h3>
+                        <h3>Set Edge Properties</h3>
+                        <label>Weight:</label>
                         <input type="number" id="weight-input" placeholder="Enter weight" step="0.1" min="0">
+                        <label>Category:</label>
+                        <input type="text" id="edge-category" placeholder="Category (optional)">
                         <div class="dialog-buttons">
                             <button id="weight-ok">OK</button>
                             <button id="weight-cancel">Cancel</button>
@@ -78,6 +81,7 @@
                         <h3>Edit Node</h3>
                         <input type="text" id="node-label" placeholder="Node label">
                         <input type="color" id="node-color" value="#3b82f6">
+                        <input type="text" id="node-category" placeholder="Category (optional)">
                         <div class="dialog-buttons">
                             <button id="node-ok">OK</button>
                             <button id="node-cancel">Cancel</button>
