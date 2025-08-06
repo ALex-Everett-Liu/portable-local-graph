@@ -71,6 +71,7 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | `addEdge(fromNode, toNode, weight, category)` | Create new edge | fromNode, toNode: number, weight: number, category: string | Edge object |
 | `getNodeAt(x, y)` | Find node at coordinates | x, y: number | Node object or null |
 | `getEdgeAt(x, y)` | Find edge at coordinates | x, y: number | Edge object or null |
+| `getEdgeLineWidth(weight)` | Map weight to line width | weight: number | Line width in pixels |
 | `exportData()` | Serialize graph to JSON | None | Object with nodes, edges, scale, offset |
 | `importData(data)` | Load graph from JSON | data: object | void |
 | `render()` | Redraw entire graph | None | void |
@@ -130,6 +131,23 @@ distanceToLineSegment(px, py, x1, y1, x2, y2) {
     return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
 }
 ```
+
+### 5. Edge Weight Visualization
+**Problem**: Weight values need visual representation beyond text labels
+**Solution**: Non-linear mapping from weight to line thickness using logarithmic scaling
+```javascript
+getEdgeLineWidth(weight) {
+    const clampedWeight = Math.max(0.1, Math.min(30, weight));
+    const logWeight = Math.log(clampedWeight + 0.1) + 2.3;
+    const normalized = Math.max(0, Math.min(1, (logWeight - 1.5) / 3.5));
+    return 0.5 + (normalized * 7.5);
+}
+```
+**Benefits**: 
+- Weight 1 → 2px (default)
+- Weight 0.1 → 0.5px (minimum)
+- Weight 30 → 8px (maximum)
+- Optimized sensitivity for common 0.5-5 range
 
 ### 3. Mode-Based Interaction
 **Problem**: Different tools need different behaviors

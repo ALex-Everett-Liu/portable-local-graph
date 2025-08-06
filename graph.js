@@ -209,6 +209,23 @@ class Graph {
         });
     }
 
+    getEdgeLineWidth(weight) {
+        // Non-linear mapping from weight to line width
+        // weight range: 0.1-30, line width range: 0.5-8
+        // Logarithmic scale to handle the 0.5-5 main range well
+        
+        const clampedWeight = Math.max(0.1, Math.min(30, weight));
+        
+        // Logarithmic mapping: more sensitivity in 0.5-5 range
+        const logWeight = Math.log(clampedWeight + 0.1) + 2.3; // Shift to positive
+        const normalized = Math.max(0, Math.min(1, (logWeight - 1.5) / 3.5));
+        
+        // Map to line width range: 0.5 to 8
+        const baseWidth = 0.5 + (normalized * 7.5);
+        
+        return Math.max(0.5, Math.min(8, baseWidth));
+    }
+
     renderEdges() {
         this.edges.forEach(edge => {
             const from = this.nodes.find(n => n.id === edge.from);
@@ -219,12 +236,14 @@ class Graph {
                 this.ctx.moveTo(from.x, from.y);
                 this.ctx.lineTo(to.x, to.y);
                 
+                const lineWidth = this.getEdgeLineWidth(edge.weight);
+                
                 if (edge === this.selectedEdge) {
                     this.ctx.strokeStyle = '#007bff';
-                    this.ctx.lineWidth = 3 / this.scale;
+                    this.ctx.lineWidth = (lineWidth + 1) / this.scale;
                 } else {
                     this.ctx.strokeStyle = '#94a3b8';
-                    this.ctx.lineWidth = 2 / this.scale;
+                    this.ctx.lineWidth = lineWidth / this.scale;
                 }
                 
                 this.ctx.stroke();

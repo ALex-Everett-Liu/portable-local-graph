@@ -17,6 +17,7 @@ A simple, interactive desktop application for manually drawing graphs using Node
 - **Zoom & Pan**: Navigate large graphs with mouse wheel and drag
 - **Right-click Context Menus**: Quick access to edit/delete options
 - **Keyboard Shortcuts**: Efficient editing with Ctrl+Z, Ctrl+Y, etc.
+- **Weight Visualization**: Edge thickness scales with weight values (0.1-30)
 
 ### Data Management
 - **JSON Export/Import**: Save and load graphs as JSON files

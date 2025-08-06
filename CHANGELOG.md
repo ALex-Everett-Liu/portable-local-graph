@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.1] - 2025-08-06
+
+### Added
+- **Edge Weight Visualization**: Edge line thickness now scales with weight values
+- **Non-linear Mapping**: Logarithmic scaling from weight (0.1-30) to line width (0.5-8px) for better visual differentiation
+- **Weight-based Rendering**: New `getEdgeLineWidth()` method in graph.js for dynamic line thickness
+
+### Technical Details
+- **Weight Range**: Supports 0.1 (minimum width) to 30 (maximum width)
+- **Visual Sensitivity**: Optimized for common 0.5-5 weight range with logarithmic scaling
+- **Zoom Scaling**: Line thickness properly scales with canvas zoom level
+
 ## [0.1.0] - 2025-08-06
 
 ### Added
