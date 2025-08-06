@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.0] - 2025-08-06
 
 ### Added
 - Added category support for nodes and edges in the graph visualization
