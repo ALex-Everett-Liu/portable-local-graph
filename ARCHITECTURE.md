@@ -1,0 +1,358 @@
+# Portable Local Graph - Architecture Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [System Architecture](#system-architecture)
+3. [Function Inventories](#function-inventories)
+4. [Tricky Solutions & Design Rationale](#tricky-solutions--design-rationale)
+5. [Key Use Cases & Workflows](#key-use-cases--workflows)
+6. [Code Conventions](#code-conventions)
+7. [Naming Conventions](#naming-conventions)
+8. [Module Details](#module-details)
+
+---
+
+## Overview
+
+The Portable Local Graph is a lightweight, browser-based graph drawing application for creating and manipulating node-edge diagrams. It provides an intuitive interface for building graphs with support for nodes, edges, weights, and categories, all running locally in the browser without external dependencies.
+
+**Core Design Philosophy**: Simple, accessible graph creation with powerful features hidden behind a clean interface - no server required for basic usage.
+
+---
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Browser Runtime                             │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
+│  │   HTML/CSS UI   │  │   JavaScript     │  │   Canvas API    │ │
+│  │                 │  │   Application    │  │                 │ │
+│  │ • Toolbar       │  │ • Graph logic    │  │ • 2D Rendering  │ │
+│  │ • Mode buttons  │  │ • Event handling │  │ • Zoom/pan      │ │
+│  │ • Dialog boxes  │  │ • Data storage   │  │ • Grid system   │ │
+│  │ • Status bar    │  │ • Undo/redo      │  │ • Hit detection │ │
+│  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
+│                              │                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                  Graph Core (graph.js)                    │  │
+│  │  ┌──────────────┐  ┌─────────────┐  ┌─────────────────┐ │ │
+│  │  │   Nodes      │  │   Edges     │  │   Interaction   │ │ │
+│  │  │ • Position   │  │ • Weight    │  │ • Mouse events  │ │ │
+│  │  │ • Label      │  │ • Category  │  │ • Mode switching│ │ │
+│  │  │ • Color      │  │ • Direction │  │ • Selection     │ │ │
+│  │  └──────────────┘  └─────────────┘  └─────────────────┘ │ │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────────┐
+│                    Optional Server Mode                         │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
+│  │   Express.js    │  │   File System    │  │   JSON API      │ │
+│  │                 │  │                  │  │                 │ │
+│  │ • CRUD graphs  │  │ • Save/Load      │  │ • REST endpoints│  │
+│  │ • Auto-save    │  │ • SVG export     │  │ • Validation    │  │
+│  │ • Statistics   │  │ • File cleanup   │  │ • Stats API     │  │
+│  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Function Inventories
+
+### Graph.js - Core Graph Engine
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `constructor(canvas, options)` | Initialize graph engine | canvas: HTMLCanvasElement, options: object | Graph instance |
+| `addNode(x, y, label, color, category)` | Create new node | x, y: number, label: string, color: string, category: string | Node object |
+| `addEdge(fromNode, toNode, weight, category)` | Create new edge | fromNode, toNode: number, weight: number, category: string | Edge object |
+| `getNodeAt(x, y)` | Find node at coordinates | x, y: number | Node object or null |
+| `getEdgeAt(x, y)` | Find edge at coordinates | x, y: number | Edge object or null |
+| `exportData()` | Serialize graph to JSON | None | Object with nodes, edges, scale, offset |
+| `importData(data)` | Load graph from JSON | data: object | void |
+| `render()` | Redraw entire graph | None | void |
+
+### App.js - Application Controller
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `setMode(mode)` | Switch interaction mode | mode: 'node'/'edge'/'select' | void |
+| `saveState()` | Save to undo stack | None | void |
+| `undo()` | Revert last action | None | void |
+| `redo()` | Restore undone action | None | void |
+| `loadGraphData(data)` | Load graph from data | data: object | void |
+| `generateSVG()` | Create SVG representation | None | SVG string |
+| `handleKeyDown(e)` | Process keyboard shortcuts | e: KeyboardEvent | void |
+
+### Server.js - Optional Backend
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveGraphToFile()` | Auto-save current graph | None | void |
+| `generateSVG(graph)` | Generate SVG from graph data | graph: object | SVG string |
+| `POST /api/graph` | Save graph to server | graph: object | JSON response |
+| `GET /api/graphs` | List saved graphs | None | JSON array |
+| `POST /api/graph/stats` | Calculate graph statistics | graph: object | JSON stats |
+
+---
+
+## Tricky Solutions & Design Rationale
+
+### 1. Canvas Coordinate Transformation
+**Problem**: Mouse coordinates need to account for zoom and pan
+**Solution**: Transform coordinates using scale and offset
+```javascript
+getMousePos(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX - rect.left - this.offset.x) / this.scale,
+        y: (e.clientY - rect.top - this.offset.y) / this.scale
+    };
+}
+```
+
+### 2. Edge Selection Precision
+**Problem**: Selecting thin edges accurately
+**Solution**: Distance-to-line calculation with tolerance
+```javascript
+distanceToLineSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    
+    if (len === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+    
+    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (len * len)));
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+    
+    return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+}
+```
+
+### 3. Mode-Based Interaction
+**Problem**: Different tools need different behaviors
+**Solution**: State machine with mode switching
+```javascript
+handleMouseDown(e) {
+    switch (this.mode) {
+        case 'node':
+            if (!node) this.addNode(pos.x, pos.y);
+            break;
+        case 'edge':
+            if (node) this.handleEdgeMode(node);
+            break;
+        case 'select':
+            if (node) this.startDrag(node);
+            else this.startPan();
+            break;
+    }
+}
+```
+
+### 4. Infinite Undo/Redo
+**Problem**: Efficient state management for undo/redo
+**Solution**: Stack-based state snapshots with size limits
+```javascript
+saveState() {
+    const state = this.exportData();
+    this.undoStack.push(state);
+    if (this.undoStack.length > this.maxHistorySize) {
+        this.undoStack.shift();
+    }
+    this.redoStack = [];
+}
+```
+
+---
+
+## Key Use Cases & Workflows
+
+### 1. Creating a Simple Graph
+```
+Click node mode → Click canvas to add nodes → Switch to edge mode → 
+Click nodes to connect → Switch to select mode → Drag nodes to arrange
+```
+
+### 2. Editing Graph Properties
+```
+Right-click node → Edit label/color/category → Click OK → Graph updates
+Right-click edge → Edit weight/category → Click OK → Graph updates
+```
+
+### 3. Working with Categories
+```
+Add nodes with different categories → Color-code by category → 
+Filter views → Export categorized graphs
+```
+
+### 4. Import/Export Workflow
+```
+Create graph → Export as JSON → Save locally → 
+Later: Import JSON file → Continue editing → Export as SVG
+```
+
+### 5. Server Mode Workflow
+```
+Start server → Create graphs in browser → Auto-save every minute → 
+Access saved graphs via API → Generate statistics → Bulk export
+```
+
+---
+
+## Code Conventions
+
+### JavaScript Style
+- **ES6+ features**: const/let, arrow functions, template literals
+- **Error handling**: Graceful fallbacks for browser APIs
+- **Naming**: camelCase for variables, PascalCase for constructors
+- **Comments**: JSDoc for public methods, inline for complex logic
+
+### Canvas Rendering
+- **Coordinate system**: Top-left origin (0,0), positive Y downward
+- **Scaling**: Scale affects line widths and font sizes
+- **Colors**: Hex codes preferred, CSS color names acceptable
+- **Grid**: 20px grid spacing with light gray lines
+
+### Data Structures
+- **Nodes**: `{id, x, y, label, color, radius, category}`
+- **Edges**: `{id, from, to, weight, category}`
+- **Graph export**: `{nodes, edges, scale, offset}`
+
+---
+
+## Naming Conventions
+
+### File Naming
+- **Core modules**: kebab-case (graph.js, app.js, server.js)
+- **Static assets**: kebab-case (styles.css, index.html)
+- **Data files**: kebab-case with timestamp (graph-20250115.json)
+
+### CSS Classes
+- **Components**: `.toolbar`, `.canvas-container`, `.dialog`
+- **States**: `.active`, `.hidden`, `.selected`
+- **Modifiers**: `.btn-primary`, `.btn-secondary`
+
+### JavaScript Variables
+- **DOM elements**: camelCase ($canvas, $toolbar)
+- **State variables**: camelCase (selectedNode, currentMode)
+- **Constants**: UPPER_SNAKE_CASE (GRID_SIZE, MAX_HISTORY)
+
+---
+
+## Module Details
+
+### Graph Core Engine
+**High-performance graph rendering with interaction handling:**
+
+```javascript
+// Rendering pipeline
+render() {
+    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.ctx.save();
+    this.ctx.translate(offset.x, offset.y);
+    this.ctx.scale(scale, scale);
+    
+    renderGrid();
+    renderEdges();
+    renderNodes();
+    
+    this.ctx.restore();
+}
+```
+
+**Performance features:**
+- **Efficient hit detection**: Distance calculations with early exit
+- **Viewport culling**: Only render visible elements
+- **State caching**: Avoid redundant calculations
+- **Event throttling**: Limit render calls during interaction
+
+### Mode Management System
+**State machine for different interaction modes:**
+
+```javascript
+const modes = {
+    node: {
+        cursor: 'crosshair',
+        onClick: addNode,
+        onDrag: null
+    },
+    edge: {
+        cursor: 'pointer',
+        onClick: startEdge,
+        onDrag: null
+    },
+    select: {
+        cursor: 'default',
+        onClick: selectElement,
+        onDrag: moveElement
+    }
+};
+```
+
+### Data Persistence
+**Local storage with fallback options:**
+
+```javascript
+// Browser storage
+localStorage.setItem('graph-data', JSON.stringify(graph.exportData()));
+const saved = JSON.parse(localStorage.getItem('graph-data'));
+if (saved) graph.importData(saved);
+
+// File download fallback
+const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = 'graph.json';
+a.click();
+```
+
+### SVG Export Engine
+**Vector graphics generation with scaling:**
+
+```javascript
+generateSVG() {
+    const bounds = calculateBounds();
+    const scale = calculateScale(bounds);
+    const offset = calculateOffset(bounds, scale);
+    
+    let svg = '<svg xmlns="http://www.w3.org/2000/svg" ...>';
+    
+    // Render edges as lines
+    edges.forEach(edge => {
+        const from = transformPoint(edge.from, scale, offset);
+        const to = transformPoint(edge.to, scale, offset);
+        svg += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" />`;
+    });
+    
+    // Render nodes as circles
+    nodes.forEach(node => {
+        const pos = transformPoint(node, scale, offset);
+        svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${node.radius * scale}" />`;
+    });
+    
+    return svg + '</svg>';
+}
+```
+
+---
+
+## Performance Considerations
+
+### Runtime Performance
+- **Canvas optimization**: Use requestAnimationFrame for smooth rendering
+- **Event delegation**: Single event listeners for canvas interactions
+- **Memory management**: Clear references to prevent leaks
+- **Efficient algorithms**: O(n) node/edge lookup with spatial indexing
+
+### Startup Performance
+- **Lazy initialization**: Create dialogs only when needed
+- **Progressive enhancement**: Core features work without server
+- **Minimal dependencies**: Pure JavaScript, no external libraries
+
+### Scalability
+- **Node limits**: Performance tested up to 1000 nodes
+- **Undo limits**: Configurable history size (default 50)
+- **Export limits**: SVG generation handles large graphs efficiently
