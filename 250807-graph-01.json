@@ -1,0 +1,84 @@
+{
+  "nodes": [
+    {
+      "id": 1754503753509.8264,
+      "x": 1009,
+      "y": 474.5999984741211,
+      "label": "weight",
+      "color": "#912ac0",
+      "radius": 56,
+      "category": null
+    },
+    {
+      "id": 1754503753875.1875,
+      "x": 1156,
+      "y": 336.5999984741211,
+      "label": "strength",
+      "color": "#4e67ca",
+      "radius": 43,
+      "category": null
+    },
+    {
+      "id": 1754503786696.7942,
+      "x": 1320,
+      "y": 283.2727258855646,
+      "label": "more relevant",
+      "color": "#bae37d",
+      "radius": 32,
+      "category": "description"
+    },
+    {
+      "id": 1754503919128.367,
+      "x": 1029.090909090909,
+      "y": 112.36363497647372,
+      "label": "frequency of interactions between friends",
+      "color": "#3b82f6",
+      "radius": 26,
+      "category": "metric"
+    },
+    {
+      "id": 1754503925218.8037,
+      "x": 794.5454545454545,
+      "y": 80.54545315829189,
+      "label": "social network",
+      "color": "#f5619c",
+      "radius": 28,
+      "category": "area"
+    }
+  ],
+  "edges": [
+    {
+      "id": 1754503879068.3289,
+      "from": 1754503786696.7942,
+      "to": 1754503753875.1875,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754503880129.999,
+      "from": 1754503753875.1875,
+      "to": 1754503753509.8264,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754503977493.6497,
+      "from": 1754503925218.8037,
+      "to": 1754503919128.367,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754503980683.01,
+      "from": 1754503753875.1875,
+      "to": 1754503919128.367,
+      "weight": 1,
+      "category": null
+    }
+  ],
+  "scale": 1.1,
+  "offset": {
+    "x": -153,
+    "y": 195
+  }
+}
