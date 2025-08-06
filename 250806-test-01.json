@@ -2,35 +2,39 @@
   "nodes": [
     {
       "id": 1754486818966.51,
-      "x": 200,
-      "y": 200,
+      "x": 220,
+      "y": 205,
       "label": "Start",
       "color": "#3b82f6",
-      "radius": 25
+      "radius": 25,
+      "category": "concept"
     },
     {
       "id": 1754486818966.1619,
-      "x": 400,
-      "y": 200,
+      "x": 432,
+      "y": 197,
       "label": "Process",
       "color": "#3b82f6",
-      "radius": 25
+      "radius": 25,
+      "category": "area"
     },
     {
       "id": 1754486818966.919,
-      "x": 575,
-      "y": 349,
+      "x": 555,
+      "y": 355,
       "label": "End",
       "color": "#3b82f6",
-      "radius": 25
+      "radius": 25,
+      "category": "argument"
     },
     {
       "id": 1754486830132.3235,
-      "x": 128,
-      "y": 321,
+      "x": 121,
+      "y": 366,
       "label": "Node 4",
       "color": "#3b82f6",
-      "radius": 25
+      "radius": 25,
+      "category": "entity"
     }
   ],
   "edges": [
@@ -38,19 +42,22 @@
       "id": 1754486818966.4158,
       "from": 1754486818966.51,
       "to": 1754486818966.1619,
-      "weight": 1
+      "weight": 1,
+      "category": "similar"
     },
     {
       "id": 1754486818966.2332,
       "from": 1754486818966.1619,
       "to": 1754486818966.919,
-      "weight": 4
+      "weight": 4,
+      "category": "opposite"
     },
     {
       "id": 1754486833803.491,
       "from": 1754486818966.51,
       "to": 1754486830132.3235,
-      "weight": 1
+      "weight": 1,
+      "category": "include"
     }
   ],
   "scale": 1,
