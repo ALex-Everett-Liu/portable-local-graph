@@ -91,6 +91,20 @@ npm run server
 4. **Edit Properties**: Right-click nodes or edges to edit labels and weights
 5. **Save Your Work**: Use Ctrl+S or the Save button to save as JSON
 
+### Working with Categories
+
+You can now assign categories to both nodes and edges for better organization:
+
+#### Node Categories
+- **Add categorized nodes**: When adding nodes programmatically, include a category parameter
+- **Edit categories**: Right-click nodes to edit their category along with label and color
+- **Visual grouping**: Nodes with the same category can be styled consistently
+
+#### Edge Categories
+- **Create categorized edges**: When connecting nodes, edges can be assigned categories
+- **Update categories**: Right-click edges to modify their category and weight
+- **Relationship types**: Use categories to define different types of relationships (e.g., "friend", "colleague", "family")
+
 ### Working with Modes
 
 #### Node Mode
@@ -135,7 +149,8 @@ Graphs are saved in a simple JSON format:
       "y": 150,
       "label": "Node 1",
       "color": "#3b82f6",
-      "radius": 25
+      "radius": 25,
+      "category": "person"
     }
   ],
   "edges": [
@@ -143,7 +158,8 @@ Graphs are saved in a simple JSON format:
       "id": 1234567891,
       "from": 1234567890,
       "to": 1234567892,
-      "weight": 1.5
+      "weight": 1.5,
+      "category": "friend"
     }
   ],
   "scale": 1,

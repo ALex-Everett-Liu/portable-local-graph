@@ -50,20 +50,21 @@ class Graph {
         };
     }
 
-    addNode(x, y, label = null, color = '#3b82f6') {
+    addNode(x, y, label = null, color = '#3b82f6', category = null) {
         const node = {
             id: Date.now() + Math.random(),
             x: x,
             y: y,
             label: label || `Node ${this.nodes.length + 1}`,
             color: color,
-            radius: 25
+            radius: 25,
+            category: category
         };
         this.nodes.push(node);
         return node;
     }
 
-    addEdge(fromNode, toNode, weight = 1) {
+    addEdge(fromNode, toNode, weight = 1, category = null) {
         const existingEdge = this.edges.find(e => 
             (e.from === fromNode && e.to === toNode) || 
             (e.from === toNode && e.to === fromNode)
@@ -71,6 +72,7 @@ class Graph {
         
         if (existingEdge) {
             existingEdge.weight = weight;
+            if (category !== null) existingEdge.category = category;
             return existingEdge;
         }
 
@@ -78,7 +80,8 @@ class Graph {
             id: Date.now() + Math.random(),
             from: fromNode,
             to: toNode,
-            weight: weight
+            weight: weight,
+            category: category
         };
         this.edges.push(edge);
         return edge;
