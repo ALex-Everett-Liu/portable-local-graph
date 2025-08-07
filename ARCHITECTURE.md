@@ -90,11 +90,22 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 ### Server.js - Optional Backend
 | Function | Purpose | Parameters | Returns |
 |----------|---------|------------|---------|
-| `saveGraphToFile()` | Auto-save current graph | None | void |
+| `saveGraphToDB()` | Auto-save to isolated SQLite DB | graphId: string, graph: object | Promise<void> |
 | `generateSVG(graph)` | Generate SVG from graph data | graph: object | SVG string |
-| `POST /api/graph` | Save graph to server | graph: object | JSON response |
-| `GET /api/graphs` | List saved graphs | None | JSON array |
-| `POST /api/graph/stats` | Calculate graph statistics | graph: object | JSON stats |
+| `POST /api/graph/:id` | Save graph to SQLite | id: string, graph: object | JSON response |
+| `GET /api/graphs` | List all isolated databases | None | JSON array |
+| `GET /api/graph/:id` | Load specific graph from DB | id: string | JSON graph |
+| `POST /api/graph/:id/stats` | Calculate graph statistics | id: string | JSON stats |
+
+### Database-isolated.js - SQLite Storage Manager
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveGraph(graphId, data)` | Save graph to isolated SQLite DB | graphId: string, data: object | Promise<void> |
+| `loadGraph(graphId)` | Load graph from isolated DB | graphId: string | Promise<object> |
+| `listGraphs()` | List all available graphs | None | Promise<array> |
+| `deleteGraph(graphId)` | Delete specific graph DB | graphId: string | Promise<boolean> |
+| `importFromJSON(graphId, data)` | Import JSON to isolated DB | graphId: string, data: object | Promise<string> |
+| `exportToJSON(graphId)` | Export graph to JSON | graphId: string | Promise<object> |
 
 ---
 

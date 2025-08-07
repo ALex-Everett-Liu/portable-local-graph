@@ -40,6 +40,29 @@
 - **Visual Sensitivity**: Optimized for common 0.5-5 weight range with logarithmic scaling
 - **Zoom Scaling**: Line thickness properly scales with canvas zoom level
 
+## [0.1.5] - 2025-08-07
+
+### Added
+- **SQLite Database Migration**: Complete migration from JSON files to isolated SQLite databases
+- **Isolated Storage**: Each graph now has its own `.db` file for complete data isolation
+- **Database Manager**: New `database-isolated.js` for managing separate SQLite databases
+- **Migration Tools**: Automated migration script `migrate-isolated.js` with interactive mode
+- **Backward Compatibility**: Full JSON import/export support maintained
+- **Performance**: Improved data integrity and faster graph loading
+
+### Technical Details
+- **Storage Architecture**: One SQLite database per graph (e.g., `250806-test-01.db`)
+- **Schema Design**: Separate tables for metadata, nodes, and edges in each database
+- **Migration**: Automated 1:1 conversion from JSON files to isolated databases
+- **API Endpoints**: Updated REST API to work with isolated database structure
+- **File Management**: Graphs stored in `./data/` directory as individual `.db` files
+
+### Changed
+- **Server Mode**: Updated to use `server-isolated.js` with SQLite backend
+- **Data Persistence**: Replaced JSON file storage with SQLite database storage
+- **API Structure**: REST endpoints now use graph IDs as database identifiers
+- **Package Scripts**: Added `migrate` and `migrate:interactive` commands
+
 ## [0.1.0] - 2025-08-06
 
 ### Added

@@ -6,10 +6,11 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "server": "node server-sqlite.js",
+    "server": "node server-isolated.js",
     "server:json": "node server.js",
     "build": "electron-builder",
-    "migrate": "node migrate-to-sqlite.js"
+    "migrate": "node migrate-isolated.js",
+    "migrate:interactive": "node migrate-isolated.js --interactive"
   },
   "keywords": [
     "graph",

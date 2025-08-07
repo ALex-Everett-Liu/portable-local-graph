@@ -140,8 +140,8 @@ You can now assign categories to both nodes and edges for better organization:
 
 ## File Formats
 
-### JSON Format
-Graphs are saved in a simple JSON format:
+### JSON Format (Import/Export)
+Graphs can be imported and exported in a simple JSON format:
 ```json
 {
   "nodes": [
@@ -169,6 +169,13 @@ Graphs are saved in a simple JSON format:
 }
 ```
 
+### SQLite Database (Primary Storage)
+Graphs are now stored as isolated SQLite databases (one `.db` file per graph):
+- **Location**: `./data/` directory
+- **Format**: Individual `.db` files for complete data isolation
+- **Migration**: JSON files automatically migrate to SQLite on first use
+- **Example**: `my-graph.json` → `my-graph.db`
+
 ### SVG Export
 Vector graphics export includes:
 - Scalable nodes with labels
@@ -180,15 +187,24 @@ Vector graphics export includes:
 
 The Express server provides these REST endpoints:
 
-- `GET /api/graph` - Get current graph data
-- `POST /api/graph` - Save/update graph data
-- `POST /api/graph/load` - Load graph from file
-- `GET /api/graph/export/json` - Export as JSON
-- `POST /api/graph/export/svg` - Export as SVG
-- `GET /api/graphs` - List saved graphs
-- `DELETE /api/graph/:filename` - Delete saved graph
-- `POST /api/graph/validate` - Validate graph structure
-- `POST /api/graph/stats` - Get graph statistics
+### Graph Operations
+- `GET /api/graphs` - List all available graphs (SQLite databases)
+- `POST /api/graph/:id` - Save graph to specific SQLite database
+- `GET /api/graph/:id` - Load graph from specific SQLite database
+- `DELETE /api/graph/:id` - Delete specific graph database
+
+### Import/Export
+- `POST /api/graph/:id/import/json` - Import JSON data to SQLite database
+- `GET /api/graph/:id/export/json` - Export SQLite data to JSON format
+- `POST /api/graph/:id/export/svg` - Export graph as SVG vector graphics
+
+### Statistics & Validation
+- `GET /api/graph/:id/stats` - Get graph statistics
+- `POST /api/graph/:id/validate` - Validate graph structure
+
+### Legacy Support (for backward compatibility)
+- `GET /api/graph` - Get current graph (legacy)
+- `POST /api/graph` - Save current graph (legacy)
 
 ## Configuration
 
@@ -197,9 +213,23 @@ The Express server provides these REST endpoints:
 - `NODE_ENV`: Environment (development/production)
 
 ### Data Directory
-- Graphs are saved in `./data/` directory
-- Auto-saves occur every minute
-- File names include timestamps for versioning
+- Graphs are saved as isolated `.db` files in `./data/` directory
+- Each graph has its own SQLite database file
+- Auto-saves occur every minute to the active graph's database
+- JSON import/export maintains backward compatibility
+- Migration tools available for existing JSON files
+
+### Migration Commands
+```bash
+# Migrate all existing JSON files to SQLite
+npm run migrate
+
+# Interactive migration with backup
+npm run migrate:interactive
+
+# Create JSON backup before migration
+node migrate-isolated.js --backup
+```
 
 ## Troubleshooting
 
