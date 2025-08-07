@@ -1,11 +1,18 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs').promises;
+const { v7: uuidv7 } = require('uuid');
 
 class DatabaseManager {
     constructor(dbPath = path.join(__dirname, 'data', 'graph.db')) {
         this.dbPath = dbPath;
         this.db = null;
+    }
+
+    async openFile(filePath) {
+        await this.close();
+        this.dbPath = filePath;
+        return await this.init();
     }
 
     async init() {
@@ -33,7 +40,7 @@ class DatabaseManager {
                 offset_x REAL DEFAULT 0,
                 offset_y REAL DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 metadata TEXT
             )
         `;
@@ -48,6 +55,8 @@ class DatabaseManager {
                 color TEXT DEFAULT '#3b82f6',
                 radius REAL DEFAULT 20,
                 category TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id, graph_id),
                 FOREIGN KEY (graph_id) REFERENCES graphs(id) ON DELETE CASCADE
             )
@@ -61,6 +70,8 @@ class DatabaseManager {
                 to_node_id TEXT NOT NULL,
                 weight REAL DEFAULT 1,
                 category TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id, graph_id),
                 FOREIGN KEY (graph_id) REFERENCES graphs(id) ON DELETE CASCADE,
                 FOREIGN KEY (from_node_id, graph_id) REFERENCES nodes(id, graph_id),
@@ -78,7 +89,22 @@ class DatabaseManager {
                 });
                 this.db.run(createEdgesTable, (err) => {
                     if (err) reject(err);
-                    else resolve();
+                });
+
+                // Create indexes for performance optimization
+                const createIndexes = [
+                    'CREATE INDEX IF NOT EXISTS idx_nodes_graph_id ON nodes(graph_id)',
+                    'CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at)',
+                    'CREATE INDEX IF NOT EXISTS idx_edges_graph_id ON edges(graph_id)',
+                    'CREATE INDEX IF NOT EXISTS idx_edges_from_to ON edges(from_node_id, to_node_id)',
+                    'CREATE INDEX IF NOT EXISTS idx_edges_created ON edges(created_at)'
+                ];
+
+                createIndexes.forEach((sql, index) => {
+                    this.db.run(sql, (err) => {
+                        if (err) reject(err);
+                        else if (index === createIndexes.length - 1) resolve();
+                    });
                 });
             });
         });
@@ -102,12 +128,12 @@ class DatabaseManager {
 
                 // Insert or update graph
                 const graphStmt = this.db.prepare(`
-                    INSERT OR REPLACE INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, updated_at)
+                    INSERT OR REPLACE INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, modified_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 `);
                 
                 graphStmt.run(
-                    id,
+                    Buffer.from(id.replace(/-/g, ''), 'hex'), // Convert UUID hex to binary
                     metadata.name || id,
                     metadata.description || '',
                     scale,
@@ -128,8 +154,9 @@ class DatabaseManager {
                 `);
                 
                 nodes.forEach(node => {
+                    const nodeId = node.id && node.id.length > 10 ? String(node.id) : uuidv7();
                     nodeStmt.run(
-                        String(node.id),
+                        nodeId,
                         id,
                         node.x,
                         node.y,
@@ -148,8 +175,9 @@ class DatabaseManager {
                 `);
                 
                 edges.forEach(edge => {
+                    const edgeId = edge.id && edge.id.length > 10 ? String(edge.id) : uuidv7();
                     edgeStmt.run(
-                        String(edge.id),
+                        edgeId,
                         id,
                         String(edge.from),
                         String(edge.to),
@@ -236,11 +264,20 @@ class DatabaseManager {
     async listGraphs() {
         return new Promise((resolve, reject) => {
             const query = `
-                SELECT g.*, 
-                       (SELECT COUNT(*) FROM nodes WHERE graph_id = g.id) as node_count,
-                       (SELECT COUNT(*) FROM edges WHERE graph_id = g.id) as edge_count
+                SELECT 
+                    id,
+                    name,
+                    description,
+                    scale,
+                    offset_x,
+                    offset_y,
+                    created_at,
+                    modified_at,
+                    metadata,
+                    (SELECT COUNT(*) FROM nodes WHERE graph_id = g.id) as node_count,
+                    (SELECT COUNT(*) FROM edges WHERE graph_id = g.id) as edge_count
                 FROM graphs g
-                ORDER BY updated_at DESC
+                ORDER BY modified_at DESC
             `;
 
             this.db.all(query, (err, rows) => {
@@ -253,7 +290,7 @@ class DatabaseManager {
                         description: row.description || '',
                         nodeCount: row.node_count,
                         edgeCount: row.edge_count,
-                        lastModified: new Date(row.updated_at),
+                        lastModified: new Date(row.modified_at),
                         created: new Date(row.created_at)
                     }));
                     resolve(graphs);
@@ -276,7 +313,7 @@ class DatabaseManager {
 
     async importFromJSON(data, id = null) {
         // Use provided ID or generate one
-        const finalId = id || `import-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const finalId = id || uuidv7();
         
         // Ensure the data has the expected structure
         const normalizedData = {

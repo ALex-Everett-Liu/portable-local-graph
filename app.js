@@ -13,6 +13,7 @@ const appState = {
 let graph;
 let dbManager = null;
 let currentGraphId = null;
+const { v7: uuidv7 } = require('uuid');
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
@@ -238,7 +239,7 @@ async function newGraph() {
     appState.redoStack = [];
     appState.isModified = false;
     
-    currentGraphId = 'graph-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    currentGraphId = uuidv7();
     
     updateGraphInfo();
     await saveGraphToDatabase();
