@@ -73,7 +73,11 @@ async function migrateJSONToIsolatedSQLite() {
                 
                 await dbManager.importFromJSON(graphId, enrichedData);
                 
-                console.log(`✅ Migrated ${filename} -> ${graphId}.db`);
+                // Also create JSON file for direct browser loading
+                const jsonFilename = `${graphId}.json`;
+                await fs.writeFile(jsonFilename, JSON.stringify(enrichedData, null, 2));
+                
+                console.log(`✅ Migrated ${filename} -> ${graphId}.db + ${jsonFilename}`);
                 successCount++;
                 results.push({ filename, status: 'success', graphId });
                 
@@ -88,6 +92,7 @@ async function migrateJSONToIsolatedSQLite() {
         console.log(`   ✅ Successful: ${successCount} files`);
         console.log(`   ❌ Failed: ${errorCount} files`);
         console.log(`   📁 Total processed: ${jsonFiles.length} files`);
+        console.log(`   📄 JSON files created: ${successCount} files`);
         
         // Show detailed results
         console.log('\n📋 Detailed Results:');
@@ -197,13 +202,84 @@ if (require.main === module) {
         backupJSONFiles().catch(console.error);
     } else if (args.includes('--interactive')) {
         interactiveMigration().catch(console.error);
+    } else if (args.includes('--file')) {
+        const fileIndex = args.indexOf('--file');
+        const filename = args[fileIndex + 1];
+        if (filename) {
+            migrateSingleFile(filename).catch(console.error);
+        } else {
+            console.error('❌ Please specify a filename with --file');
+            process.exit(1);
+        }
     } else {
         migrateJSONToIsolatedSQLite().catch(console.error);
+    }
+}
+
+async function migrateSingleFile(filename) {
+    console.log(`🎯 Migrating single file: ${filename}`);
+    
+    const dbManager = new IsolatedDatabaseManager();
+    await dbManager.init();
+    
+    try {
+        // Check if file exists
+        await fs.access(filename);
+        
+        const content = await fs.readFile(filename, 'utf8');
+        const data = JSON.parse(content);
+        
+        // Validate graph structure
+        if (!data || !Array.isArray(data.nodes)) {
+            console.error(`❌ Invalid graph structure in ${filename}`);
+            process.exit(1);
+        }
+        
+        const graphId = filename.replace('.json', '');
+        
+        // Check if already migrated
+        try {
+            const existing = await dbManager.loadGraph(graphId);
+            if (existing) {
+                console.log(`ℹ️  ${graphId}.db already exists`);
+                return;
+            }
+        } catch (err) {
+            // File doesn't exist, proceed
+        }
+        
+        const enrichedData = {
+            nodes: data.nodes || [],
+            edges: data.edges || [],
+            scale: data.scale || 1,
+            offset: data.offset || { x: 0, y: 0 },
+            metadata: {
+                name: data.metadata?.name || graphId,
+                description: data.metadata?.description || `Migrated from ${filename}`,
+                originalFilename: filename,
+                migratedAt: new Date().toISOString(),
+                ...data.metadata
+            }
+        };
+        
+        await dbManager.importFromJSON(graphId, enrichedData);
+        console.log(`✅ Successfully migrated ${filename} -> ${graphId}.db`);
+        
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.error(`❌ File not found: ${filename}`);
+        } else {
+            console.error(`❌ Error migrating ${filename}:`, error.message);
+        }
+        process.exit(1);
+    } finally {
+        await dbManager.closeAll();
     }
 }
 
 module.exports = {
     migrateJSONToIsolatedSQLite,
     backupJSONFiles,
-    interactiveMigration
+    interactiveMigration,
+    migrateSingleFile
 };

@@ -11,6 +11,8 @@ const appState = {
 };
 
 let graph;
+let dbManager = null;
+let currentGraphId = null;
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,8 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupIPC();
     updateGraphInfo();
     
-    // Load default graph or create new
-    loadDefaultGraph();
+    // Initialize database and load graph
+    initializeDatabase();
 });
 
 function setupEventListeners() {
@@ -93,6 +95,36 @@ function setupIPC() {
     }
 }
 
+async function initializeDatabase() {
+    if (typeof require !== 'undefined') {
+        const DatabaseManager = require('./database-manager');
+        dbManager = new DatabaseManager();
+        
+        try {
+            await dbManager.init();
+            
+            // Check if we have existing graphs
+            const graphs = await dbManager.listGraphs();
+            if (graphs.length > 0) {
+                // Load the most recent graph
+                await loadGraphFromDatabase(graphs[0].id);
+            } else {
+                // Create new graph
+                currentGraphId = 'default-graph-' + Date.now();
+                await saveGraphToDatabase();
+                await loadDefaultGraph();
+            }
+        } catch (error) {
+            console.error('Error initializing database:', error);
+            // Fallback to default graph
+            await loadDefaultGraph();
+        }
+    } else {
+        // Web mode - use default graph
+        await loadDefaultGraph();
+    }
+}
+
 function setMode(mode) {
     appState.mode = mode;
     appState.edgeStart = null;
@@ -124,9 +156,9 @@ function setMode(mode) {
     }
 }
 
-function saveState() {
+async function saveState() {
     const state = graph.exportData();
-    appState.undoStack.push(state);
+    appState.undoStack.push(JSON.parse(JSON.stringify(state))); // Deep copy
     
     // Limit undo stack size
     if (appState.undoStack.length > appState.maxHistorySize) {
@@ -137,6 +169,14 @@ function saveState() {
     appState.redoStack = [];
     
     appState.isModified = true;
+    
+    // Auto-save to database after a short delay
+    if (dbManager && currentGraphId) {
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(async () => {
+            await saveGraphToDatabase();
+        }, 1000);
+    }
 }
 
 function undo() {
@@ -163,7 +203,7 @@ function redo() {
     }
 }
 
-function newGraph() {
+async function newGraph() {
     if (appState.isModified) {
         if (!confirm('Current graph has unsaved changes. Continue?')) {
             return;
@@ -175,26 +215,19 @@ function newGraph() {
     appState.redoStack = [];
     appState.isModified = false;
     
-    currentGraph = {
-        nodes: [],
-        edges: [],
-        metadata: {
-            name: 'Untitled Graph',
-            created: new Date().toISOString(),
-            lastModified: new Date().toISOString()
-        }
-    };
+    currentGraphId = 'graph-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
     updateGraphInfo();
+    await saveGraphToDatabase();
     saveState();
 }
 
-function saveGraph() {
-    if (typeof require !== 'undefined') {
-        const { ipcRenderer } = require('electron');
-        ipcRenderer.send('save-graph-request');
+async function saveGraph() {
+    if (dbManager && currentGraphId) {
+        await saveGraphToDatabase();
+        showNotification('Graph saved to database!');
     } else {
-        // Web fallback
+        // Fallback to JSON export
         const data = graph.exportData();
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -206,7 +239,52 @@ function saveGraph() {
     }
 }
 
-function loadGraph() {
+async function saveGraphToDatabase() {
+    if (!dbManager || !currentGraphId) return;
+    
+    try {
+        const graphData = graph.exportData();
+        const data = {
+            ...graphData,
+            metadata: {
+                name: 'Graph ' + new Date().toLocaleString(),
+                lastModified: new Date().toISOString()
+            }
+        };
+        
+        await dbManager.saveGraph(currentGraphId, data);
+        appState.isModified = false;
+    } catch (error) {
+        console.error('Error saving to database:', error);
+        showNotification('Error saving graph: ' + error.message, 'error');
+    }
+}
+
+async function loadGraph() {
+    if (dbManager) {
+        // Show database graph selection dialog
+        try {
+            const graphs = await dbManager.listGraphs();
+            if (graphs.length === 0) {
+                showNotification('No graphs found in database', 'info');
+                return;
+            }
+            
+            const selectedId = await showGraphSelector(graphs);
+            if (selectedId) {
+                await loadGraphFromDatabase(selectedId);
+            }
+        } catch (error) {
+            console.error('Error loading from database:', error);
+            fallbackToJSONLoad();
+        }
+    } else {
+        // Fallback to JSON loading
+        fallbackToJSONLoad();
+    }
+}
+
+function fallbackToJSONLoad() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -214,10 +292,19 @@ function loadGraph() {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    loadGraphData(data);
+                    if (dbManager) {
+                        // Import JSON to database
+                        const newId = 'import-' + Date.now();
+                        await dbManager.importFromJSON(data, newId);
+                        currentGraphId = newId;
+                        await loadGraphFromDatabase(newId);
+                        showNotification('JSON imported to database!');
+                    } else {
+                        loadGraphData(data);
+                    }
                 } catch (error) {
                     showNotification('Error loading graph: Invalid JSON');
                 }
@@ -226,6 +313,23 @@ function loadGraph() {
         }
     };
     input.click();
+}
+
+async function loadGraphFromDatabase(graphId) {
+    if (!dbManager) return;
+    
+    try {
+        const data = await dbManager.loadGraph(graphId);
+        if (data) {
+            loadGraphData(data);
+            currentGraphId = graphId;
+            appState.isModified = false;
+            showNotification('Graph loaded from database!');
+        }
+    } catch (error) {
+        console.error('Error loading graph from database:', error);
+        showNotification('Error loading graph: ' + error.message, 'error');
+    }
 }
 
 function loadGraphData(data) {
@@ -484,6 +588,59 @@ function generateSVG() {
     return svg;
 }
 
+function showGraphSelector(graphs) {
+    return new Promise((resolve) => {
+        const dialog = document.createElement('div');
+        dialog.className = 'graph-selector-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-overlay">
+                <div class="dialog-content">
+                    <h3>Select a Graph</h3>
+                    <div class="graph-list">
+                        ${graphs.map(graph => `
+                            <div class="graph-item" data-id="${graph.id}">
+                                <div class="graph-name">${graph.name || 'Untitled'}</div>
+                                <div class="graph-stats">
+                                    ${graph.nodeCount || 0} nodes, ${graph.edgeCount || 0} edges
+                                    <br>
+                                    ${new Date(graph.lastModified).toLocaleString()}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="dialog-buttons">
+                        <button id="cancel-load">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Handle selection
+        dialog.querySelectorAll('.graph-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const graphId = item.dataset.id;
+                dialog.remove();
+                resolve(graphId);
+            });
+        });
+        
+        dialog.querySelector('#cancel-load').addEventListener('click', () => {
+            dialog.remove();
+            resolve(null);
+        });
+        
+        // Close on overlay click
+        dialog.querySelector('.dialog-overlay').addEventListener('click', (e) => {
+            if (e.target === dialog.querySelector('.dialog-overlay')) {
+                dialog.remove();
+                resolve(null);
+            }
+        });
+    });
+}
+
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -529,7 +686,7 @@ function loadDefaultGraph() {
     updateGraphInfo();
 }
 
-// CSS for notifications
+// CSS for notifications and dialogs
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -540,6 +697,81 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .graph-selector-dialog .dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .graph-selector-dialog .dialog-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .graph-selector-dialog h3 {
+        margin-top: 0;
+        color: #333;
+    }
+    
+    .graph-selector-dialog .graph-list {
+        margin: 15px 0;
+    }
+    
+    .graph-selector-dialog .graph-item {
+        padding: 12px;
+        margin: 8px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .graph-selector-dialog .graph-item:hover {
+        background-color: #f5f5f5;
+        border-color: #007bff;
+    }
+    
+    .graph-selector-dialog .graph-name {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    
+    .graph-selector-dialog .graph-stats {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .graph-selector-dialog .dialog-buttons {
+        text-align: right;
+        margin-top: 15px;
+    }
+    
+    .graph-selector-dialog button {
+        padding: 8px 16px;
+        margin-left: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+    }
+    
+    .graph-selector-dialog button:hover {
+        background: #f0f0f0;
     }
 `;
 document.head.appendChild(style);

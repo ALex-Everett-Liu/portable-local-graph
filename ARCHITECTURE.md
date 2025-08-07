@@ -31,8 +31,8 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │  │                 │  │   Application    │  │                 │ │
 │  │ • Toolbar       │  │ • Graph logic    │  │ • 2D Rendering  │ │
 │  │ • Mode buttons  │  │ • Event handling │  │ • Zoom/pan      │ │
-│  │ • Dialog boxes  │  │ • Data storage   │  │ • Grid system   │ │
-│  │ • Status bar    │  │ • Undo/redo      │  │ • Hit detection │ │
+│  │ • Dialog boxes  │  │ • SQLite DB      │  │ • Grid system   │ │
+│  │ • Status bar    │  │ • Auto-save      │  │ • Hit detection │ │
 │  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
 │                              │                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
@@ -44,17 +44,27 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │  │  │ • Color      │  │ • Direction │  │ • Selection     │ │ │
 │  │  └──────────────┘  └─────────────┘  └─────────────────┘ │ │
 │  └───────────────────────────────────────────────────────────┘  │
+│                              │                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                Database Manager (app.js)                  │  │
+│  │  ┌─────────────────┐  ┌─────────────────┐                │ │
+│  │  │   SQLite DB     │  │   JSON Backup   │                │ │
+│  │  │ • Real-time     │  │ • Import/Export │                │ │
+│  │  │ • Auto-save     │  │ • Migration     │                │ │
+│  │  │ • Graph list    │  │ • Sharing       │                │ │
+│  │  └─────────────────┘  └─────────────────┘                │ │
+│  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Optional Server Mode                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
-│  │   Express.js    │  │   File System    │  │   JSON API      │ │
+│  │   Express.js    │  │   SQLite DB      │  │   REST API      │ │
 │  │                 │  │                  │  │                 │ │
-│  │ • CRUD graphs  │  │ • Save/Load      │  │ • REST endpoints│  │
-│  │ • Auto-save    │  │ • SVG export     │  │ • Validation    │  │
-│  │ • Statistics   │  │ • File cleanup   │  │ • Stats API     │  │
+│  │ • CRUD graphs  │  │ • Real-time      │  │ • REST endpoints│  │
+│  │ • Auto-save    │  │ • Multi-graph    │  │ • Validation    │  │
+│  │ • Statistics   │  │ • Transactions   │  │ • JSON/DB API   │  │
 │  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -87,15 +97,33 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | `generateSVG()` | Create SVG representation | None | SVG string |
 | `handleKeyDown(e)` | Process keyboard shortcuts | e: KeyboardEvent | void |
 
+### App.js - Enhanced Database Integration
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `initializeDatabase()` | Initialize SQLite database connection | None | Promise<void> |
+| `saveGraphToDatabase()` | Auto-save graph to database | None | Promise<void> |
+| `loadGraphFromDatabase(id)` | Load graph from database | id: string | Promise<void> |
+| `showGraphSelector(graphs)` | Display graph selection dialog | graphs: array | Promise<string> |
+| `saveState()` | Save to database with auto-save | None | Promise<void> |
+
 ### Server.js - Optional Backend
 | Function | Purpose | Parameters | Returns |
 |----------|---------|------------|---------|
-| `saveGraphToDB()` | Auto-save to isolated SQLite DB | graphId: string, graph: object | Promise<void> |
+| `saveGraphToDB()` | Auto-save to SQLite database | graphId: string, graph: object | Promise<void> |
 | `generateSVG(graph)` | Generate SVG from graph data | graph: object | SVG string |
-| `POST /api/graph/:id` | Save graph to SQLite | id: string, graph: object | JSON response |
-| `GET /api/graphs` | List all isolated databases | None | JSON array |
-| `GET /api/graph/:id` | Load specific graph from DB | id: string | JSON graph |
+| `POST /api/graph/:id` | Save graph to database | id: string, graph: object | JSON response |
+| `GET /api/graphs` | List all saved graphs | None | JSON array |
+| `GET /api/graph/:id` | Load specific graph | id: string | JSON graph |
 | `POST /api/graph/:id/stats` | Calculate graph statistics | id: string | JSON stats |
+
+### Database Manager Integration
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveGraph(id, data)` | Save graph to SQLite database | id: string, data: object | Promise<void> |
+| `loadGraph(id)` | Load graph from database | id: string | Promise<object> |
+| `listGraphs()` | List all available graphs | None | Promise<array> |
+| `importFromJSON(data, id)` | Import JSON to database | data: object, id: string | Promise<string> |
+| `exportToJSON(id)` | Export graph to JSON | id: string | Promise<object> |
 
 ### Database-isolated.js - SQLite Storage Manager
 | Function | Purpose | Parameters | Returns |
@@ -143,7 +171,47 @@ distanceToLineSegment(px, py, x1, y1, x2, y2) {
 }
 ```
 
-### 5. Edge Weight Visualization
+### 5. Database-first Storage Architecture
+**Problem**: JSON files don't provide real-time persistence and can lose data on crashes
+**Solution**: SQLite database as primary storage with JSON as backup format
+
+```javascript
+// Real-time database persistence
+let dbManager = null;
+let currentGraphId = null;
+
+async function initializeDatabase() {
+    dbManager = new DatabaseManager();
+    await dbManager.init();
+    
+    const graphs = await dbManager.listGraphs();
+    if (graphs.length > 0) {
+        await loadGraphFromDatabase(graphs[0].id);
+    }
+}
+
+// Auto-save after changes
+async function saveState() {
+    const state = graph.exportData();
+    appState.undoStack.push(JSON.parse(JSON.stringify(state)));
+    
+    // Auto-save to database after 1 second delay
+    if (dbManager && currentGraphId) {
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(async () => {
+            await saveGraphToDatabase();
+        }, 1000);
+    }
+}
+```
+**Benefits**:
+- Real-time persistence without user intervention
+- No data loss during crashes or browser restarts
+- Multiple graph support with database selection dialog
+- JSON import/export maintained for backup/sharing
+- Automatic migration from existing JSON files
+
+### 6. Edge Weight Visualization
 **Problem**: Weight values need visual representation beyond text labels
 **Solution**: Non-linear mapping from weight to line thickness using logarithmic scaling
 **Two Semantics Supported**:
@@ -239,16 +307,22 @@ Add nodes with different categories → Color-code by category →
 Filter views → Export categorized graphs
 ```
 
-### 4. Import/Export Workflow
+### 4. Database-First Workflow
 ```
-Create graph → Export as JSON → Save locally → 
-Later: Import JSON file → Continue editing → Export as SVG
+Initialize database → Auto-load recent graph → Make changes → 
+Auto-save to database → Browse graphs → Continue editing → No data loss
 ```
 
-### 5. Server Mode Workflow
+### 5. JSON Import/Export Workflow
 ```
-Start server → Create graphs in browser → Auto-save every minute → 
-Access saved graphs via API → Generate statistics → Bulk export
+Create graph → Auto-save to database → Export JSON for sharing → 
+Import JSON to database → Continue editing → All data persisted
+```
+
+### 6. Server Mode Workflow
+```
+Start server → Database initialized → Real-time persistence → 
+Graph selection dialog → Multiple graph support → API access → Statistics
 ```
 
 ---
@@ -344,20 +418,27 @@ const modes = {
 ```
 
 ### Data Persistence
-**Local storage with fallback options:**
+**SQLite database with JSON backup support:**
 
 ```javascript
-// Browser storage
-localStorage.setItem('graph-data', JSON.stringify(graph.exportData()));
-const saved = JSON.parse(localStorage.getItem('graph-data'));
-if (saved) graph.importData(saved);
+// Real-time database storage
+const dbManager = new DatabaseManager();
+await dbManager.init();
+await dbManager.saveGraph(currentGraphId, graph.exportData());
 
-// File download fallback
+// Auto-save functionality
+async function saveState() {
+    const state = graph.exportData();
+    await saveGraphToDatabase();  // Auto-save after 1s delay
+    appState.undoStack.push(JSON.parse(JSON.stringify(state)));
+}
+
+// JSON backup/export
+const data = await dbManager.exportToJSON(currentGraphId);
 const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
-a.href = url;
-a.download = 'graph.json';
+a.href = URL.createObjectURL(blob);
+a.download = `graph-${Date.now()}.json`;
 a.click();
 ```
 

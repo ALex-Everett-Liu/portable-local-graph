@@ -10,7 +10,8 @@
     "server:json": "node server.js",
     "build": "electron-builder",
     "migrate": "node migrate-isolated.js",
-    "migrate:interactive": "node migrate-isolated.js --interactive"
+    "migrate:interactive": "node migrate-isolated.js --interactive",
+    "migrate:file": "node migrate-isolated.js --file"
   },
   "keywords": [
     "graph",

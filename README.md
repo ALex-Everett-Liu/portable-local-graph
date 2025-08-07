@@ -21,11 +21,12 @@ A simple, interactive desktop application for manually drawing graphs using Node
 - **Node Size Control**: Adjustable node radius from 1-100 pixels with slider control
 
 ### Data Management
-- **JSON Export/Import**: Save and load graphs as JSON files
+- **SQLite Database**: Primary storage with real-time persistence
+- **JSON Export/Import**: Backup and sharing via JSON files
 - **SVG Export**: Export graphs as vector graphics
-- **Auto-save**: Automatic backup every minute
+- **Auto-save**: Automatic database updates every second
 - **Undo/Redo**: Unlimited undo/redo with history management
-- **File Management**: Built-in file browser for saved graphs
+- **Graph Selection**: Browse and load from multiple saved graphs
 
 ### User Interface
 - **Responsive Design**: Adapts to different screen sizes
@@ -93,6 +94,21 @@ npm run server
 4. **Edit Properties**: Right-click nodes or edges to edit labels and weights
 5. **Save Your Work**: Use Ctrl+S or the Save button to save as JSON
 
+### Database Storage
+
+The application now uses **SQLite database as primary storage** with JSON as backup format:
+
+#### **SQLite Database (Primary)**
+- **Real-time persistence**: All changes automatically saved to database
+- **Graph selection**: Browse available graphs with interactive dialog
+- **No data loss**: Survives crashes and browser restarts
+- **Multiple graphs**: Support for unlimited saved graphs
+
+#### **JSON Format (Backup/Export)**
+- **Import/Export**: JSON files for backup and sharing
+- **Migration**: Existing JSON files automatically imported to database
+- **Compatibility**: Full backward compatibility maintained
+
 ### Working with Categories
 
 You can now assign categories to both nodes and edges for better organization:
@@ -126,8 +142,8 @@ You can now assign categories to both nodes and edges for better organization:
 
 ### Keyboard Shortcuts
 - **Ctrl+N**: New graph
-- **Ctrl+O**: Open graph
-- **Ctrl+S**: Save graph
+- **Ctrl+O**: Open graph database selection dialog
+- **Ctrl+S**: Save to database (auto-save also enabled)
 - **Ctrl+Z**: Undo
 - **Ctrl+Y**: Redo
 - **Delete**: Delete selected nodes/edges
@@ -140,8 +156,16 @@ You can now assign categories to both nodes and edges for better organization:
 
 ## File Formats
 
-### JSON Format (Import/Export)
-Graphs can be imported and exported in a simple JSON format:
+### Loading Graphs
+
+#### **SQLite Database (Primary Storage)**
+- **Real-time persistence**: All changes automatically saved to database
+- **Graph selection**: Interactive dialog for browsing saved graphs
+- **No file selection needed**: Graphs loaded from database directly
+- **Multiple graphs**: Support for unlimited saved graphs in single database
+
+#### **JSON Format (Backup/Export)**
+Graphs can still be imported and exported in JSON format:
 ```json
 {
   "nodes": [
@@ -168,13 +192,6 @@ Graphs can be imported and exported in a simple JSON format:
   "offset": {"x": 0, "y": 0}
 }
 ```
-
-### SQLite Database (Primary Storage)
-Graphs are now stored as isolated SQLite databases (one `.db` file per graph):
-- **Location**: `./data/` directory
-- **Format**: Individual `.db` files for complete data isolation
-- **Migration**: JSON files automatically migrate to SQLite on first use
-- **Example**: `my-graph.json` → `my-graph.db`
 
 ### SVG Export
 Vector graphics export includes:
@@ -219,17 +236,11 @@ The Express server provides these REST endpoints:
 - JSON import/export maintains backward compatibility
 - Migration tools available for existing JSON files
 
-### Migration Commands
-```bash
-# Migrate all existing JSON files to SQLite
-npm run migrate
-
-# Interactive migration with backup
-npm run migrate:interactive
-
-# Create JSON backup before migration
-node migrate-isolated.js --backup
-```
+### Usage Notes
+- **Database-first**: All operations use SQLite database as primary storage
+- **JSON Compatibility**: JSON import/export available for external sharing
+- **No manual migration**: Existing JSON files imported automatically
+- **Real-time persistence**: Changes saved automatically without user action
 
 ## Troubleshooting
 

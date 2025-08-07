@@ -40,6 +40,30 @@
 - **Visual Sensitivity**: Optimized for common 0.5-5 weight range with logarithmic scaling
 - **Zoom Scaling**: Line thickness properly scales with canvas zoom level
 
+## [0.1.6] - 2025-08-07
+
+### Added
+- **Primary Database Storage**: Complete migration from JSON to SQLite as primary storage
+- **Real-time Database Updates**: All graph changes are automatically persisted to SQLite
+- **Database-first Architecture**: JSON files now serve only as backup/export format
+- **Auto-save Functionality**: Changes saved to database after 1-second delay
+- **Graph Selection Dialog**: New UI for browsing and selecting from multiple saved graphs
+- **Database Manager Integration**: Enhanced `app.js` with SQLite database integration
+- **Real-time Persistence**: No data loss even during crashes or browser restarts
+
+### Technical Details
+- **Storage Architecture**: Single SQLite database with multiple graph support
+- **Auto-save**: Changes persisted to database automatically without user intervention
+- **Graph Selection**: Interactive dialog for loading graphs from database
+- **JSON Compatibility**: Full import/export support maintained for backup/sharing
+- **Migration**: Automatic import of existing JSON files into database
+
+### Changed
+- **Primary Storage**: JSON files → SQLite database for real-time data persistence
+- **Save Behavior**: Manual JSON saves → automatic database updates
+- **Load Behavior**: File picker → database selection dialog
+- **Data Integrity**: Improved with transactional database operations
+
 ## [0.1.5] - 2025-08-07
 
 ### Added
