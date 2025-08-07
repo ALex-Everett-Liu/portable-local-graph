@@ -42,9 +42,11 @@ function setupEventListeners() {
     document.getElementById('clear-btn').addEventListener('click', clearGraph);
     
     document.getElementById('new-graph-btn').addEventListener('click', newGraph);
-    document.getElementById('save-btn').addEventListener('click', saveGraph);
-    document.getElementById('load-btn').addEventListener('click', loadGraph);
+    document.getElementById('save-btn').addEventListener('click', saveGraphToFile);
+    document.getElementById('load-btn').addEventListener('click', openGraphFile);
+    document.getElementById('import-json-btn').addEventListener('click', importJSON);
     document.getElementById('export-svg-btn').addEventListener('click', exportSVG);
+    document.getElementById('export-json-btn').addEventListener('click', exportJSON);
     
     // Dialog buttons
     document.getElementById('weight-ok').addEventListener('click', handleWeightOK);
@@ -90,6 +92,27 @@ function setupIPC() {
                 showNotification('SVG exported successfully!');
             } else if (!result.cancelled) {
                 showNotification('Error exporting SVG: ' + result.error);
+            }
+        });
+
+        ipcRenderer.on('import-json-request', async () => {
+            const result = await ipcRenderer.invoke('import-json-file');
+            if (result.success) {
+                loadGraphData(result.graphData);
+                currentGraphId = 'import-' + Date.now();
+                showNotification(`JSON imported from ${result.fileName}`);
+            } else if (!result.cancelled) {
+                showNotification('Error importing JSON: ' + result.error);
+            }
+        });
+
+        ipcRenderer.on('export-json-request', async () => {
+            const data = graph.exportData();
+            const result = await ipcRenderer.invoke('export-json', data);
+            if (result.success) {
+                showNotification('JSON exported successfully!');
+            } else if (!result.cancelled) {
+                showNotification('Error exporting JSON: ' + result.error);
             }
         });
     }
@@ -222,20 +245,21 @@ async function newGraph() {
     saveState();
 }
 
-async function saveGraph() {
-    if (dbManager && currentGraphId) {
+async function saveGraphToFile() {
+    if (typeof require !== 'undefined') {
+        // Electron mode - use file dialog
+        const { ipcRenderer } = require('electron');
+        const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), currentGraphId);
+        if (result.success) {
+            currentGraphId = result.graphId;
+            showNotification(`Graph saved to ${result.fileName}`);
+        } else if (!result.cancelled) {
+            showNotification('Error saving graph: ' + result.error, 'error');
+        }
+    } else {
+        // Web mode - use database
         await saveGraphToDatabase();
         showNotification('Graph saved to database!');
-    } else {
-        // Fallback to JSON export
-        const data = graph.exportData();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `graph_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
     }
 }
 
@@ -260,27 +284,21 @@ async function saveGraphToDatabase() {
     }
 }
 
-async function loadGraph() {
-    if (dbManager) {
-        // Show database graph selection dialog
-        try {
-            const graphs = await dbManager.listGraphs();
-            if (graphs.length === 0) {
-                showNotification('No graphs found in database', 'info');
-                return;
-            }
-            
-            const selectedId = await showGraphSelector(graphs);
-            if (selectedId) {
-                await loadGraphFromDatabase(selectedId);
-            }
-        } catch (error) {
-            console.error('Error loading from database:', error);
-            fallbackToJSONLoad();
+async function openGraphFile() {
+    if (typeof require !== 'undefined') {
+        // Electron mode - use file dialog
+        const { ipcRenderer } = require('electron');
+        const result = await ipcRenderer.invoke('open-graph-file');
+        if (result.success) {
+            currentGraphId = result.graphId;
+            await loadGraphFromDatabase(result.graphId);
+            showNotification(`Graph opened from ${result.fileName}`);
+        } else if (!result.cancelled) {
+            showNotification('Error opening graph: ' + result.error, 'error');
         }
     } else {
-        // Fallback to JSON loading
-        fallbackToJSONLoad();
+        // Web mode - use database selection
+        await openFromDatabase();
     }
 }
 
@@ -313,6 +331,26 @@ function fallbackToJSONLoad() {
         }
     };
     input.click();
+}
+
+async function openFromDatabase() {
+    if (!dbManager) return;
+    
+    try {
+        const graphs = await dbManager.listGraphs();
+        if (graphs.length === 0) {
+            showNotification('No graphs found in database', 'info');
+            return;
+        }
+        
+        const selectedId = await showGraphSelector(graphs);
+        if (selectedId) {
+            await loadGraphFromDatabase(selectedId);
+        }
+    } catch (error) {
+        console.error('Error loading from database:', error);
+        showNotification('Error loading graph: ' + error.message, 'error');
+    }
 }
 
 async function loadGraphFromDatabase(graphId) {
@@ -360,6 +398,62 @@ function exportSVG() {
     a.click();
     URL.revokeObjectURL(url);
     showNotification('SVG exported successfully!');
+}
+
+function exportJSON() {
+    const data = graph.exportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `graph_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showNotification('JSON exported successfully!');
+}
+
+async function importJSON() {
+    if (typeof require !== 'undefined') {
+        // Electron mode - use file dialog
+        const { ipcRenderer } = require('electron');
+        const result = await ipcRenderer.invoke('import-json-file');
+        if (result.success) {
+            await loadGraphData(result.graphData);
+            currentGraphId = 'import-' + Date.now();
+            showNotification(`JSON imported from ${result.fileName}`);
+        } else if (!result.cancelled) {
+            showNotification('Error importing JSON: ' + result.error, 'error');
+        }
+    } else {
+        // Web mode - use file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        await loadGraphData(data);
+                        currentGraphId = 'import-' + Date.now();
+                        
+                        // Save to database if available
+                        if (dbManager) {
+                            await saveGraphToDatabase();
+                        }
+                        
+                        showNotification(`JSON imported from ${file.name}`);
+                    } catch (error) {
+                        showNotification('Error importing JSON: Invalid format', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
 }
 
 function clearGraph() {
@@ -482,11 +576,11 @@ function handleKeyDown(e) {
                 break;
             case 's':
                 e.preventDefault();
-                saveGraph();
+                saveGraphToFile();
                 break;
             case 'o':
                 e.preventDefault();
-                loadGraph();
+                openGraphFile();
                 break;
             case 'z':
                 e.preventDefault();

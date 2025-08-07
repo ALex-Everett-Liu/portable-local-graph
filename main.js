@@ -35,41 +35,73 @@ function createWindow() {
                     }
                 },
                 {
-                    label: 'Open Graph',
+                    label: 'Open Graph...',
                     accelerator: 'CmdOrCtrl+O',
                     click: async () => {
                         const result = await dialog.showOpenDialog(mainWindow, {
                             filters: [
+                                { name: 'SQLite Database', extensions: ['db'] },
                                 { name: 'JSON Files', extensions: ['json'] }
                             ]
                         });
                         
                         if (!result.canceled && result.filePaths.length > 0) {
-                            const data = fs.readFileSync(result.filePaths[0], 'utf8');
-                            mainWindow.webContents.send('load-graph', JSON.parse(data));
+                            const filePath = result.filePaths[0];
+                            if (filePath.endsWith('.db')) {
+                                const DatabaseManager = require('./database-manager');
+                                const dbManager = new DatabaseManager(filePath);
+                                await dbManager.init();
+                                const graphs = await dbManager.listGraphs();
+                                if (graphs.length > 0) {
+                                    const graphData = await dbManager.loadGraph(graphs[0].id);
+                                    await dbManager.close();
+                                    mainWindow.webContents.send('load-graph', graphData);
+                                }
+                            } else {
+                                const data = fs.readFileSync(filePath, 'utf8');
+                                mainWindow.webContents.send('load-graph', JSON.parse(data));
+                            }
                         }
                     }
                 },
                 {
-                    label: 'Save Graph',
+                    label: 'Save Graph...',
                     accelerator: 'CmdOrCtrl+S',
                     click: async () => {
                         const result = await dialog.showSaveDialog(mainWindow, {
                             filters: [
+                                { name: 'SQLite Database', extensions: ['db'] },
                                 { name: 'JSON Files', extensions: ['json'] }
-                            ]
+                            ],
+                            defaultPath: 'graph.db'
                         });
                         
                         if (!result.canceled) {
-                            mainWindow.webContents.send('save-graph-request', result.filePath);
+                            if (result.filePath.endsWith('.db')) {
+                                mainWindow.webContents.send('save-graph-file-request', result.filePath);
+                            } else {
+                                mainWindow.webContents.send('save-graph-request', result.filePath);
+                            }
                         }
                     }
                 },
                 { type: 'separator' },
                 {
-                    label: 'Export as SVG',
+                    label: 'Export SVG',
                     click: () => {
                         mainWindow.webContents.send('export-svg-request');
+                    }
+                },
+                {
+                    label: 'Import JSON...',
+                    click: () => {
+                        mainWindow.webContents.send('import-json-request');
+                    }
+                },
+                {
+                    label: 'Export JSON...',
+                    click: () => {
+                        mainWindow.webContents.send('export-json-request');
                     }
                 },
                 { type: 'separator' },
@@ -117,11 +149,107 @@ function createWindow() {
     });
 }
 
-// IPC handlers
+// IPC handlers for database files
+ipcMain.handle('save-graph-file', async (event, data, graphId) => {
+    try {
+        const result = await dialog.showSaveDialog(mainWindow, {
+            filters: [
+                { name: 'SQLite Database', extensions: ['db'] }
+            ],
+            defaultPath: `${graphId || 'graph'}.db`
+        });
+        
+        if (result.canceled) {
+            return { success: false, cancelled: true };
+        }
+        
+        // Create a new database manager for the selected file
+        const DatabaseManager = require('./database-manager');
+        const dbManager = new DatabaseManager(result.filePath);
+        await dbManager.init();
+        
+        // Save the graph data
+        const finalGraphId = graphId || `graph-${Date.now()}`;
+        await dbManager.saveGraph(finalGraphId, data);
+        await dbManager.close();
+        
+        return { 
+            success: true, 
+            fileName: path.basename(result.filePath),
+            graphId: finalGraphId,
+            filePath: result.filePath
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('open-graph-file', async () => {
+    try {
+        const result = await dialog.showOpenDialog(mainWindow, {
+            filters: [
+                { name: 'SQLite Database', extensions: ['db'] }
+            ],
+            properties: ['openFile']
+        });
+        
+        if (result.canceled || result.filePaths.length === 0) {
+            return { success: false, cancelled: true };
+        }
+        
+        const filePath = result.filePaths[0];
+        const DatabaseManager = require('./database-manager');
+        const dbManager = new DatabaseManager(filePath);
+        await dbManager.init();
+        
+        // Get the first available graph
+        const graphs = await dbManager.listGraphs();
+        if (graphs.length === 0) {
+            await dbManager.close();
+            return { success: false, error: 'No graphs found in database' };
+        }
+        
+        const graphData = await dbManager.loadGraph(graphs[0].id);
+        await dbManager.close();
+        
+        return { 
+            success: true, 
+            graphData,
+            graphId: graphs[0].id,
+            fileName: path.basename(filePath),
+            filePath
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Legacy JSON handlers
 ipcMain.handle('save-graph', async (event, data, filePath) => {
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('save-graph-file-request', async (event, filePath, data, graphId) => {
+    try {
+        const DatabaseManager = require('./database-manager');
+        const dbManager = new DatabaseManager(filePath);
+        await dbManager.init();
+        
+        const finalGraphId = graphId || `graph-${Date.now()}`;
+        await dbManager.saveGraph(finalGraphId, data);
+        await dbManager.close();
+        
+        return { 
+            success: true, 
+            fileName: path.basename(filePath),
+            graphId: finalGraphId,
+            filePath
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }
@@ -140,6 +268,52 @@ ipcMain.handle('export-svg', async (event, svgData) => {
             return { success: true, filePath: result.filePath };
         }
         return { success: false, cancelled: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('export-json', async (event, data) => {
+    try {
+        const result = await dialog.showSaveDialog(mainWindow, {
+            filters: [
+                { name: 'JSON Files', extensions: ['json'] }
+            ],
+            defaultPath: 'graph.json'
+        });
+        
+        if (!result.canceled) {
+            fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2));
+            return { success: true, filePath: result.filePath };
+        }
+        return { success: false, cancelled: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('import-json-file', async () => {
+    try {
+        const result = await dialog.showOpenDialog(mainWindow, {
+            filters: [
+                { name: 'JSON Files', extensions: ['json'] }
+            ],
+            properties: ['openFile']
+        });
+        
+        if (result.canceled || result.filePaths.length === 0) {
+            return { success: false, cancelled: true };
+        }
+        
+        const filePath = result.filePaths[0];
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        
+        return { 
+            success: true, 
+            graphData: data,
+            fileName: path.basename(filePath),
+            filePath
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }

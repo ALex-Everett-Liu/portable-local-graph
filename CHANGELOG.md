@@ -87,6 +87,28 @@
 - **API Structure**: REST endpoints now use graph IDs as database identifiers
 - **Package Scripts**: Added `migrate` and `migrate:interactive` commands
 
+## [0.1.7] - 2025-08-07
+
+### Added
+- **Dedicated JSON Import**: New "Import JSON" button and menu option for explicit JSON file import
+- **File-based Database**: Support for opening and saving to any `.db` file (not just `graph.db`)
+- **Enhanced Import/Export**: Clear separation between Save (to .db) and Export (to .json/.svg)
+- **Toolbar Improvements**: New Import button (📥) for JSON file selection
+- **Menu Integration**: File menu now supports "Import JSON..." and "Export JSON..." options
+- **Electron Integration**: Full file dialog support for database and JSON operations
+
+### Changed
+- **Storage Naming**: "Save" now refers to database (.db) files, "Export" refers to JSON/SVG files
+- **File Operations**: Replaced single-file database with support for arbitrary .db file locations
+- **Import Process**: JSON import now explicit action rather than implicit fallback
+- **User Interface**: Clear button labels and menu items for import/export operations
+
+### Technical Details
+- **Database Manager**: Added `openFile()` method for dynamic database file selection
+- **IPC Handlers**: New handlers for JSON import (`import-json-file`) and file-based save/load
+- **File Dialogs**: Support for .db and .json file filters in save/open dialogs
+- **Backward Compatibility**: Existing JSON files can be imported without modification
+
 ## [0.1.0] - 2025-08-06
 
 ### Added
