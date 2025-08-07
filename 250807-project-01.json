@@ -1,0 +1,276 @@
+{
+  "nodes": [
+    {
+      "id": 1754540709431.2793,
+      "x": 305,
+      "y": 309,
+      "label": "system architecture",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540710045.2896,
+      "x": 382,
+      "y": 208,
+      "label": "Electron Runtime",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540712878.5164,
+      "x": 302,
+      "y": 113,
+      "label": "Electron",
+      "color": "#16836d",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540720414.1982,
+      "x": 541,
+      "y": 230,
+      "label": "File System Layer",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540771991.5728,
+      "x": 664,
+      "y": 243,
+      "label": "file system",
+      "color": "#b68ee6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540857491.8623,
+      "x": 467,
+      "y": 97,
+      "label": "main process",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540858046.2532,
+      "x": 608,
+      "y": 20,
+      "label": "renderer process",
+      "color": "#49c1fd",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540901774.868,
+      "x": 534,
+      "y": -89,
+      "label": "Express Backend",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540902510.5676,
+      "x": 454,
+      "y": -191,
+      "label": "Express.js",
+      "color": "#72df9c",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754540974166.9573,
+      "x": 758.8888888888889,
+      "y": 2.2222222222222223,
+      "label": "UI/UX Logic",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754541011845.9463,
+      "x": 571.1111111111111,
+      "y": 327.77777777777777,
+      "label": "JSON storage",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754541015126.7183,
+      "x": 525.5555555555555,
+      "y": 430,
+      "label": "data persistent",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754541015726.914,
+      "x": 675.5555555555555,
+      "y": 466.66666666666663,
+      "label": "data storage",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754541077094.819,
+      "x": 242.22222222222223,
+      "y": 446.66666666666663,
+      "label": "architecture documentation",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754541077620.0303,
+      "x": 318.88888888888886,
+      "y": 514.4444444444445,
+      "label": "ARCHITECTURE.md",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754541142502.4414,
+      "x": 382.22222222222223,
+      "y": 626.6666666666666,
+      "label": "function inventories",
+      "color": "#6a57f4",
+      "radius": 40,
+      "category": null
+    },
+    {
+      "id": 1754541142949.4136,
+      "x": 303.3333333333333,
+      "y": 748.8888888888889,
+      "label": "function",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    }
+  ],
+  "edges": [
+    {
+      "id": 1754540797367.604,
+      "from": 1754540712878.5164,
+      "to": 1754540710045.2896,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540798598.1316,
+      "from": 1754540710045.2896,
+      "to": 1754540709431.2793,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540799808.9695,
+      "from": 1754540710045.2896,
+      "to": 1754540720414.1982,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540802335.9995,
+      "from": 1754540720414.1982,
+      "to": 1754540771991.5728,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540885055.775,
+      "from": 1754540857491.8623,
+      "to": 1754540710045.2896,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540886383.6013,
+      "from": 1754540858046.2532,
+      "to": 1754540857491.8623,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540928856.9023,
+      "from": 1754540902510.5676,
+      "to": 1754540901774.868,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754540930190.6597,
+      "from": 1754540901774.868,
+      "to": 1754540858046.2532,
+      "weight": 3,
+      "category": null
+    },
+    {
+      "id": 1754540981014.0034,
+      "from": 1754540858046.2532,
+      "to": 1754540974166.9573,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541046518.5952,
+      "from": 1754541011845.9463,
+      "to": 1754540720414.1982,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541047633.2512,
+      "from": 1754541011845.9463,
+      "to": 1754541015126.7183,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541048695.147,
+      "from": 1754541011845.9463,
+      "to": 1754541015726.914,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541099462.8235,
+      "from": 1754541077094.819,
+      "to": 1754541077620.0303,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541102382.8296,
+      "from": 1754541077094.819,
+      "to": 1754540709431.2793,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541190900.8335,
+      "from": 1754541142502.4414,
+      "to": 1754541142949.4136,
+      "weight": 1,
+      "category": null
+    },
+    {
+      "id": 1754541192271.1753,
+      "from": 1754541142502.4414,
+      "to": 1754541077620.0303,
+      "weight": 5,
+      "category": null
+    }
+  ],
+  "scale": 0.7290000000000001,
+  "offset": {
+    "x": 25,
+    "y": 5
+  }
+}

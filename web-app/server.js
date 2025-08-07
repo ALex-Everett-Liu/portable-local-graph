@@ -240,9 +240,7 @@ function generateSVG(data) {
                   font-family="Arial" font-size="12" fill="white">${node.label}</text>`;
     });
 
-    svg += '
-        </g>
-    </svg>';
+    svg += '</g></svg>';
     
     return svg;
 }
