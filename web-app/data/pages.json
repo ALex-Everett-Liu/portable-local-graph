@@ -1,0 +1,34 @@
+[
+  {
+    "title": "Getting Started",
+    "description": "Learn the basics of using the Portable Graph web application",
+    "url": "index.html",
+    "tags": ["tutorial", "basics", "getting-started"],
+    "category": "documentation",
+    "date": "2025-08-07"
+  },
+  {
+    "title": "Performance Guide",
+    "description": "Tips for working with large graphs and performance optimization",
+    "url": "#performance",
+    "tags": ["performance", "optimization", "large-graphs"],
+    "category": "guide",
+    "date": "2025-08-07"
+  },
+  {
+    "title": "Keyboard Shortcuts",
+    "description": "Complete list of keyboard shortcuts for faster workflow",
+    "url": "#shortcuts",
+    "tags": ["shortcuts", "productivity", "keyboard"],
+    "category": "reference",
+    "date": "2025-08-07"
+  },
+  {
+    "title": "Sample Graphs",
+    "description": "Ready-to-use sample graphs for testing and learning",
+    "url": "data/sample-graph.json",
+    "tags": ["examples", "samples", "testing"],
+    "category": "examples",
+    "date": "2025-08-07"
+  }
+]

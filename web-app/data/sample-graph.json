@@ -1,0 +1,114 @@
+{
+  "format": "graph-data-v1",
+  "timestamp": "2025-08-07T12:00:00.000Z",
+  "metadata": {
+    "name": "Sample Workflow Graph",
+    "description": "A sample graph demonstrating workflow connections",
+    "version": "1.0"
+  },
+  "nodes": [
+    {
+      "id": "start-node",
+      "x": 150,
+      "y": 200,
+      "label": "Start",
+      "color": "#10b981",
+      "radius": 30,
+      "category": "input"
+    },
+    {
+      "id": "process-a",
+      "x": 350,
+      "y": 120,
+      "label": "Process A",
+      "color": "#3b82f6",
+      "radius": 25,
+      "category": "process"
+    },
+    {
+      "id": "process-b",
+      "x": 350,
+      "y": 280,
+      "label": "Process B",
+      "color": "#8b5cf6",
+      "radius": 25,
+      "category": "process"
+    },
+    {
+      "id": "validate",
+      "x": 550,
+      "y": 200,
+      "label": "Validate",
+      "color": "#f59e0b",
+      "radius": 28,
+      "category": "validation"
+    },
+    {
+      "id": "end-success",
+      "x": 750,
+      "y": 150,
+      "label": "Success",
+      "color": "#10b981",
+      "radius": 25,
+      "category": "output"
+    },
+    {
+      "id": "end-error",
+      "x": 750,
+      "y": 250,
+      "label": "Error",
+      "color": "#ef4444",
+      "radius": 25,
+      "category": "output"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "start-node",
+      "to": "process-a",
+      "weight": 2.0,
+      "category": "flow"
+    },
+    {
+      "id": "edge-2",
+      "from": "start-node",
+      "to": "process-b",
+      "weight": 1.5,
+      "category": "flow"
+    },
+    {
+      "id": "edge-3",
+      "from": "process-a",
+      "to": "validate",
+      "weight": 2.5,
+      "category": "flow"
+    },
+    {
+      "id": "edge-4",
+      "from": "process-b",
+      "to": "validate",
+      "weight": 2.0,
+      "category": "flow"
+    },
+    {
+      "id": "edge-5",
+      "from": "validate",
+      "to": "end-success",
+      "weight": 3.0,
+      "category": "success"
+    },
+    {
+      "id": "edge-6",
+      "from": "validate",
+      "to": "end-error",
+      "weight": 1.0,
+      "category": "error"
+    }
+  ],
+  "scale": 1,
+  "offset": {
+    "x": 0,
+    "y": 0
+  }
+}

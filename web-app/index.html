@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portable Graph - Web Application</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-project-diagram"></i>
+                    Portable Graph
+                </h1>
+                <p class="subtitle">Interactive Graph Visualization Tool</p>
+            </div>
+            <div class="header-actions">
+                <button id="import-btn" class="btn btn-secondary" title="Import Graph">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <button id="export-btn" class="btn btn-secondary" title="Export Graph">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button id="clear-btn" class="btn btn-secondary" title="Clear Canvas">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="tool-group">
+                <label class="tool-label">Mode:</label>
+                <div class="mode-buttons">
+                    <button class="mode-btn active" data-mode="select">
+                        <i class="fas fa-mouse-pointer"></i>
+                        Select
+                    </button>
+                    <button class="mode-btn" data-mode="node">
+                        <i class="fas fa-circle"></i>
+                        Add Node
+                    </button>
+                    <button class="mode-btn" data-mode="edge">
+                        <i class="fas fa-project-diagram"></i>
+                        Add Edge
+                    </button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <label class="tool-label">View:</label>
+                <button id="zoom-in-btn" class="btn btn-icon" title="Zoom In">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="zoom-out-btn" class="btn btn-icon" title="Zoom Out">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button id="fit-view-btn" class="btn btn-icon" title="Fit to View">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+
+            <div class="tool-group">
+                <label class="tool-label">Performance:</label>
+                <span id="node-count">0 nodes</span>
+                <span id="edge-count">0 edges</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Canvas Container -->
+            <div class="canvas-container">
+                <canvas id="graph-canvas"></canvas>
+                
+                <!-- Context Menu -->
+                <div id="context-menu" class="context-menu hidden">
+                    <div class="menu-item" data-action="edit">
+                        <i class="fas fa-edit"></i> Edit
+                    </div>
+                    <div class="menu-item" data-action="delete">
+                        <i class="fas fa-trash"></i> Delete
+                    </div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-item" data-action="duplicate">
+                        <i class="fas fa-copy"></i> Duplicate
+                    </div>
+                </div>
+
+                <!-- Performance Info -->
+                <div id="performance-info" class="performance-info hidden">
+                    <div class="perf-item">
+                        <span>FPS:</span>
+                        <span id="fps-counter">60</span>
+                    </div>
+                    <div class="perf-item">
+                        <span>Nodes:</span>
+                        <span id="perf-nodes">0</span>
+                    </div>
+                    <div class="perf-item">
+                        <span>Edges:</span>
+                        <span id="perf-edges">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Properties</h3>
+                    <div id="properties-panel" class="properties-panel">
+                        <div class="empty-state">
+                            <i class="fas fa-mouse-pointer"></i>
+                            <p>Select an element to edit properties</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Recent Files</h3>
+                    <div id="recent-files" class="recent-files">
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p>No recent files</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dialogs -->
+        <div id="node-dialog" class="dialog hidden">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h3>Edit Node</h3>
+                    <button class="dialog-close">&times;</button>
+                </div>
+                <div class="dialog-body">
+                    <div class="form-group">
+                        <label for="node-label">Label:</label>
+                        <input type="text" id="node-label" placeholder="Node label">
+                    </div>
+                    <div class="form-group">
+                        <label for="node-color">Color:</label>
+                        <input type="color" id="node-color" value="#3b82f6">
+                    </div>
+                    <div class="form-group">
+                        <label for="node-radius">Size: <span id="radius-value">20</span>px</label>
+                        <input type="range" id="node-radius" min="5" max="50" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="node-category">Category:</label>
+                        <input type="text" id="node-category" placeholder="Optional category">
+                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <button class="btn btn-secondary" data-action="cancel">Cancel</button>
+                    <button class="btn btn-primary" data-action="save">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="edge-dialog" class="dialog hidden">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h3>Edit Edge</h3>
+                    <button class="dialog-close">&times;</button>
+                </div>
+                <div class="dialog-body">
+                    <div class="form-group">
+                        <label for="edge-weight">Weight: <span id="weight-value">1</span></label>
+                        <input type="range" id="edge-weight" min="0.1" max="30" step="0.1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="edge-category">Category:</label>
+                        <input type="text" id="edge-category" placeholder="Optional category">
+                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <button class="btn btn-secondary" data-action="cancel">Cancel</button>
+                    <button class="btn btn-primary" data-action="save">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Input (Hidden) -->
+    <input type="file" id="file-input" accept=".json" style="display: none;">
+
+    <!-- Scripts -->
+    <script src="js/graph-engine.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/app-controller.js"></script>
+</body>
+</html>
