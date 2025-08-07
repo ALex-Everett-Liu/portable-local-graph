@@ -6,10 +6,17 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "server": "node server.js",
-    "build": "electron-builder"
+    "server": "node server-sqlite.js",
+    "server:json": "node server.js",
+    "build": "electron-builder",
+    "migrate": "node migrate-to-sqlite.js"
   },
-  "keywords": ["graph", "drawing", "canvas", "electron"],
+  "keywords": [
+    "graph",
+    "drawing",
+    "canvas",
+    "electron"
+  ],
   "author": "User",
   "license": "MIT",
   "devDependencies": {
@@ -17,7 +24,8 @@
     "electron-builder": "^24.0.0"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "sqlite3": "^5.1.7"
   }
 }
