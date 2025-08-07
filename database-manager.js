@@ -3,6 +3,19 @@ const path = require('path');
 const fs = require('fs').promises;
 const { v7: uuidv7 } = require('uuid');
 
+// UUID conversion utilities for binary storage
+function uuidToBuffer(uuid) {
+    if (!uuid) return null;
+    const hex = uuid.replace(/-/g, '');
+    return Buffer.from(hex, 'hex');
+}
+
+function bufferToUuid(buffer) {
+    if (!buffer || buffer.length !== 16) return null;
+    const hex = buffer.toString('hex');
+    return `${hex.substr(0, 8)}-${hex.substr(8, 4)}-${hex.substr(12, 4)}-${hex.substr(16, 4)}-${hex.substr(20, 12)}`;
+}
+
 class DatabaseManager {
     constructor(dbPath = path.join(__dirname, 'data', 'graph.db')) {
         this.dbPath = dbPath;
@@ -33,7 +46,7 @@ class DatabaseManager {
     async createTables() {
         const createGraphsTable = `
             CREATE TABLE IF NOT EXISTS graphs (
-                id TEXT PRIMARY KEY,
+                id BLOB PRIMARY KEY,
                 name TEXT NOT NULL,
                 description TEXT,
                 scale REAL DEFAULT 1.0,
@@ -47,8 +60,8 @@ class DatabaseManager {
 
         const createNodesTable = `
             CREATE TABLE IF NOT EXISTS nodes (
-                id TEXT NOT NULL,
-                graph_id TEXT NOT NULL,
+                id BLOB NOT NULL,
+                graph_id BLOB NOT NULL,
                 x REAL NOT NULL,
                 y REAL NOT NULL,
                 label TEXT,
@@ -64,10 +77,10 @@ class DatabaseManager {
 
         const createEdgesTable = `
             CREATE TABLE IF NOT EXISTS edges (
-                id TEXT NOT NULL,
-                graph_id TEXT NOT NULL,
-                from_node_id TEXT NOT NULL,
-                to_node_id TEXT NOT NULL,
+                id BLOB NOT NULL,
+                graph_id BLOB NOT NULL,
+                from_node_id BLOB NOT NULL,
+                to_node_id BLOB NOT NULL,
                 weight REAL DEFAULT 1,
                 category TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -133,8 +146,8 @@ class DatabaseManager {
                 `);
                 
                 graphStmt.run(
-                    Buffer.from(id.replace(/-/g, ''), 'hex'), // Convert UUID hex to binary
-                    metadata.name || id,
+                    uuidToBuffer(id), // Convert UUID string to binary (16 bytes)
+                    metadata.name || String(id),
                     metadata.description || '',
                     scale,
                     offset.x,
@@ -144,8 +157,8 @@ class DatabaseManager {
                 graphStmt.finalize();
 
                 // Delete existing nodes and edges for this graph
-                this.db.run('DELETE FROM nodes WHERE graph_id = ?', [id]);
-                this.db.run('DELETE FROM edges WHERE graph_id = ?', [id]);
+                this.db.run('DELETE FROM nodes WHERE graph_id = ?', [uuidToBuffer(id)]);
+                this.db.run('DELETE FROM edges WHERE graph_id = ?', [uuidToBuffer(id)]);
 
                 // Insert nodes
                 const nodeStmt = this.db.prepare(`
@@ -154,10 +167,10 @@ class DatabaseManager {
                 `);
                 
                 nodes.forEach(node => {
-                    const nodeId = node.id && node.id.length > 10 ? String(node.id) : uuidv7();
+                    const nodeId = node.id && node.id.length > 10 ? uuidToBuffer(node.id) : uuidToBuffer(uuidv7());
                     nodeStmt.run(
                         nodeId,
-                        id,
+                        uuidToBuffer(id),
                         node.x,
                         node.y,
                         node.label || '',
@@ -175,12 +188,12 @@ class DatabaseManager {
                 `);
                 
                 edges.forEach(edge => {
-                    const edgeId = edge.id && edge.id.length > 10 ? String(edge.id) : uuidv7();
+                    const edgeId = edge.id && edge.id.length > 10 ? uuidToBuffer(edge.id) : uuidToBuffer(uuidv7());
                     edgeStmt.run(
                         edgeId,
-                        id,
-                        String(edge.from),
-                        String(edge.to),
+                        uuidToBuffer(id),
+                        uuidToBuffer(String(edge.from)),
+                        uuidToBuffer(String(edge.to)),
                         edge.weight || 1,
                         edge.category || null
                     );
@@ -201,7 +214,7 @@ class DatabaseManager {
 
     async loadGraph(id) {
         return new Promise((resolve, reject) => {
-            this.db.get('SELECT * FROM graphs WHERE id = ?', [id], (err, graphRow) => {
+            this.db.get('SELECT * FROM graphs WHERE id = ?', [uuidToBuffer(id)], (err, graphRow) => {
                 if (err) {
                     reject(err);
                     return;
@@ -213,21 +226,21 @@ class DatabaseManager {
                 }
 
                 // Load nodes
-                this.db.all('SELECT * FROM nodes WHERE graph_id = ?', [id], (err, nodeRows) => {
+                this.db.all('SELECT * FROM nodes WHERE graph_id = ?', [uuidToBuffer(id)], (err, nodeRows) => {
                     if (err) {
                         reject(err);
                         return;
                     }
 
                     // Load edges
-                    this.db.all('SELECT * FROM edges WHERE graph_id = ?', [id], (err, edgeRows) => {
+                    this.db.all('SELECT * FROM edges WHERE graph_id = ?', [uuidToBuffer(id)], (err, edgeRows) => {
                         if (err) {
                             reject(err);
                             return;
                         }
 
                         const nodes = nodeRows.map(row => ({
-                            id: row.id,
+                            id: bufferToUuid(row.id),
                             x: row.x,
                             y: row.y,
                             label: row.label,
@@ -237,9 +250,9 @@ class DatabaseManager {
                         }));
 
                         const edges = edgeRows.map(row => ({
-                            id: row.id,
-                            from: row.from_node_id,
-                            to: row.to_node_id,
+                            id: bufferToUuid(row.id),
+                            from: bufferToUuid(row.from_node_id),
+                            to: bufferToUuid(row.to_node_id),
                             weight: row.weight,
                             category: row.category
                         }));
@@ -285,7 +298,7 @@ class DatabaseManager {
                     reject(err);
                 } else {
                     const graphs = rows.map(row => ({
-                        id: row.id,
+                        id: bufferToUuid(row.id),
                         name: row.name,
                         description: row.description || '',
                         nodeCount: row.node_count,
@@ -301,7 +314,7 @@ class DatabaseManager {
 
     async deleteGraph(id) {
         return new Promise((resolve, reject) => {
-            this.db.run('DELETE FROM graphs WHERE id = ?', [id], function(err) {
+            this.db.run('DELETE FROM graphs WHERE id = ?', [uuidToBuffer(id)], function(err) {
                 if (err) {
                     reject(err);
                 } else {

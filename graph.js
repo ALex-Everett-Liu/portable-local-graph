@@ -51,8 +51,26 @@ class Graph {
     }
 
     addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20) {
+        // Generate consistent UUID format
+        let uuid;
+        if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+            // Use browser's native crypto API for UUID v4
+            uuid = window.crypto.randomUUID();
+        } else if (typeof require !== 'undefined') {
+            // Node.js environment
+            try {
+                const { v7 } = require('uuid');
+                uuid = v7();
+            } catch (e) {
+                uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+            }
+        } else {
+            // Fallback for other environments
+            uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        }
+        
         const node = {
-            id: Date.now() + Math.random(),
+            id: uuid,
             x: x,
             y: y,
             label: label || `Node ${this.nodes.length + 1}`,
@@ -76,8 +94,26 @@ class Graph {
             return existingEdge;
         }
 
+        // Generate consistent UUID format
+        let uuid;
+        if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+            // Use browser's native crypto API for UUID v4
+            uuid = window.crypto.randomUUID();
+        } else if (typeof require !== 'undefined') {
+            // Node.js environment
+            try {
+                const { v7 } = require('uuid');
+                uuid = v7();
+            } catch (e) {
+                uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+            }
+        } else {
+            // Fallback for other environments
+            uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        }
+        
         const edge = {
-            id: Date.now() + Math.random(),
+            id: uuid,
             from: fromNode,
             to: toNode,
             weight: weight,

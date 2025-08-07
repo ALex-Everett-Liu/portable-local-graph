@@ -1,0 +1,45 @@
+{
+  "nodes": [
+    {
+      "id": "34718aa7-40a3-4edd-ae40-20883036430d",
+      "x": 226,
+      "y": 228,
+      "label": "Node 1",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": "e03c9d4e-23b3-4815-9fea-f27baec00953",
+      "x": 349,
+      "y": 342,
+      "label": "Node 2",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": "370e3fdf-3e3d-4dc6-9ef3-3aa5091059c3",
+      "x": 440,
+      "y": 241,
+      "label": "Node 3",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e32ea9e8-82e3-4264-8d02-e4f5f4aa8bf3",
+      "from": "34718aa7-40a3-4edd-ae40-20883036430d",
+      "to": "e03c9d4e-23b3-4815-9fea-f27baec00953",
+      "weight": 1,
+      "category": null
+    }
+  ],
+  "scale": 1,
+  "offset": {
+    "x": 0,
+    "y": 0
+  }
+}

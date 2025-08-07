@@ -1,0 +1,45 @@
+{
+  "nodes": [
+    {
+      "id": 1754606053670.585,
+      "x": 274,
+      "y": 149,
+      "label": "Node 1",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754606054045.9443,
+      "x": 387,
+      "y": 316,
+      "label": "Node 2",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    },
+    {
+      "id": 1754606054477.579,
+      "x": 448,
+      "y": 200,
+      "label": "Node 3",
+      "color": "#3b82f6",
+      "radius": 20,
+      "category": null
+    }
+  ],
+  "edges": [
+    {
+      "id": 1754606056128.0256,
+      "from": 1754606053670.585,
+      "to": 1754606054045.9443,
+      "weight": 1,
+      "category": null
+    }
+  ],
+  "scale": 1,
+  "offset": {
+    "x": 0,
+    "y": 0
+  }
+}

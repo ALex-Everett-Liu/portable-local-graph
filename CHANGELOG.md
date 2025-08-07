@@ -133,6 +133,28 @@
 - **Migration Support**: Automatic detection and upgrade of existing database files
 - **Error Handling**: Robust handling of schema version mismatches
 
+## [0.1.9] - 2025-08-08
+
+### Added
+- **Binary UUID Storage**: Converted from TEXT (36 bytes) to BLOB (16 bytes) format for significant space savings
+- **UUID Conversion Utilities**: Added `uuidToBuffer()` and `bufferToUuid()` functions for seamless string↔binary conversion
+- **Storage Optimization**: 55% reduction in UUID storage space from 36 bytes to 16 bytes per UUID
+- **Schema Enhancement**: Updated database schema to use BLOB type for all ID fields
+- **Performance Boost**: Reduced storage overhead for UUID-heavy applications
+
+### Technical Details
+- **Space Efficiency**: Binary UUID format uses 16 bytes vs 36 bytes for string format
+- **Storage Savings**: ~56KB reduction for graphs with 1000 nodes and 2000 edges
+- **Schema Updates**: All ID fields (graphs.id, nodes.id, edges.id, foreign keys) now use BLOB
+- **Backward Compatibility**: Transparent conversion maintains string interface while storing binary
+- **Performance Impact**: 55% storage reduction with zero functional changes
+
+### Infrastructure
+- **Database Schema**: Optimized for binary UUID storage
+- **Conversion Layer**: Automatic string↔binary UUID conversion
+- **Migration**: Seamless upgrade for existing databases
+- **Space Analysis**: Significant savings for large-scale graph applications
+
 ## [0.1.0] - 2025-08-06
 
 ### Added

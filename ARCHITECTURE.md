@@ -417,11 +417,31 @@ const modes = {
 };
 ```
 
-### Data Persistence
-**SQLite database with JSON backup support:**
+### Binary UUID Storage
+**Optimized storage with binary UUID format:**
 
 ```javascript
-// Real-time database storage
+// UUID conversion utilities for space efficiency
+function uuidToBuffer(uuid) {
+    const hex = uuid.replace(/-/g, '');
+    return Buffer.from(hex, 'hex');
+}
+
+function bufferToUuid(buffer) {
+    const hex = buffer.toString('hex');
+    return `${hex.substr(0, 8)}-${hex.substr(8, 4)}-${hex.substr(12, 4)}-${hex.substr(16, 4)}-${hex.substr(20, 12)}`;
+}
+
+// Space-efficient storage (16 bytes vs 36 bytes)
+const uuidBuffer = uuidToBuffer('019886c9-0230-759c-a350-777ce83ba835');
+// Stores as: <Buffer 01 98 86 c9 02 30 75 9c a3 50 77 7c e8 3b a8 35>
+```
+
+### Data Persistence
+**SQLite database with JSON backup support and binary UUID storage:**
+
+```javascript
+// Real-time database storage with binary UUIDs
 const dbManager = new DatabaseManager();
 await dbManager.init();
 await dbManager.saveGraph(currentGraphId, graph.exportData());
