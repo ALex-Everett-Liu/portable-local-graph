@@ -133,7 +133,23 @@
 - **Migration Support**: Automatic detection and upgrade of existing database files
 - **Error Handling**: Robust handling of schema version mismatches
 
-## [0.1.11] - 2025-08-08
+## [0.1.13] - 2025-08-08
+
+### Fixed
+- **CRITICAL: Database Data Loss Prevention**: Fixed multiple critical bugs causing database file destruction
+- **Auto-Save Removal**: Completely eliminated auto-save system that was overwriting databases during load operations
+- **New Graph Safety**: Fixed "New Graph" button that was destroying current database files
+- **Load Operation Protection**: All load operations now read-only, never modify source databases
+- **Load Default Graph Safety**: Fixed default graph creation that was overwriting existing databases
+
+### Technical Details
+- **Auto-Save Elimination**: Removed all automatic save triggers to prevent accidental data loss
+- **Database Safety**: Load operations no longer trigger write operations
+- **Manual Save Only**: All saves now require explicit user action (Ctrl+S, Save button, Save As)
+- **Context Protection**: Database files are never overwritten during load or new graph operations
+- **Data Integrity**: Eliminated race conditions between load and save operations
+
+## [0.1.12] - 2025-08-08
 
 ### Fixed
 - **Save/Load Button Consistency**: Fixed database context switching between menu items and toolbar buttons

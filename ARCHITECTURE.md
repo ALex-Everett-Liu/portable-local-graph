@@ -171,32 +171,36 @@ distanceToLineSegment(px, py, x1, y1, x2, y2) {
 }
 ```
 
-### 5. Database-first Storage Architecture
-**Problem**: JSON files don't provide real-time persistence and can lose data on crashes
-**Solution**: SQLite database as primary storage with JSON as backup format
+### 5. Database Safety Architecture
+**Problem**: Auto-save and load operations were causing database file destruction
+**Solution**: Manual save only with complete load operation protection
 
-### 6. Unified File Operations
-**Problem**: Menu items and toolbar buttons used different code paths for file operations
-**Solution**: Centralized database context switching with consistent save/load mechanisms
-
-**Implementation**:
+**Critical Fixes**:
 ```javascript
-// Unified file operations across all UI elements
-// Load button now uses same mechanism as Ctrl+O menu
-const result = await ipcRenderer.invoke('open-graph-file');
-if (result.success) {
-    await dbManager.openFile(result.filePath);  // Switch database context
-    const graphs = await dbManager.listGraphs();  // Load fresh data
-    const graphData = await dbManager.loadGraph(graphs[0].id);
-    loadGraphData(graphData);  // Use data from switched database
+// Auto-save completely removed - manual save only
+// Load operations are now read-only
+// New graph creation doesn't overwrite databases
+
+// Safe load operation
+function loadGraphData(data) {
+    graph.importData(data);  // Read-only operation
+    updateGraphInfo();       // Update UI only
+    graph.render();          // Render only - no save triggers
+}
+
+// Safe new graph creation
+async function newGraph() {
+    graph.clear();           // Clear canvas only
+    // CRITICAL: No database operations performed
+    updateGraphInfo();       // Update UI only
 }
 ```
 
 **Benefits**:
-- Consistent behavior between menu items and toolbar buttons
-- Proper database context switching after file selection
-- Elimination of stale data issues from IPC-based loading
-- Unified save target (always saves to currently loaded database)
+- **Zero data loss risk**: No automatic save operations
+- **Explicit user control**: All saves require explicit action
+- **Database protection**: Load operations never modify source files
+- **Clear intent**: User actions have predictable outcomes
 
 ### 5. Database-first Storage Architecture
 
