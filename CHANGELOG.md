@@ -133,6 +133,26 @@
 - **Migration Support**: Automatic detection and upgrade of existing database files
 - **Error Handling**: Robust handling of schema version mismatches
 
+## [0.1.10] - 2025-08-08
+
+### Added
+- **Save As Functionality**: New Ctrl+Shift+S shortcut for creating new database files
+- **Clear File Operations**: Distinction between Save (update current) and Save As (create new)
+- **Database File Switching**: Proper handling when opening .db files with correct schema
+- **Enhanced Save Workflow**: Ctrl+S updates current file, Ctrl+Shift+S creates new file
+
+### Fixed
+- **Schema Consistency**: Resolved SQLite schema mismatch errors during Save As operations
+- **File Switching**: Fixed database connection handling when opening .db files
+- **Menu Integration**: Updated File menu with proper Save/Save As distinction
+- **IPC Handlers**: Corrected parameter passing for file-based operations
+
+### Technical Details
+- **Save vs Save As**: Ctrl+S updates current database file, Ctrl+Shift+S creates new .db file
+- **Database Schema**: Consistent use of current database-manager.js with graph_id columns
+- **Binary UUID**: Maintains 16-byte BLOB storage for optimal space efficiency
+- **File Operations**: Full support for arbitrary .db file locations
+
 ## [0.1.9] - 2025-08-08
 
 ### Added

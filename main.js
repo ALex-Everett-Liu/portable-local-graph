@@ -277,7 +277,7 @@ ipcMain.handle('save-graph-file-request', async (event, filePath, data, graphId)
             success: true, 
             fileName: path.basename(filePath),
             graphId: finalGraphId,
-            filePath
+            filePath: filePath
         };
     } catch (error) {
         return { success: false, error: error.message };

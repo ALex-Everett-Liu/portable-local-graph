@@ -123,6 +123,25 @@ function setupIPC() {
                 await saveGraphToFile();
             }
         });
+
+        ipcRenderer.on('save-graph-file-request', async (event, filePath) => {
+            const result = await ipcRenderer.invoke('save-graph-file-request', filePath, graph.exportData(), currentGraphId);
+            if (result.success) {
+                // Switch to the new database file
+                if (dbManager && result.filePath) {
+                    try {
+                        await dbManager.openFile(result.filePath);
+                        currentGraphId = result.graphId;
+                        showNotification(`Graph saved as ${result.fileName}`);
+                    } catch (error) {
+                        console.error('Error switching to new database file:', error);
+                        showNotification('Error switching to new database file: ' + error.message, 'error');
+                    }
+                }
+            } else if (!result.cancelled) {
+                showNotification('Error saving graph: ' + result.error, 'error');
+            }
+        });
         
         ipcRenderer.on('export-svg-request', async () => {
             const svgData = generateSVG();
