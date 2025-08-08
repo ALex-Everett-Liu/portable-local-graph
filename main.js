@@ -55,18 +55,47 @@ function createWindow() {
                                 if (graphs.length > 0) {
                                     const graphData = await dbManager.loadGraph(graphs[0].id);
                                     await dbManager.close();
-                                    mainWindow.webContents.send('load-graph', graphData);
+                                    mainWindow.webContents.send('open-graph-file-result', {
+                                        success: true,
+                                        graphData,
+                                        graphId: graphs[0].id,
+                                        fileName: path.basename(filePath),
+                                        filePath: filePath
+                                    });
+                                } else {
+                                    await dbManager.close();
+                                    mainWindow.webContents.send('open-graph-file-result', {
+                                        success: false,
+                                        error: 'No graphs found in database'
+                                    });
                                 }
                             } else {
                                 const data = fs.readFileSync(filePath, 'utf8');
-                                mainWindow.webContents.send('load-graph', JSON.parse(data));
+                                mainWindow.webContents.send('open-graph-file-result', {
+                                    success: true,
+                                    graphData: JSON.parse(data),
+                                    fileName: path.basename(filePath),
+                                    filePath: filePath
+                                });
                             }
+                        } else {
+                            mainWindow.webContents.send('open-graph-file-result', {
+                                success: false,
+                                cancelled: true
+                            });
                         }
                     }
                 },
                 {
-                    label: 'Save Graph...',
+                    label: 'Save',
                     accelerator: 'CmdOrCtrl+S',
+                    click: () => {
+                        mainWindow.webContents.send('save-current-graph');
+                    }
+                },
+                {
+                    label: 'Save As...',
+                    accelerator: 'CmdOrCtrl+Shift+S',
                     click: async () => {
                         const result = await dialog.showSaveDialog(mainWindow, {
                             filters: [
@@ -217,7 +246,7 @@ ipcMain.handle('open-graph-file', async () => {
             graphData,
             graphId: graphs[0].id,
             fileName: path.basename(filePath),
-            filePath
+            filePath: filePath
         };
     } catch (error) {
         return { success: false, error: error.message };

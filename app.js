@@ -43,7 +43,16 @@ function setupEventListeners() {
     document.getElementById('clear-btn').addEventListener('click', clearGraph);
     
     document.getElementById('new-graph-btn').addEventListener('click', newGraph);
-    document.getElementById('save-btn').addEventListener('click', saveGraphToFile);
+    document.getElementById('save-btn').addEventListener('click', () => {
+        if (typeof require !== 'undefined') {
+            // Electron mode - send save current graph
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('save-current-graph');
+        } else {
+            // Web mode - save to database
+            saveGraphToDatabase();
+        }
+    });
     document.getElementById('load-btn').addEventListener('click', openGraphFile);
     document.getElementById('import-json-btn').addEventListener('click', importJSON);
     document.getElementById('export-svg-btn').addEventListener('click', exportSVG);
@@ -83,6 +92,35 @@ function setupIPC() {
                 showNotification('Graph saved successfully!');
             } else {
                 showNotification('Error saving graph: ' + result.error);
+            }
+        });
+        
+        ipcRenderer.on('open-graph-file-result', async (event, result) => {
+            if (result.success) {
+                // Switch to the new database file
+                if (result.filePath && dbManager) {
+                    try {
+                        await dbManager.openFile(result.filePath);
+                    } catch (error) {
+                        console.error('Error switching database file:', error);
+                    }
+                }
+                loadGraphData(result.graphData);
+                currentGraphId = result.graphId;
+                appState.isModified = false;
+                showNotification(`Graph opened from ${result.fileName}`);
+            } else if (!result.cancelled) {
+                showNotification('Error opening graph: ' + result.error, 'error');
+            }
+        });
+
+        ipcRenderer.on('save-current-graph', async () => {
+            if (dbManager && currentGraphId) {
+                await saveGraphToDatabase();
+                showNotification('Graph saved to current file');
+            } else {
+                // Fallback to Save As if no database
+                await saveGraphToFile();
             }
         });
         
@@ -248,7 +286,7 @@ async function newGraph() {
 
 async function saveGraphToFile() {
     if (typeof require !== 'undefined') {
-        // Electron mode - use file dialog
+        // Electron mode - use file dialog for Save As
         const { ipcRenderer } = require('electron');
         const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), currentGraphId);
         if (result.success) {
@@ -258,14 +296,18 @@ async function saveGraphToFile() {
             showNotification('Error saving graph: ' + result.error, 'error');
         }
     } else {
-        // Web mode - use database
-        await saveGraphToDatabase();
-        showNotification('Graph saved to database!');
+        // Web mode - use database for Save As (create new graph)
+        const graphs = await dbManager.listGraphs();
+        const newId = 'graph-' + Date.now();
+        await saveGraphToDatabase(newId);
+        currentGraphId = newId;
+        showNotification('Graph saved to new database!');
     }
 }
 
-async function saveGraphToDatabase() {
-    if (!dbManager || !currentGraphId) return;
+async function saveGraphToDatabase(graphId = null) {
+    const targetGraphId = graphId || currentGraphId;
+    if (!dbManager || !targetGraphId) return;
     
     try {
         const graphData = graph.exportData();
@@ -277,7 +319,7 @@ async function saveGraphToDatabase() {
             }
         };
         
-        await dbManager.saveGraph(currentGraphId, data);
+        await dbManager.saveGraph(targetGraphId, data);
         appState.isModified = false;
     } catch (error) {
         console.error('Error saving to database:', error);
@@ -287,16 +329,8 @@ async function saveGraphToDatabase() {
 
 async function openGraphFile() {
     if (typeof require !== 'undefined') {
-        // Electron mode - use file dialog
-        const { ipcRenderer } = require('electron');
-        const result = await ipcRenderer.invoke('open-graph-file');
-        if (result.success) {
-            currentGraphId = result.graphId;
-            await loadGraphFromDatabase(result.graphId);
-            showNotification(`Graph opened from ${result.fileName}`);
-        } else if (!result.cancelled) {
-            showNotification('Error opening graph: ' + result.error, 'error');
-        }
+        // Electron mode - handled by menu IPC
+        // No action needed, menu will trigger open-graph-file-result
     } else {
         // Web mode - use database selection
         await openFromDatabase();
@@ -577,7 +611,16 @@ function handleKeyDown(e) {
                 break;
             case 's':
                 e.preventDefault();
-                saveGraphToFile();
+                if (e.shiftKey) {
+                    saveGraphToFile(); // Ctrl+Shift+S for Save As
+                } else {
+                    if (typeof require !== 'undefined') {
+                        const { ipcRenderer } = require('electron');
+                        ipcRenderer.send('save-current-graph');
+                    } else {
+                        saveGraphToDatabase(); // Ctrl+S for Save
+                    }
+                }
                 break;
             case 'o':
                 e.preventDefault();
