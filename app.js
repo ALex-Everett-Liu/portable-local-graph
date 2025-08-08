@@ -12,7 +12,6 @@ const appState = {
 
 let graph;
 let dbManager = null;
-let currentGraphId = null;
 let uuidv7;
 try {
     const { v7 } = require('uuid');
@@ -129,18 +128,15 @@ function setupEventListeners() {
                     // Load the graph data from the new database
                     const graphs = await dbManager.listGraphs();
                     if (graphs.length > 0) {
-                        const graphData = await dbManager.loadGraph(graphs[0].id);
+                        const graphData = await dbManager.loadGraph();
                         loadGraphData(graphData);
-                        currentGraphId = graphs[0].id;
                     } else {
                         console.log('No graphs found in new database');
                         loadGraphData({nodes: [], edges: [], scale: 1, offset: {x: 0, y: 0}});
-                        currentGraphId = uuidv7();
-                    }
+                                        }
                 } else {
                     // Fallback to using the returned data
                     loadGraphData(result.graphData);
-                    currentGraphId = result.graphId;
                 }
                 appState.isModified = false;
                 showNotification(`Graph opened from ${result.fileName}`);
@@ -198,14 +194,21 @@ function setupIPC() {
             
             ipcRenderer.on('open-graph-file-result', async (event, result) => {
                 if (result.success) {
-                    // Switch to the new database file - USE THE SAME MECHANISM AS MENU
+                    // Switch to the new database file and load automatically
                     if (result.filePath && dbManager) {
                         console.log('Opening database via openFile:', result.filePath);
                         await dbManager.openFile(result.filePath);
                         console.log('Database switched to:', result.filePath);
                     }
-                    loadGraphData(result.graphData);
-                    currentGraphId = result.graphId;
+                    
+                    // Load the most recent graph from the new database
+                    await loadGraphFromDatabase();
+                    
+                    // Use the returned data if no graphs found in database
+                    if (graph.nodes.length === 0 && result.graphData && result.graphData.nodes && result.graphData.nodes.length > 0) {
+                        loadGraphData(result.graphData);
+                    }
+                    
                     appState.isModified = false;
                     showNotification(`Graph opened from ${result.fileName}`);
                 } else if (!result.cancelled) {
@@ -215,10 +218,9 @@ function setupIPC() {
 
             ipcRenderer.on('save-current-graph', async () => {
                 console.log('Save triggered for current file');
-                console.log('Current graph ID:', currentGraphId);
                 console.log('Database path:', dbManager ? dbManager.dbPath : 'no db manager');
                 
-                if (dbManager && currentGraphId) {
+                if (dbManager) {
                     await saveGraphToDatabase();
                     showNotification('Graph saved to current file');
                 } else {
@@ -228,13 +230,12 @@ function setupIPC() {
             });
 
             ipcRenderer.on('save-graph-file-request', async (event, filePath) => {
-                const result = await ipcRenderer.invoke('save-graph-file-request', filePath, graph.exportData(), currentGraphId);
+                const result = await ipcRenderer.invoke('save-graph-file-request', filePath, graph.exportData());
                 if (result.success) {
                     // Switch to the new database file
                     if (dbManager && result.filePath) {
                         try {
                             await dbManager.openFile(result.filePath);
-                            currentGraphId = result.graphId;
                             showNotification(`Graph saved as ${result.fileName}`);
                         } catch (error) {
                             console.error('Error switching to new database file:', error);
@@ -291,17 +292,8 @@ async function initializeDatabase() {
             try {
                 await dbManager.init();
                 
-                // Check if we have existing graphs
-                const graphs = await dbManager.listGraphs();
-                if (graphs.length > 0) {
-                    // Load the most recent graph
-                    await loadGraphFromDatabase(graphs[0].id);
-                } else {
-                    // Create new graph
-                    currentGraphId = 'default-graph-' + Date.now();
-                    await saveGraphToDatabase();
-                    await loadDefaultGraph();
-                }
+                // Automatically load the most recent graph
+                await loadGraphFromDatabase();
             } catch (error) {
                 console.error('Error initializing database:', error);
                 // Fallback to default graph
@@ -364,7 +356,7 @@ async function saveState() {
     appState.isModified = true;
     
     // Auto-save to database after a short delay
-    if (dbManager && currentGraphId) {
+    if (dbManager) {
         clearTimeout(window.saveTimeout);
         window.saveTimeout = setTimeout(async () => {
             await saveGraphToDatabase();
@@ -408,7 +400,6 @@ async function newGraph() {
     appState.redoStack = [];
     appState.isModified = false;
     
-    currentGraphId = uuidv7();
     
     updateGraphInfo();
     await saveGraphToDatabase();
@@ -422,9 +413,8 @@ async function saveGraphToFile() {
         console.log('Electron mode, using save-graph-file IPC');
         try {
             const { ipcRenderer } = require('electron');
-            const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), currentGraphId);
+            const result = await ipcRenderer.invoke('save-graph-file', graph.exportData());
             if (result.success) {
-                currentGraphId = result.graphId;
                 showNotification(`Graph saved to ${result.fileName}`);
             } else if (!result.cancelled) {
                 showNotification('Error saving graph: ' + result.error, 'error');
@@ -436,20 +426,16 @@ async function saveGraphToFile() {
         // Web mode - use database for Save As (create new graph)
         console.log('Web mode, creating new graph in database');
         try {
-            const graphs = await dbManager.listGraphs();
-            const newId = 'graph-' + Date.now();
-            await saveGraphToDatabase(newId);
-            currentGraphId = newId;
-            showNotification('Graph saved to new database!');
+            await saveGraphToDatabase();
+            showNotification('Graph saved to database!');
         } catch (error) {
             console.error('Error in saveGraphToFile web mode:', error);
         }
     }
 }
 
-async function saveGraphToDatabase(graphId = null) {
-    const targetGraphId = graphId || currentGraphId;
-    if (!dbManager || !targetGraphId) return;
+async function saveGraphToDatabase() {
+    if (!dbManager) return;
     
     try {
         const graphData = graph.exportData();
@@ -461,7 +447,7 @@ async function saveGraphToDatabase(graphId = null) {
             }
         };
         
-        await dbManager.saveGraph(targetGraphId, data);
+        await dbManager.saveGraph(data);
         appState.isModified = false;
     } catch (error) {
         console.error('Error saving to database:', error);
@@ -481,9 +467,9 @@ async function openGraphFile() {
             console.error('Error opening file in Electron:', error);
         }
     } else {
-        // Web mode - use database selection
+        // Web mode - automatically load most recent graph
         console.log('Web mode, opening from database');
-        await openFromDatabase();
+        await loadGraphFromDatabase();
     }
 }
 
@@ -500,10 +486,8 @@ function fallbackToJSONLoad() {
                     const data = JSON.parse(e.target.result);
                     if (dbManager) {
                         // Import JSON to database
-                        const newId = 'import-' + Date.now();
-                        await dbManager.importFromJSON(data, newId);
-                        currentGraphId = newId;
-                        await loadGraphFromDatabase(newId);
+                        await dbManager.importFromJSON(data);
+                        await loadGraphFromDatabase();
                         showNotification('JSON imported to database!');
                     } else {
                         loadGraphData(data);
@@ -538,16 +522,19 @@ async function openFromDatabase() {
     }
 }
 
-async function loadGraphFromDatabase(graphId) {
+async function loadGraphFromDatabase() {
     if (!dbManager) return;
     
     try {
-        const data = await dbManager.loadGraph(graphId);
+        const data = await dbManager.loadGraph();
         if (data) {
             loadGraphData(data);
-            currentGraphId = graphId;
             appState.isModified = false;
             showNotification('Graph loaded from database!');
+        } else {
+            // Empty database - start fresh
+            console.log('Empty database, starting fresh');
+            await loadDefaultGraph();
         }
     } catch (error) {
         console.error('Error loading graph from database:', error);
@@ -557,13 +544,6 @@ async function loadGraphFromDatabase(graphId) {
 
 function loadGraphData(data) {
     graph.importData(data);
-    currentGraph = {
-        ...data,
-        metadata: {
-            ...data.metadata,
-            lastModified: new Date().toISOString()
-        }
-    };
     
     appState.undoStack = [];
     appState.redoStack = [];
@@ -604,7 +584,6 @@ async function importJSON() {
         const result = await ipcRenderer.invoke('import-json-file');
         if (result.success) {
             await loadGraphData(result.graphData);
-            currentGraphId = 'import-' + Date.now();
             showNotification(`JSON imported from ${result.fileName}`);
         } else if (!result.cancelled) {
             showNotification('Error importing JSON: ' + result.error, 'error');
@@ -622,7 +601,6 @@ async function importJSON() {
                     try {
                         const data = JSON.parse(e.target.result);
                         await loadGraphData(data);
-                        currentGraphId = 'import-' + Date.now();
                         
                         // Save to database if available
                         if (dbManager) {

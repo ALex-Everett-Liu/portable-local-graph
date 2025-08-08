@@ -62,8 +62,7 @@ class DatabaseManager {
 
         const createNodesTable = `
             CREATE TABLE IF NOT EXISTS nodes (
-                id BLOB NOT NULL,
-                graph_id BLOB NOT NULL,
+                id BLOB PRIMARY KEY,
                 x REAL NOT NULL,
                 y REAL NOT NULL,
                 label TEXT,
@@ -72,26 +71,21 @@ class DatabaseManager {
                 radius REAL DEFAULT 20,
                 category TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (id, graph_id),
-                FOREIGN KEY (graph_id) REFERENCES graphs(id) ON DELETE CASCADE
+                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `;
 
         const createEdgesTable = `
             CREATE TABLE IF NOT EXISTS edges (
-                id BLOB NOT NULL,
-                graph_id BLOB NOT NULL,
+                id BLOB PRIMARY KEY,
                 from_node_id BLOB NOT NULL,
                 to_node_id BLOB NOT NULL,
                 weight REAL DEFAULT 1,
                 category TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (id, graph_id),
-                FOREIGN KEY (graph_id) REFERENCES graphs(id) ON DELETE CASCADE,
-                FOREIGN KEY (from_node_id, graph_id) REFERENCES nodes(id, graph_id),
-                FOREIGN KEY (to_node_id, graph_id) REFERENCES nodes(id, graph_id)
+                FOREIGN KEY (from_node_id) REFERENCES nodes(id),
+                FOREIGN KEY (to_node_id) REFERENCES nodes(id)
             )
         `;
 
@@ -109,27 +103,43 @@ class DatabaseManager {
 
                 // Create indexes for performance optimization
                 const createIndexes = [
-                    'CREATE INDEX IF NOT EXISTS idx_nodes_graph_id ON nodes(graph_id)',
                     'CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at)',
-                    'CREATE INDEX IF NOT EXISTS idx_edges_graph_id ON edges(graph_id)',
                     'CREATE INDEX IF NOT EXISTS idx_edges_from_to ON edges(from_node_id, to_node_id)',
                     'CREATE INDEX IF NOT EXISTS idx_edges_created ON edges(created_at)'
                 ];
 
-                // Migrate existing database - add chinese_label column if it doesn't exist
-                this.db.get("PRAGMA table_info(nodes)", (err, rows) => {
-                    if (!err) {
-                        this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
-                            const hasChineseLabel = columns.some(col => col.name === 'chinese_label');
-                            if (!hasChineseLabel) {
-                                this.db.run('ALTER TABLE nodes ADD COLUMN chinese_label TEXT', (err) => {
-                                    if (err) console.warn('Could not add chinese_label column:', err.message);
-                                });
-                            }
-                        });
+                // Handle migration from old schema
+                this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
+                    if (!err && columns.length > 0) {
+                        const hasGraphId = columns.some(col => col.name === 'graph_id');
+                        if (hasGraphId) {
+                            console.log('Old database schema detected, dropping tables...');
+                            // Drop old tables with graph_id columns
+                            this.db.run('DROP TABLE IF EXISTS edges', (err) => {
+                                if (err) console.warn('Error dropping edges table:', err);
+                            });
+                            this.db.run('DROP TABLE IF EXISTS nodes', (err) => {
+                                if (err) console.warn('Error dropping nodes table:', err);
+                            });
+                            this.db.run('DROP TABLE IF EXISTS graphs', (err) => {
+                                if (err) console.warn('Error dropping graphs table:', err);
+                            });
+                        }
                     }
                 });
 
+                // Add chinese_label column to existing nodes table if needed
+                this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
+                    if (!err && columns.length > 0) {
+                        const hasChineseLabel = columns.some(col => col.name === 'chinese_label');
+                        if (!hasChineseLabel) {
+                            this.db.run('ALTER TABLE nodes ADD COLUMN chinese_label TEXT', (err) => {
+                                if (err) console.warn('Could not add chinese_label column:', err.message);
+                            });
+                        }
+                    }
+                });
+                
                 createIndexes.forEach((sql, index) => {
                     this.db.run(sql, (err) => {
                         if (err) reject(err);
@@ -149,22 +159,22 @@ class DatabaseManager {
         }
     }
 
-    async saveGraph(id, data) {
+async saveGraph(data) {
         return new Promise((resolve, reject) => {
             const { nodes = [], edges = [], scale = 1, offset = { x: 0, y: 0 }, metadata = {} } = data;
             
             this.db.serialize(() => {
                 this.db.run('BEGIN TRANSACTION');
 
-                // Insert or update graph
+                // Insert or update graph metadata
                 const graphStmt = this.db.prepare(`
                     INSERT OR REPLACE INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, modified_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 `);
                 
                 graphStmt.run(
-                    uuidToBuffer(id), // Convert UUID string to binary (16 bytes)
-                    metadata.name || String(id),
+                    Buffer.from('00000000-0000-0000-0000-000000000000', 'hex'), // Single graph ID
+                    metadata.name || 'Graph',
                     metadata.description || '',
                     scale,
                     offset.x,
@@ -173,21 +183,20 @@ class DatabaseManager {
                 );
                 graphStmt.finalize();
 
-                // Delete existing nodes and edges for this graph
-                this.db.run('DELETE FROM nodes WHERE graph_id = ?', [uuidToBuffer(id)]);
-                this.db.run('DELETE FROM edges WHERE graph_id = ?', [uuidToBuffer(id)]);
+                // Clear existing data
+                this.db.run('DELETE FROM nodes');
+                this.db.run('DELETE FROM edges');
 
                 // Insert nodes
                 const nodeStmt = this.db.prepare(`
-                    INSERT INTO nodes (id, graph_id, x, y, label, chinese_label, color, radius, category)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `);
                 
                 nodes.forEach(node => {
                     const nodeId = node.id && node.id.length > 10 ? uuidToBuffer(node.id) : uuidToBuffer(uuidv7());
                     nodeStmt.run(
                         nodeId,
-                        uuidToBuffer(id),
                         node.x,
                         node.y,
                         node.label || '',
@@ -201,15 +210,14 @@ class DatabaseManager {
 
                 // Insert edges
                 const edgeStmt = this.db.prepare(`
-                    INSERT INTO edges (id, graph_id, from_node_id, to_node_id, weight, category)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO edges (id, from_node_id, to_node_id, weight, category)
+                    VALUES (?, ?, ?, ?, ?)
                 `);
                 
                 edges.forEach(edge => {
                     const edgeId = edge.id && edge.id.length > 10 ? uuidToBuffer(edge.id) : uuidToBuffer(uuidv7());
                     edgeStmt.run(
                         edgeId,
-                        uuidToBuffer(id),
                         uuidToBuffer(String(edge.from)),
                         uuidToBuffer(String(edge.to)),
                         edge.weight || 1,
@@ -230,28 +238,27 @@ class DatabaseManager {
         });
     }
 
-    async loadGraph(id) {
+    async loadGraph() {
         return new Promise((resolve, reject) => {
-            this.db.get('SELECT * FROM graphs WHERE id = ?', [uuidToBuffer(id)], (err, graphRow) => {
+            // Load graph metadata
+            this.db.get('SELECT * FROM graphs WHERE id = ?', [Buffer.from('00000000-0000-0000-0000-000000000000', 'hex')], (err, graphRow) => {
                 if (err) {
                     reject(err);
                     return;
                 }
                 
-                if (!graphRow) {
-                    resolve(null);
-                    return;
-                }
+                const scale = graphRow ? graphRow.scale : 1;
+                const offset = graphRow ? { x: graphRow.offset_x, y: graphRow.offset_y } : { x: 0, y: 0 };
 
-                // Load nodes
-                this.db.all('SELECT * FROM nodes WHERE graph_id = ?', [uuidToBuffer(id)], (err, nodeRows) => {
+                // Load all nodes
+                this.db.all('SELECT * FROM nodes', (err, nodeRows) => {
                     if (err) {
                         reject(err);
                         return;
                     }
 
-                    // Load edges
-                    this.db.all('SELECT * FROM edges WHERE graph_id = ?', [uuidToBuffer(id)], (err, edgeRows) => {
+                    // Load all edges
+                    this.db.all('SELECT * FROM edges', (err, edgeRows) => {
                         if (err) {
                             reject(err);
                             return;
@@ -279,11 +286,8 @@ class DatabaseManager {
                         const data = {
                             nodes,
                             edges,
-                            scale: graphRow.scale,
-                            offset: {
-                                x: graphRow.offset_x,
-                                y: graphRow.offset_y
-                            }
+                            scale,
+                            offset
                         };
 
                         resolve(data);
@@ -306,13 +310,14 @@ class DatabaseManager {
                     created_at,
                     modified_at,
                     metadata,
-                    (SELECT COUNT(*) FROM nodes WHERE graph_id = g.id) as node_count,
-                    (SELECT COUNT(*) FROM edges WHERE graph_id = g.id) as edge_count
-                FROM graphs g
+                    (SELECT COUNT(*) FROM nodes) as node_count,
+                    (SELECT COUNT(*) FROM edges) as edge_count
+                FROM graphs
+                WHERE id = ?
                 ORDER BY modified_at DESC
             `;
 
-            this.db.all(query, (err, rows) => {
+            this.db.all(query, [Buffer.from('00000000-0000-0000-0000-000000000000', 'hex')], (err, rows) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -331,17 +336,6 @@ class DatabaseManager {
         });
     }
 
-    async deleteGraph(id) {
-        return new Promise((resolve, reject) => {
-            this.db.run('DELETE FROM graphs WHERE id = ?', [uuidToBuffer(id)], function(err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(this.changes > 0);
-                }
-            });
-        });
-    }
 
     async importFromJSON(data, id = null) {
         // Use provided ID or generate one
