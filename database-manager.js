@@ -67,6 +67,7 @@ class DatabaseManager {
                 x REAL NOT NULL,
                 y REAL NOT NULL,
                 label TEXT,
+                chinese_label TEXT,
                 color TEXT DEFAULT '#3b82f6',
                 radius REAL DEFAULT 20,
                 category TEXT,
@@ -114,6 +115,20 @@ class DatabaseManager {
                     'CREATE INDEX IF NOT EXISTS idx_edges_from_to ON edges(from_node_id, to_node_id)',
                     'CREATE INDEX IF NOT EXISTS idx_edges_created ON edges(created_at)'
                 ];
+
+                // Migrate existing database - add chinese_label column if it doesn't exist
+                this.db.get("PRAGMA table_info(nodes)", (err, rows) => {
+                    if (!err) {
+                        this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
+                            const hasChineseLabel = columns.some(col => col.name === 'chinese_label');
+                            if (!hasChineseLabel) {
+                                this.db.run('ALTER TABLE nodes ADD COLUMN chinese_label TEXT', (err) => {
+                                    if (err) console.warn('Could not add chinese_label column:', err.message);
+                                });
+                            }
+                        });
+                    }
+                });
 
                 createIndexes.forEach((sql, index) => {
                     this.db.run(sql, (err) => {
@@ -164,8 +179,8 @@ class DatabaseManager {
 
                 // Insert nodes
                 const nodeStmt = this.db.prepare(`
-                    INSERT INTO nodes (id, graph_id, x, y, label, color, radius, category)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO nodes (id, graph_id, x, y, label, chinese_label, color, radius, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `);
                 
                 nodes.forEach(node => {
@@ -176,6 +191,7 @@ class DatabaseManager {
                         node.x,
                         node.y,
                         node.label || '',
+                        node.chineseLabel || '',
                         node.color || '#3b82f6',
                         node.radius || 20,
                         node.category || null
@@ -246,6 +262,7 @@ class DatabaseManager {
                             x: row.x,
                             y: row.y,
                             label: row.label,
+                            chineseLabel: row.chinese_label || '',
                             color: row.color,
                             radius: row.radius,
                             category: row.category

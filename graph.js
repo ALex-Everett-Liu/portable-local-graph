@@ -17,6 +17,7 @@ class Graph {
         this.edgeStart = null;
         this.onModeChange = options.onModeChange || (() => {});
         this.onGraphUpdate = options.onGraphUpdate || (() => {});
+        this.onSelectionChange = options.onSelectionChange || (() => {});
         
         this.setupCanvas();
         this.setupEventListeners();
@@ -50,7 +51,7 @@ class Graph {
         };
     }
 
-    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20) {
+    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20, chineseLabel = null) {
         // Generate consistent UUID format
         let uuid;
         if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -74,6 +75,7 @@ class Graph {
             x: x,
             y: y,
             label: label || `Node ${this.nodes.length + 1}`,
+            chineseLabel: chineseLabel || '',
             color: color,
             radius: Math.max(1, Math.min(100, radius || 20)),
             category: category
@@ -166,6 +168,7 @@ class Graph {
         
         if (this.selectedNode && this.selectedNode.id === nodeId) {
             this.selectedNode = null;
+            this.onSelectionChange();
         }
     }
 
@@ -174,12 +177,14 @@ class Graph {
         
         if (this.selectedEdge && this.selectedEdge.id === edgeId) {
             this.selectedEdge = null;
+            this.onSelectionChange();
         }
     }
 
     moveNode(node, dx, dy) {
         node.x += dx;
         node.y += dy;
+        this.onSelectionChange();
     }
 
     render() {
@@ -341,9 +346,11 @@ class Graph {
                     };
                     this.selectedNode = node;
                     this.selectedEdge = null;
+                    this.onSelectionChange();
                 } else {
                     this.selectedNode = null;
                     this.selectedEdge = null;
+                    this.onSelectionChange();
                     this.isPanning = true;
                     this.lastPanPoint = { x: e.clientX, y: e.clientY };
                 }
@@ -403,8 +410,14 @@ class Graph {
         const edge = this.getEdgeAt(pos.x, pos.y);
         
         if (node) {
+            this.selectedNode = node;
+            this.selectedEdge = null;
+            this.onSelectionChange();
             window.showNodeDialog(node);
         } else if (edge) {
+            this.selectedEdge = edge;
+            this.selectedNode = null;
+            this.onSelectionChange();
             window.showEdgeDialog(edge);
         }
     }
@@ -433,6 +446,7 @@ class Graph {
         this.selectedEdge = null;
         this.scale = 1;
         this.offset = { x: 0, y: 0 };
+        this.onSelectionChange();
         this.render();
     }
 }

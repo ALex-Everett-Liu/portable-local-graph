@@ -34,7 +34,8 @@ function initApp() {
     graph = new Graph(canvas, {
         mode: appState.mode,
         onModeChange: (mode) => setMode(mode),
-        onGraphUpdate: updateGraphInfo
+        onGraphUpdate: updateGraphInfo,
+        onSelectionChange: updateGraphInfo
     });
     
     setupEventListeners();
@@ -76,7 +77,7 @@ function setupEventListeners() {
     
     document.getElementById('new-graph-btn').addEventListener('click', newGraph);
     document.getElementById('save-btn').addEventListener('click', async () => {
-        alert('Save button clicked!');
+        // alert('Save button clicked!');
         console.log('Save button clicked');
         
         if (typeof require !== 'undefined') {
@@ -105,7 +106,7 @@ function setupEventListeners() {
         }
     });
     document.getElementById('load-btn').addEventListener('click', async () => {
-        alert('Load button clicked!');
+        // alert('Load button clicked!');
         console.log('Load button clicked');
         
         if (typeof require !== 'undefined') {
@@ -651,17 +652,60 @@ function updateGraphInfo() {
     document.getElementById('edge-count').textContent = graph.edges.length;
     document.getElementById('current-mode').textContent = 
         appState.mode.charAt(0).toUpperCase() + appState.mode.slice(1);
+    
+    updateSelectionInfo();
+}
+
+function updateSelectionInfo() {
+    const selectionInfo = document.getElementById('selection-info');
+    
+    if (graph.selectedNode) {
+        const node = graph.selectedNode;
+        const chineseLabelDisplay = node.chineseLabel ? 
+            `<p><strong>中文:</strong> ${node.chineseLabel}</p>` : 
+            '';
+            
+        selectionInfo.innerHTML = `
+            <div style="font-size: 12px; line-height: 1.4;">
+                <p><strong>English:</strong> ${node.label}</p>
+                ${chineseLabelDisplay}
+                <p><strong>Position:</strong> (${Math.round(node.x)}, ${Math.round(node.y)})</p>
+                <p><strong>Color:</strong> <span style="display: inline-block; width: 12px; height: 12px; background-color: ${node.color}; border: 1px solid #333; vertical-align: middle; margin-right: 4px;"></span>${node.color}</p>
+                <p><strong>Size:</strong> ${node.radius}px</p>
+                ${node.category ? `<p><strong>Category:</strong> ${node.category}</p>` : ''}
+            </div>
+        `;
+    } else if (graph.selectedEdge) {
+        const edge = graph.selectedEdge;
+        const fromNode = graph.nodes.find(n => n.id === edge.from);
+        const toNode = graph.nodes.find(n => n.id === edge.to);
+        
+        const fromChinese = fromNode && fromNode.chineseLabel ? ` (${fromNode.chineseLabel})` : '';
+        const toChinese = toNode && toNode.chineseLabel ? ` (${toNode.chineseLabel})` : '';
+        
+        selectionInfo.innerHTML = `
+            <div style="font-size: 12px; line-height: 1.4;">
+                <p><strong>Edge:</strong> ${fromNode ? fromNode.label : 'Unknown'}${fromChinese} → ${toNode ? toNode.label : 'Unknown'}${toChinese}</p>
+                <p><strong>Weight:</strong> ${edge.weight}</p>
+                ${edge.category ? `<p><strong>Category:</strong> ${edge.category}</p>` : ''}
+            </div>
+        `;
+    } else {
+        selectionInfo.innerHTML = '<p>Nothing selected</p>';
+    }
 }
 
 function showNodeDialog(node) {
     const dialog = document.getElementById('node-dialog');
     const labelInput = document.getElementById('node-label');
+    const chineseInput = document.getElementById('node-chinese');
     const colorInput = document.getElementById('node-color');
     const categoryInput = document.getElementById('node-category');
     const sizeInput = document.getElementById('node-size');
     const sizeDisplay = document.getElementById('size-display');
     
     labelInput.value = node.label;
+    chineseInput.value = node.chineseLabel || '';
     colorInput.value = node.color;
     categoryInput.value = node.category || '';
     sizeInput.value = node.radius;
@@ -691,6 +735,7 @@ function handleNodeOK() {
     const dialog = document.getElementById('node-dialog');
     const nodeId = dialog.dataset.nodeId;
     const label = document.getElementById('node-label').value;
+    const chineseLabel = document.getElementById('node-chinese').value;
     const color = document.getElementById('node-color').value;
     const category = document.getElementById('node-category').value;
     const radius = parseInt(document.getElementById('node-size').value);
@@ -699,6 +744,7 @@ function handleNodeOK() {
     if (node) {
         saveState();
         node.label = label;
+        node.chineseLabel = chineseLabel || '';
         node.color = color;
         node.category = category || null;
         node.radius = Math.max(1, Math.min(100, radius));
@@ -961,10 +1007,10 @@ function handleBeforeUnload(e) {
 }
 
 function loadDefaultGraph() {
-    // Create a simple default graph
-    const node1 = graph.addNode(200, 200, 'Start');
-    const node2 = graph.addNode(400, 200, 'Process');
-    const node3 = graph.addNode(300, 350, 'End');
+    // Create a simple default graph with bilingual labels
+    const node1 = graph.addNode(200, 200, 'Start', '#3b82f6', null, 20, '开始');
+    const node2 = graph.addNode(400, 200, 'Process', '#3b82f6', null, 20, '处理');
+    const node3 = graph.addNode(300, 350, 'End', '#3b82f6', null, 20, '结束');
     
     graph.addEdge(node1.id, node2.id, 1);
     graph.addEdge(node2.id, node3.id, 2);
