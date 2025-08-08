@@ -13,11 +13,24 @@ const appState = {
 let graph;
 let dbManager = null;
 let currentGraphId = null;
-const { v7: uuidv7 } = require('uuid');
+let uuidv7;
+try {
+    const { v7 } = require('uuid');
+    uuidv7 = v7;
+} catch (error) {
+    console.log('UUID not available in browser context, using fallback');
+    uuidv7 = () => 'fallback-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
 
 // Initialize application
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
+    console.log('Initializing application...');
     const canvas = document.getElementById('graph-canvas');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+    
     graph = new Graph(canvas, {
         mode: appState.mode,
         onModeChange: (mode) => setMode(mode),
@@ -30,9 +43,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize database and load graph
     initializeDatabase();
-});
+}
+
+// Check if DOM is already loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    // DOM is already loaded
+    initApp();
+}
 
 function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
+    // Check if buttons exist
+    const saveBtn = document.getElementById('save-btn');
+    const loadBtn = document.getElementById('load-btn');
+    const newBtn = document.getElementById('new-graph-btn');
+    
+    console.log('Save button exists:', !!saveBtn);
+    console.log('Load button exists:', !!loadBtn);
+    console.log('New button exists:', !!newBtn);
+    
     // Toolbar buttons
     document.getElementById('node-mode').addEventListener('click', () => setMode('node'));
     document.getElementById('edge-mode').addEventListener('click', () => setMode('edge'));
@@ -43,17 +75,77 @@ function setupEventListeners() {
     document.getElementById('clear-btn').addEventListener('click', clearGraph);
     
     document.getElementById('new-graph-btn').addEventListener('click', newGraph);
-    document.getElementById('save-btn').addEventListener('click', () => {
+    document.getElementById('save-btn').addEventListener('click', async () => {
+        alert('Save button clicked!');
+        console.log('Save button clicked');
+        
         if (typeof require !== 'undefined') {
-            // Electron mode - send save current graph
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.send('save-current-graph');
+            // Electron mode - use proper IPC
+            try {
+                const { ipcRenderer } = require('electron');
+                console.log('Requesting save via IPC...');
+                
+                if (dbManager && currentGraphId) {
+                    // Save to current database (no dialog)
+                    await saveGraphToDatabase();
+                    showNotification('Graph saved to current file');
+                } else {
+                    // No current file - fallback to Save As
+                    const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), 'graph');
+                    if (result.success) {
+                        appState.isModified = false;
+                        currentGraphId = result.graphId;
+                        showNotification(`Graph saved as ${result.fileName}`);
+                    } else if (!result.cancelled) {
+                        showNotification('Error saving graph: ' + result.error, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving file:', error);
+                showNotification('Error saving file: ' + error.message, 'error');
+            }
         } else {
-            // Web mode - save to database
-            saveGraphToDatabase();
+            // Web mode
+            console.log('Web mode save triggered');
+            if (dbManager && currentGraphId) {
+                console.log('Saving to database...');
+                saveGraphToDatabase();
+            } else {
+                console.log('No database available, using Save As');
+                saveGraphToFile();
+            }
         }
     });
-    document.getElementById('load-btn').addEventListener('click', openGraphFile);
+    document.getElementById('load-btn').addEventListener('click', async () => {
+        alert('Load button clicked!');
+        console.log('Load button clicked');
+        
+        if (typeof require !== 'undefined') {
+            // Electron mode - use proper IPC
+            try {
+                const { ipcRenderer } = require('electron');
+                console.log('Requesting file open via IPC...');
+                const result = await ipcRenderer.invoke('open-graph-file');
+                
+                if (result.success) {
+                    loadGraphData(result.graphData);
+                    currentGraphId = result.graphId;
+                    appState.isModified = false;
+                    showNotification(`Graph opened from ${result.fileName}`);
+                } else if (!result.cancelled) {
+                    showNotification('Error opening graph: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error opening file:', error);
+                showNotification('Error opening file: ' + error.message, 'error');
+            }
+        } else {
+            // Web mode
+            await openGraphFile();
+        }
+    });
+    
+    
     document.getElementById('import-json-btn').addEventListener('click', importJSON);
     document.getElementById('export-svg-btn').addEventListener('click', exportSVG);
     document.getElementById('export-json-btn').addEventListener('click', exportJSON);
@@ -75,133 +167,143 @@ function setupEventListeners() {
 
 function setupIPC() {
     if (typeof require !== 'undefined') {
-        const { ipcRenderer } = require('electron');
-        
-        ipcRenderer.on('new-graph', () => {
-            newGraph();
-        });
-        
-        ipcRenderer.on('load-graph', (event, data) => {
-            loadGraphData(data);
-        });
-        
-        ipcRenderer.on('save-graph-request', async (event, filePath) => {
-            const result = await ipcRenderer.invoke('save-graph', graph.exportData(), filePath);
-            if (result.success) {
-                appState.isModified = false;
-                showNotification('Graph saved successfully!');
-            } else {
-                showNotification('Error saving graph: ' + result.error);
-            }
-        });
-        
-        ipcRenderer.on('open-graph-file-result', async (event, result) => {
-            if (result.success) {
-                // Switch to the new database file
-                if (result.filePath && dbManager) {
-                    try {
-                        await dbManager.openFile(result.filePath);
-                    } catch (error) {
-                        console.error('Error switching database file:', error);
-                    }
+        try {
+            const { ipcRenderer } = require('electron');
+            
+            ipcRenderer.on('new-graph', () => {
+                newGraph();
+            });
+            
+            ipcRenderer.on('load-graph', (event, data) => {
+                loadGraphData(data);
+            });
+            
+            ipcRenderer.on('save-graph-request', async (event, filePath) => {
+                const result = await ipcRenderer.invoke('save-graph', graph.exportData(), filePath);
+                if (result.success) {
+                    appState.isModified = false;
+                    showNotification('Graph saved successfully!');
+                } else {
+                    showNotification('Error saving graph: ' + result.error);
                 }
-                loadGraphData(result.graphData);
-                currentGraphId = result.graphId;
-                appState.isModified = false;
-                showNotification(`Graph opened from ${result.fileName}`);
-            } else if (!result.cancelled) {
-                showNotification('Error opening graph: ' + result.error, 'error');
-            }
-        });
-
-        ipcRenderer.on('save-current-graph', async () => {
-            if (dbManager && currentGraphId) {
-                await saveGraphToDatabase();
-                showNotification('Graph saved to current file');
-            } else {
-                // Fallback to Save As if no database
-                await saveGraphToFile();
-            }
-        });
-
-        ipcRenderer.on('save-graph-file-request', async (event, filePath) => {
-            const result = await ipcRenderer.invoke('save-graph-file-request', filePath, graph.exportData(), currentGraphId);
-            if (result.success) {
-                // Switch to the new database file
-                if (dbManager && result.filePath) {
-                    try {
-                        await dbManager.openFile(result.filePath);
-                        currentGraphId = result.graphId;
-                        showNotification(`Graph saved as ${result.fileName}`);
-                    } catch (error) {
-                        console.error('Error switching to new database file:', error);
-                        showNotification('Error switching to new database file: ' + error.message, 'error');
+            });
+            
+            ipcRenderer.on('open-graph-file-result', async (event, result) => {
+                if (result.success) {
+                    // Switch to the new database file
+                    if (result.filePath && dbManager) {
+                        try {
+                            await dbManager.openFile(result.filePath);
+                        } catch (error) {
+                            console.error('Error switching database file:', error);
+                        }
                     }
+                    loadGraphData(result.graphData);
+                    currentGraphId = result.graphId;
+                    appState.isModified = false;
+                    showNotification(`Graph opened from ${result.fileName}`);
+                } else if (!result.cancelled) {
+                    showNotification('Error opening graph: ' + result.error, 'error');
                 }
-            } else if (!result.cancelled) {
-                showNotification('Error saving graph: ' + result.error, 'error');
-            }
-        });
-        
-        ipcRenderer.on('export-svg-request', async () => {
-            const svgData = generateSVG();
-            const result = await ipcRenderer.invoke('export-svg', svgData);
-            if (result.success) {
-                showNotification('SVG exported successfully!');
-            } else if (!result.cancelled) {
-                showNotification('Error exporting SVG: ' + result.error);
-            }
-        });
+            });
 
-        ipcRenderer.on('import-json-request', async () => {
-            const result = await ipcRenderer.invoke('import-json-file');
-            if (result.success) {
-                loadGraphData(result.graphData);
-                currentGraphId = 'import-' + Date.now();
-                showNotification(`JSON imported from ${result.fileName}`);
-            } else if (!result.cancelled) {
-                showNotification('Error importing JSON: ' + result.error);
-            }
-        });
+            ipcRenderer.on('save-current-graph', async () => {
+                if (dbManager && currentGraphId) {
+                    await saveGraphToDatabase();
+                    showNotification('Graph saved to current file');
+                } else {
+                    // Fallback to Save As if no database
+                    await saveGraphToFile();
+                }
+            });
 
-        ipcRenderer.on('export-json-request', async () => {
-            const data = graph.exportData();
-            const result = await ipcRenderer.invoke('export-json', data);
-            if (result.success) {
-                showNotification('JSON exported successfully!');
-            } else if (!result.cancelled) {
-                showNotification('Error exporting JSON: ' + result.error);
-            }
-        });
+            ipcRenderer.on('save-graph-file-request', async (event, filePath) => {
+                const result = await ipcRenderer.invoke('save-graph-file-request', filePath, graph.exportData(), currentGraphId);
+                if (result.success) {
+                    // Switch to the new database file
+                    if (dbManager && result.filePath) {
+                        try {
+                            await dbManager.openFile(result.filePath);
+                            currentGraphId = result.graphId;
+                            showNotification(`Graph saved as ${result.fileName}`);
+                        } catch (error) {
+                            console.error('Error switching to new database file:', error);
+                            showNotification('Error switching to new database file: ' + error.message, 'error');
+                        }
+                    }
+                } else if (!result.cancelled) {
+                    showNotification('Error saving graph: ' + result.error, 'error');
+                }
+            });
+            
+            ipcRenderer.on('export-svg-request', async () => {
+                const svgData = generateSVG();
+                const result = await ipcRenderer.invoke('export-svg', svgData);
+                if (result.success) {
+                    showNotification('SVG exported successfully!');
+                } else if (!result.cancelled) {
+                    showNotification('Error exporting SVG: ' + result.error);
+                }
+            });
+
+            ipcRenderer.on('import-json-request', async () => {
+                const result = await ipcRenderer.invoke('import-json-file');
+                if (result.success) {
+                    loadGraphData(result.graphData);
+                    currentGraphId = 'import-' + Date.now();
+                    showNotification(`JSON imported from ${result.fileName}`);
+                } else if (!result.cancelled) {
+                    showNotification('Error importing JSON: ' + result.error);
+                }
+            });
+
+            ipcRenderer.on('export-json-request', async () => {
+                const data = graph.exportData();
+                const result = await ipcRenderer.invoke('export-json', data);
+                if (result.success) {
+                    showNotification('JSON exported successfully!');
+                } else if (!result.cancelled) {
+                    showNotification('Error exporting JSON: ' + result.error);
+                }
+            });
+        } catch (error) {
+            console.log('Electron IPC not available, running in web mode');
+        }
     }
 }
 
 async function initializeDatabase() {
     if (typeof require !== 'undefined') {
-        const DatabaseManager = require('./database-manager');
-        dbManager = new DatabaseManager();
-        
         try {
-            await dbManager.init();
+            const DatabaseManager = require('./database-manager');
+            dbManager = new DatabaseManager();
             
-            // Check if we have existing graphs
-            const graphs = await dbManager.listGraphs();
-            if (graphs.length > 0) {
-                // Load the most recent graph
-                await loadGraphFromDatabase(graphs[0].id);
-            } else {
-                // Create new graph
-                currentGraphId = 'default-graph-' + Date.now();
-                await saveGraphToDatabase();
+            try {
+                await dbManager.init();
+                
+                // Check if we have existing graphs
+                const graphs = await dbManager.listGraphs();
+                if (graphs.length > 0) {
+                    // Load the most recent graph
+                    await loadGraphFromDatabase(graphs[0].id);
+                } else {
+                    // Create new graph
+                    currentGraphId = 'default-graph-' + Date.now();
+                    await saveGraphToDatabase();
+                    await loadDefaultGraph();
+                }
+            } catch (error) {
+                console.error('Error initializing database:', error);
+                // Fallback to default graph
                 await loadDefaultGraph();
             }
         } catch (error) {
-            console.error('Error initializing database:', error);
-            // Fallback to default graph
+            console.log('DatabaseManager not available, using web mode');
             await loadDefaultGraph();
         }
     } else {
         // Web mode - use default graph
+        console.log('Running in web mode (no require)');
         await loadDefaultGraph();
     }
 }
@@ -304,23 +406,34 @@ async function newGraph() {
 }
 
 async function saveGraphToFile() {
+    console.log('saveGraphToFile called');
     if (typeof require !== 'undefined') {
         // Electron mode - use file dialog for Save As
-        const { ipcRenderer } = require('electron');
-        const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), currentGraphId);
-        if (result.success) {
-            currentGraphId = result.graphId;
-            showNotification(`Graph saved to ${result.fileName}`);
-        } else if (!result.cancelled) {
-            showNotification('Error saving graph: ' + result.error, 'error');
+        console.log('Electron mode, using save-graph-file IPC');
+        try {
+            const { ipcRenderer } = require('electron');
+            const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), currentGraphId);
+            if (result.success) {
+                currentGraphId = result.graphId;
+                showNotification(`Graph saved to ${result.fileName}`);
+            } else if (!result.cancelled) {
+                showNotification('Error saving graph: ' + result.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error in saveGraphToFile:', error);
         }
     } else {
         // Web mode - use database for Save As (create new graph)
-        const graphs = await dbManager.listGraphs();
-        const newId = 'graph-' + Date.now();
-        await saveGraphToDatabase(newId);
-        currentGraphId = newId;
-        showNotification('Graph saved to new database!');
+        console.log('Web mode, creating new graph in database');
+        try {
+            const graphs = await dbManager.listGraphs();
+            const newId = 'graph-' + Date.now();
+            await saveGraphToDatabase(newId);
+            currentGraphId = newId;
+            showNotification('Graph saved to new database!');
+        } catch (error) {
+            console.error('Error in saveGraphToFile web mode:', error);
+        }
     }
 }
 
@@ -347,11 +460,19 @@ async function saveGraphToDatabase(graphId = null) {
 }
 
 async function openGraphFile() {
+    console.log('openGraphFile called');
     if (typeof require !== 'undefined') {
         // Electron mode - handled by menu IPC
-        // No action needed, menu will trigger open-graph-file-result
+        console.log('Electron mode, triggering file open via IPC');
+        try {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('open-graph-file');
+        } catch (error) {
+            console.error('Error opening file in Electron:', error);
+        }
     } else {
         // Web mode - use database selection
+        console.log('Web mode, opening from database');
         await openFromDatabase();
     }
 }
