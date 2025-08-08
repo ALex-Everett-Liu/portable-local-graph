@@ -135,6 +135,23 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | `importFromJSON(graphId, data)` | Import JSON to isolated DB | graphId: string, data: object | Promise<string> |
 | `exportToJSON(graphId)` | Export graph to JSON | graphId: string | Promise<object> |
 
+### Local Graph Filter - Enhanced Filtering System
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `calculateDistances(centerNodeId, maxDistance, maxDepth)` | Enhanced Dijkstra with dual constraints | centerNodeId: string, maxDistance: number, maxDepth: number | Object with distances and depths |
+| `filterLocalGraph(centerNodeId, maxDistance, maxDepth)` | Returns filtered subgraph | centerNodeId: string, maxDistance: number, maxDepth: number | Object with filtered nodes and edges |
+| `applyLocalGraphFilter(centerNodeId, maxDistance, maxDepth)` | Applies filter and centers view | centerNodeId: string, maxDistance: number, maxDepth: number | boolean success |
+| `resetFilter()` | Restores original graph | None | boolean success |
+| `getAllNodes()` | Returns node list for dropdown population | None | Array of node objects |
+
+### View Management System
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveViewConfig()` | Save current filter configuration | None | void |
+| `loadViewConfig(configId)` | Apply saved filter configuration | configId: string | void |
+| `deleteViewConfig(configId)` | Remove saved configuration | configId: string | void |
+| `renderQuickAccess()` | Display saved configurations in UI | None | void |
+
 ---
 
 ## Tricky Solutions & Design Rationale
@@ -280,6 +297,76 @@ addNode(x, y, label, color, category, radius) {
 - Real-time preview with slider control
 - Proportional scaling with zoom level
 
+### 7. Local Graph Filtering System
+**Problem**: Large graphs become unwieldy, users need focus on specific subgraphs
+**Solution**: Distance-based filtering with enhanced Dijkstra algorithm and dual constraints
+```javascript
+calculateDistances(centerNodeId, maxDistance, maxDepth) {
+    const distances = new Map();
+    const depths = new Map();
+    const queue = new PriorityQueue();
+    
+    // Initialize with center node
+    queue.enqueue(centerNodeId, 0, 0);
+    distances.set(centerNodeId, 0);
+    depths.set(centerNodeId, 0);
+    
+    while (!queue.isEmpty()) {
+        const { nodeId, distance, depth } = queue.dequeue();
+        
+        // Explore neighbors with bidirectional edge support
+        this.getNeighbors(nodeId).forEach(neighbor => {
+            const edgeWeight = this.getEdgeWeight(nodeId, neighbor);
+            const newDistance = distance + edgeWeight;
+            const newDepth = depth + 1;
+            
+            // Apply dual constraint logic (OR-based)
+            if (newDistance <= maxDistance || newDepth <= maxDepth) {
+                if (!distances.has(neighbor) || newDistance < distances.get(neighbor)) {
+                    distances.set(neighbor, newDistance);
+                    depths.set(neighbor, newDepth);
+                    queue.enqueue(neighbor, newDistance, newDepth);
+                }
+            }
+        });
+    }
+    
+    return { distances, depths };
+}
+```
+**Benefits**:
+- **Dual Constraints**: Distance OR depth filtering for flexible subgraph exploration
+- **Bidirectional Support**: All edges treated as bidirectional for comprehensive exploration
+- **Performance**: O(n log n) complexity with efficient priority queue implementation
+- **Real-time Updates**: Immediate visual feedback when parameters change
+- **Persistent Storage**: Saved configurations persist across sessions
+- **User Experience**: Intuitive UI with sliders and dropdowns
+
+### 8. View Configuration Management
+**Problem**: Users need to save and quickly access frequently used filter combinations
+**Solution**: Local storage-based configuration system with quick access panel
+```javascript
+function saveViewConfig() {
+    const config = {
+        id: 'view-' + Date.now(),
+        name: `${centerNode.label} (D:${maxDistance}, H:${maxDepth})`,
+        centerNodeId: centerNodeId,
+        maxDistance: maxDistance,
+        maxDepth: maxDepth,
+        timestamp: new Date().toISOString()
+    };
+    
+    appState.quickAccess.push(config);
+    localStorage.setItem('graphQuickAccess', JSON.stringify(appState.quickAccess));
+}
+```
+**Benefits**:
+- **One-click Access**: Saved configurations available instantly
+- **Persistent Storage**: Survives browser restarts and reloads
+- **Limited History**: Keeps only 10 most recent configurations to prevent clutter
+- **Descriptive Naming**: Auto-generated names show key parameters
+- **Easy Management**: Simple add/remove operations with visual feedback
+
 ### 3. Mode-Based Interaction
 **Problem**: Different tools need different behaviors
 **Solution**: State machine with mode switching
@@ -352,6 +439,19 @@ Import JSON to database → Continue editing → All data persisted
 ```
 Start server → Database initialized → Real-time persistence → 
 Graph selection dialog → Multiple graph support → API access → Statistics
+```
+
+### 7. Local Graph Filtering Workflow
+```
+Load graph → Select center node → Set distance/depth parameters → 
+Apply filter → View subgraph → Save configuration → Quick access for future use
+```
+
+### 8. View Management Workflow
+```
+Create filter configuration → Save with descriptive name → 
+Access from quick access panel → Apply with one click → 
+Manage saved configurations → Delete unused views
 ```
 
 ---

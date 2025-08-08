@@ -19,6 +19,8 @@ A simple, interactive desktop application for manually drawing graphs using Node
 - **Keyboard Shortcuts**: Efficient editing with Ctrl+Z, Ctrl+Y, etc.
 - **Weight Visualization**: Edge thickness scales inversely with weight values (0.1-30), supporting both connection strength and distance/cost semantics
 - **Node Size Control**: Adjustable node radius from 1-100 pixels with slider control
+- **Local Graph Filtering**: Distance-based filtering to explore subgraphs within specified constraints
+- **View Management**: Save and quickly access frequently used filter configurations
 
 ### Data Management
 - **SQLite Database**: Primary storage with real-time persistence
@@ -110,6 +112,29 @@ The application now uses **SQLite database as primary storage** with JSON as bac
 - **Import/Export**: JSON files for backup and sharing
 - **Migration**: Existing JSON files automatically imported to database
 - **Compatibility**: Full backward compatibility maintained
+
+### Local Graph Filtering
+
+Explore subgraphs using powerful distance-based filtering:
+
+#### Distance-Based Filtering
+- **Center Node Selection**: Choose any node as the filter center point
+- **Maximum Distance**: Set distance threshold using weighted edge calculations
+- **Maximum Depth**: Limit exploration by hop count from center
+- **Dual Constraints**: Use distance OR depth constraints (inclusive logic)
+
+#### View Management
+- **Save Configurations**: Store frequently used filter combinations
+- **Quick Access Panel**: One-click access to saved views
+- **Persistent Storage**: Configurations saved in browser local storage
+- **Real-time Updates**: Adjust parameters and see results instantly
+
+#### Usage
+1. Select a center node from the dropdown
+2. Set maximum distance and depth using sliders
+3. Click "Apply Filter" to see the subgraph
+4. Save the configuration for future use
+5. Reset to view the full graph at any time
 
 ### Working with Categories
 

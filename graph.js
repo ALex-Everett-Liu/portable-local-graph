@@ -449,4 +449,116 @@ class Graph {
         this.onSelectionChange();
         this.render();
     }
+
+    // Distance-based filtering methods
+    calculateDistances(centerNodeId, maxDistance = 10, maxDepth = 5) {
+        const distances = new Map();
+        const depths = new Map();
+        const queue = [{ nodeId: centerNodeId, distance: 0, depth: 0 }];
+        
+        distances.set(centerNodeId, 0);
+        depths.set(centerNodeId, 0);
+        
+        while (queue.length > 0) {
+            const { nodeId, distance, depth } = queue.shift();
+            
+            // Find all edges connected to this node
+            const connectedEdges = this.edges.filter(edge => 
+                edge.from === nodeId || edge.to === nodeId
+            );
+            
+            for (const edge of connectedEdges) {
+                const neighborId = edge.from === nodeId ? edge.to : edge.from;
+                const newDistance = distance + edge.weight;
+                const newDepth = depth + 1;
+                
+                // Check if neighbor satisfies either constraint (OR logic)
+                const satisfiesDistance = newDistance <= maxDistance;
+                const satisfiesDepth = newDepth <= maxDepth;
+                
+                if ((satisfiesDistance || satisfiesDepth) && 
+                    (!distances.has(neighborId) || newDistance < distances.get(neighborId))) {
+                    
+                    distances.set(neighborId, newDistance);
+                    depths.set(neighborId, newDepth);
+                    queue.push({ nodeId: neighborId, distance: newDistance, depth: newDepth });
+                }
+            }
+        }
+        
+        return { distances, depths };
+    }
+
+    filterLocalGraph(centerNodeId, maxDistance = 10, maxDepth = 5) {
+        const centerNode = this.nodes.find(n => n.id === centerNodeId);
+        if (!centerNode) {
+            return { nodes: [], edges: [], centerNode: null };
+        }
+        
+        const { distances, depths } = this.calculateDistances(centerNodeId, maxDistance, maxDepth);
+        
+        // Get all nodes that are reachable
+        const filteredNodes = this.nodes.filter(node => distances.has(node.id));
+        
+        // Get edges between filtered nodes
+        const filteredEdges = this.edges.filter(edge => {
+            const fromIncluded = distances.has(edge.from);
+            const toIncluded = distances.has(edge.to);
+            return fromIncluded && toIncluded;
+        });
+        
+        return {
+            nodes: filteredNodes,
+            edges: filteredEdges,
+            centerNode,
+            distances: Object.fromEntries(distances),
+            depths: Object.fromEntries(depths)
+        };
+    }
+
+    applyLocalGraphFilter(centerNodeId, maxDistance = 10, maxDepth = 5) {
+        const filteredData = this.filterLocalGraph(centerNodeId, maxDistance, maxDepth);
+        
+        if (filteredData.nodes.length === 0) {
+            return false;
+        }
+        
+        // Store original data before filtering
+        this.originalNodes = [...this.nodes];
+        this.originalEdges = [...this.edges];
+        
+        // Apply filter
+        this.nodes = filteredData.nodes;
+        this.edges = filteredData.edges;
+        
+        // Center the view on the center node
+        if (filteredData.centerNode) {
+            const canvasRect = this.canvas.getBoundingClientRect();
+            this.offset.x = canvasRect.width / 2 - filteredData.centerNode.x * this.scale;
+            this.offset.y = canvasRect.height / 2 - filteredData.centerNode.y * this.scale;
+        }
+        
+        this.render();
+        return true;
+    }
+
+    resetFilter() {
+        if (this.originalNodes && this.originalEdges) {
+            this.nodes = this.originalNodes;
+            this.edges = this.originalEdges;
+            this.originalNodes = null;
+            this.originalEdges = null;
+            this.render();
+            return true;
+        }
+        return false;
+    }
+
+    getAllNodes() {
+        return this.nodes.map(node => ({
+            id: node.id,
+            label: node.label,
+            chineseLabel: node.chineseLabel || ''
+        }));
+    }
 }

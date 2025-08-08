@@ -7,7 +7,14 @@ const appState = {
     undoStack: [],
     redoStack: [],
     maxHistorySize: 50,
-    isModified: false
+    isModified: false,
+    isFiltered: false,
+    filterParams: {
+        centerNodeId: null,
+        maxDistance: 10,
+        maxDepth: 3
+    },
+    quickAccess: []
 };
 
 let graph;
@@ -40,6 +47,7 @@ function initApp() {
     setupEventListeners();
     setupIPC();
     updateGraphInfo();
+    renderQuickAccess();
     
     // Initialize database and load graph
     initializeDatabase();
@@ -154,6 +162,17 @@ function setupEventListeners() {
     document.getElementById('node-ok').addEventListener('click', handleNodeOK);
     document.getElementById('node-cancel').addEventListener('click', handleNodeCancel);
     document.getElementById('node-delete').addEventListener('click', handleNodeDelete);
+    
+    // Filter controls
+    document.getElementById('center-node-select').addEventListener('change', updateFilterParams);
+    document.getElementById('max-distance').addEventListener('input', updateDistanceDisplay);
+    document.getElementById('max-depth').addEventListener('input', updateDepthDisplay);
+    document.getElementById('apply-filter-btn').addEventListener('click', applyFilter);
+    document.getElementById('reset-filter-btn').addEventListener('click', resetFilter);
+    document.getElementById('save-view-btn').addEventListener('click', saveViewConfig);
+    
+    // Load saved quick access
+    loadQuickAccess();
     
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyDown);
@@ -569,12 +588,14 @@ function loadGraphData(data) {
     appState.undoStack = [];
     appState.redoStack = [];
     appState.isModified = false;
+    appState.isFiltered = false;
     
     console.log('[loadGraphData] Graph imported successfully');
     console.log('[loadGraphData] Current nodes:', graph.nodes.length);
     console.log('[loadGraphData] Current edges:', graph.edges.length);
     
     updateGraphInfo();
+    renderQuickAccess();
     // CRITICAL: Do NOT call saveState() during load - it triggers auto-save which overwrites the database!
     // Instead, just render the graph without triggering any save operations
     graph.render();
@@ -658,6 +679,7 @@ function updateGraphInfo() {
     document.getElementById('current-mode').textContent = 
         appState.mode.charAt(0).toUpperCase() + appState.mode.slice(1);
     
+    updateCenterNodeSelect();
     updateSelectionInfo();
 }
 
@@ -698,6 +720,189 @@ function updateSelectionInfo() {
     } else {
         selectionInfo.innerHTML = '<p>Nothing selected</p>';
     }
+}
+
+// Local Graph Filter functions
+function updateCenterNodeSelect() {
+    const select = document.getElementById('center-node-select');
+    const currentValue = select.value;
+    
+    select.innerHTML = '<option value="">Select a node...</option>';
+    
+    graph.getAllNodes().forEach(node => {
+        const option = document.createElement('option');
+        option.value = node.id;
+        option.textContent = node.label + (node.chineseLabel ? ` (${node.chineseLabel})` : '');
+        select.appendChild(option);
+    });
+    
+    if (currentValue) {
+        select.value = currentValue;
+    }
+}
+
+function updateDistanceDisplay() {
+    const value = document.getElementById('max-distance').value;
+    document.getElementById('distance-value').textContent = value;
+    appState.filterParams.maxDistance = parseFloat(value);
+}
+
+function updateDepthDisplay() {
+    const value = document.getElementById('max-depth').value;
+    document.getElementById('depth-value').textContent = value;
+    appState.filterParams.maxDepth = parseInt(value);
+}
+
+function updateFilterParams() {
+    const select = document.getElementById('center-node-select');
+    appState.filterParams.centerNodeId = select.value;
+}
+
+async function applyFilter() {
+    if (!appState.filterParams.centerNodeId) {
+        showNotification('Please select a center node first', 'error');
+        return;
+    }
+    
+    const centerNode = graph.nodes.find(n => n.id === appState.filterParams.centerNodeId);
+    if (!centerNode) {
+        showNotification('Selected center node not found', 'error');
+        return;
+    }
+    
+    try {
+        const success = graph.applyLocalGraphFilter(
+            appState.filterParams.centerNodeId,
+            appState.filterParams.maxDistance,
+            appState.filterParams.maxDepth
+        );
+        
+        if (success) {
+            appState.isFiltered = true;
+            updateGraphInfo();
+            showNotification(`Filtered graph with center: ${centerNode.label}`);
+        } else {
+            showNotification('No nodes found within the specified constraints', 'info');
+        }
+    } catch (error) {
+        showNotification('Error applying filter: ' + error.message, 'error');
+    }
+}
+
+function resetFilter() {
+    if (graph.resetFilter()) {
+        appState.isFiltered = false;
+        updateGraphInfo();
+        showNotification('Filter reset - showing full graph');
+    }
+}
+
+function saveViewConfig() {
+    if (!appState.filterParams.centerNodeId) {
+        showNotification('Please apply a filter first before saving', 'error');
+        return;
+    }
+    
+    const centerNode = graph.nodes.find(n => n.id === appState.filterParams.centerNodeId);
+    if (!centerNode) {
+        showNotification('Center node not found', 'error');
+        return;
+    }
+    
+    const config = {
+        id: 'view-' + Date.now(),
+        name: `${centerNode.label} (D:${appState.filterParams.maxDistance}, H:${appState.filterParams.maxDepth})`,
+        centerNodeId: appState.filterParams.centerNodeId,
+        maxDistance: appState.filterParams.maxDistance,
+        maxDepth: appState.filterParams.maxDepth,
+        centerNodeLabel: centerNode.label,
+        timestamp: new Date().toISOString()
+    };
+    
+    appState.quickAccess.push(config);
+    
+    // Keep only the 10 most recent configurations
+    if (appState.quickAccess.length > 10) {
+        appState.quickAccess = appState.quickAccess.slice(-10);
+    }
+    
+    saveQuickAccess();
+    renderQuickAccess();
+    showNotification('View configuration saved');
+}
+
+function loadQuickAccess() {
+    try {
+        const saved = localStorage.getItem('graphQuickAccess');
+        if (saved) {
+            appState.quickAccess = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.error('Error loading quick access:', error);
+        appState.quickAccess = [];
+    }
+}
+
+function saveQuickAccess() {
+    try {
+        localStorage.setItem('graphQuickAccess', JSON.stringify(appState.quickAccess));
+    } catch (error) {
+        console.error('Error saving quick access:', error);
+    }
+}
+
+function renderQuickAccess() {
+    const container = document.getElementById('quick-access-list');
+    container.innerHTML = '';
+    
+    if (appState.quickAccess.length === 0) {
+        container.innerHTML = '<p style="font-size: 11px; color: #666;">No saved views</p>';
+        return;
+    }
+    
+    appState.quickAccess.forEach(config => {
+        const item = document.createElement('div');
+        item.className = 'quick-access-item';
+        item.innerHTML = `
+            <div style="flex: 1; cursor: pointer;" onclick="loadViewConfig('${config.id}')">
+                ${config.name}
+            </div>
+            <button onclick="deleteViewConfig('${config.id}')" style="background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">×</button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function loadViewConfig(configId) {
+    const config = appState.quickAccess.find(c => c.id === configId);
+    if (!config) {
+        showNotification('View configuration not found', 'error');
+        return;
+    }
+    
+    // Update UI controls
+    document.getElementById('center-node-select').value = config.centerNodeId;
+    document.getElementById('max-distance').value = config.maxDistance;
+    document.getElementById('max-depth').value = config.maxDepth;
+    
+    // Update app state
+    appState.filterParams.centerNodeId = config.centerNodeId;
+    appState.filterParams.maxDistance = config.maxDistance;
+    appState.filterParams.maxDepth = config.maxDepth;
+    
+    // Update displays
+    updateDistanceDisplay();
+    updateDepthDisplay();
+    
+    // Apply the filter
+    applyFilter();
+}
+
+function deleteViewConfig(configId) {
+    appState.quickAccess = appState.quickAccess.filter(c => c.id !== configId);
+    saveQuickAccess();
+    renderQuickAccess();
+    showNotification('View configuration deleted');
 }
 
 function showNodeDialog(node) {

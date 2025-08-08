@@ -133,6 +133,29 @@
 - **Migration Support**: Automatic detection and upgrade of existing database files
 - **Error Handling**: Robust handling of schema version mismatches
 
+## [0.2.0] - 2025-08-08
+
+### Added
+- **Local Graph Filter**: Powerful distance-based filtering system for exploring subgraphs
+- **Distance-Based Filtering**: Filter nodes and edges within specified distance from any center node
+- **Depth-Based Filtering**: Additional layer-based filtering using hop count from center
+- **Dual Constraint Logic**: OR-based filtering (distance OR depth constraints)
+- **Enhanced Dijkstra Algorithm**: Optimized pathfinding for distance calculations with bidirectional edge traversal
+- **View Configuration System**: Save and manage frequently used filter combinations
+- **Quick Access Panel**: One-click access to saved filter configurations
+- **Real-time Parameter Adjustment**: Interactive sliders for distance and depth parameters
+- **Center Node Selection**: Dropdown with all nodes for easy center selection
+- **Persistent Storage**: Local storage for saved view configurations
+- **Visual Filtering**: Seamless graph updates with maintained zoom and pan positions
+
+### Technical Details
+- **Algorithm**: Enhanced Dijkstra's algorithm with dual constraints (distance + depth)
+- **Performance**: Efficient O(n log n) pathfinding with bidirectional edge support
+- **Storage**: LocalStorage-based persistence for quick access configurations
+- **UI Integration**: Sidebar panel with all filtering controls
+- **Backward Compatibility**: Full compatibility with existing graph structures
+- **State Management**: Filter state tracked alongside graph state
+
 ## [0.1.13] - 2025-08-08
 
 ### Fixed
