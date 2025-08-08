@@ -357,13 +357,7 @@ async function saveState() {
     
     appState.isModified = true;
     
-    // Auto-save to database after a short delay
-    if (dbManager) {
-        clearTimeout(window.saveTimeout);
-        window.saveTimeout = setTimeout(async () => {
-            await saveGraphToDatabase();
-        }, 1000);
-    }
+    // Auto-save completely removed - manual save only!
 }
 
 function undo() {
@@ -402,10 +396,10 @@ async function newGraph() {
     appState.redoStack = [];
     appState.isModified = false;
     
-    
     updateGraphInfo();
-    await saveGraphToDatabase();
-    saveState();
+    // CRITICAL: Do NOT save to current database when creating new graph!
+    // This prevents destroying the current database file
+    console.log('[newGraph] Created new graph without saving - use Save As for new database');
 }
 
 async function saveGraphToFile() {
@@ -533,11 +527,7 @@ async function loadGraphFromDatabase() {
     console.log('[loadGraphFromDatabase] Starting to load graph from database...');
     console.log('[loadGraphFromDatabase] Database path:', dbManager.dbPath);
     
-    // CRITICAL: Disable auto-save during load to prevent data loss
-    if (window.saveTimeout) {
-        clearTimeout(window.saveTimeout);
-        console.log('[loadGraphFromDatabase] Auto-save disabled during load');
-    }
+    // Auto-save completely removed - no need to disable anything
     
     try {
         console.log('[loadGraphFromDatabase] Calling dbManager.loadGraph()...');
