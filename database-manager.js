@@ -23,11 +23,14 @@ class DatabaseManager {
     }
 
     async openFile(filePath) {
-        console.log('Opening database file:', filePath);
+        console.log('[DatabaseManager.openFile] Opening database file:', filePath);
+        console.log('[DatabaseManager.openFile] Current dbPath before change:', this.dbPath);
         await this.close();
         this.dbPath = filePath;
-        console.log('Database path set to:', this.dbPath);
-        return await this.init();
+        console.log('[DatabaseManager.openFile] Database path set to:', this.dbPath);
+        const result = await this.init();
+        console.log('[DatabaseManager.openFile] Database initialized successfully');
+        return result;
     }
 
     async init() {
@@ -239,49 +242,73 @@ async saveGraph(data) {
     }
 
     async loadGraph() {
+        console.log('[DatabaseManager.loadGraph] Starting to load graph from:', this.dbPath);
+        
         return new Promise((resolve, reject) => {
             // Load graph metadata
+            console.log('[DatabaseManager.loadGraph] Loading graph metadata...');
             this.db.get('SELECT * FROM graphs WHERE id = ?', [Buffer.from('00000000-0000-0000-0000-000000000000', 'hex')], (err, graphRow) => {
                 if (err) {
+                    console.error('[DatabaseManager.loadGraph] Error loading graph metadata:', err);
                     reject(err);
                     return;
                 }
                 
+                console.log('[DatabaseManager.loadGraph] Graph metadata row:', graphRow);
                 const scale = graphRow ? graphRow.scale : 1;
                 const offset = graphRow ? { x: graphRow.offset_x, y: graphRow.offset_y } : { x: 0, y: 0 };
+                console.log('[DatabaseManager.loadGraph] Scale:', scale, 'Offset:', offset);
 
                 // Load all nodes
+                console.log('[DatabaseManager.loadGraph] Loading nodes...');
                 this.db.all('SELECT * FROM nodes', (err, nodeRows) => {
                     if (err) {
+                        console.error('[DatabaseManager.loadGraph] Error loading nodes:', err);
                         reject(err);
                         return;
                     }
 
+                    console.log('[DatabaseManager.loadGraph] Found nodes:', nodeRows.length);
+                    console.log('[DatabaseManager.loadGraph] Node rows:', nodeRows);
+
                     // Load all edges
+                    console.log('[DatabaseManager.loadGraph] Loading edges...');
                     this.db.all('SELECT * FROM edges', (err, edgeRows) => {
                         if (err) {
+                            console.error('[DatabaseManager.loadGraph] Error loading edges:', err);
                             reject(err);
                             return;
                         }
 
-                        const nodes = nodeRows.map(row => ({
-                            id: bufferToUuid(row.id),
-                            x: row.x,
-                            y: row.y,
-                            label: row.label,
-                            chineseLabel: row.chinese_label || '',
-                            color: row.color,
-                            radius: row.radius,
-                            category: row.category
-                        }));
+                        console.log('[DatabaseManager.loadGraph] Found edges:', edgeRows.length);
+                        console.log('[DatabaseManager.loadGraph] Edge rows:', edgeRows);
 
-                        const edges = edgeRows.map(row => ({
-                            id: bufferToUuid(row.id),
-                            from: bufferToUuid(row.from_node_id),
-                            to: bufferToUuid(row.to_node_id),
-                            weight: row.weight,
-                            category: row.category
-                        }));
+                        const nodes = nodeRows.map(row => {
+                            const node = {
+                                id: bufferToUuid(row.id),
+                                x: row.x,
+                                y: row.y,
+                                label: row.label,
+                                chineseLabel: row.chinese_label || '',
+                                color: row.color,
+                                radius: row.radius,
+                                category: row.category
+                            };
+                            console.log('[DatabaseManager.loadGraph] Processed node:', node);
+                            return node;
+                        });
+
+                        const edges = edgeRows.map(row => {
+                            const edge = {
+                                id: bufferToUuid(row.id),
+                                from: bufferToUuid(row.from_node_id),
+                                to: bufferToUuid(row.to_node_id),
+                                weight: row.weight,
+                                category: row.category
+                            };
+                            console.log('[DatabaseManager.loadGraph] Processed edge:', edge);
+                            return edge;
+                        });
 
                         const data = {
                             nodes,
@@ -290,6 +317,8 @@ async saveGraph(data) {
                             offset
                         };
 
+                        console.log('[DatabaseManager.loadGraph] Final data:', data);
+                        console.log('[DatabaseManager.loadGraph] Nodes count:', nodes.length, 'Edges count:', edges.length);
                         resolve(data);
                     });
                 });
@@ -298,6 +327,8 @@ async saveGraph(data) {
     }
 
     async listGraphs() {
+        console.log('[DatabaseManager.listGraphs] Listing graphs from:', this.dbPath);
+        
         return new Promise((resolve, reject) => {
             const query = `
                 SELECT 
@@ -313,23 +344,33 @@ async saveGraph(data) {
                     (SELECT COUNT(*) FROM nodes) as node_count,
                     (SELECT COUNT(*) FROM edges) as edge_count
                 FROM graphs
-                WHERE id = ?
                 ORDER BY modified_at DESC
             `;
 
-            this.db.all(query, [Buffer.from('00000000-0000-0000-0000-000000000000', 'hex')], (err, rows) => {
+            console.log('[DatabaseManager.listGraphs] Executing query:', query);
+            this.db.all(query, (err, rows) => {
                 if (err) {
+                    console.error('[DatabaseManager.listGraphs] Error listing graphs:', err);
                     reject(err);
                 } else {
-                    const graphs = rows.map(row => ({
-                        id: bufferToUuid(row.id),
-                        name: row.name,
-                        description: row.description || '',
-                        nodeCount: row.node_count,
-                        edgeCount: row.edge_count,
-                        lastModified: new Date(row.modified_at),
-                        created: new Date(row.created_at)
-                    }));
+                    console.log('[DatabaseManager.listGraphs] Found graphs:', rows.length);
+                    console.log('[DatabaseManager.listGraphs] Raw rows:', rows);
+                    
+                    const graphs = rows.map(row => {
+                        const graph = {
+                            id: bufferToUuid(row.id),
+                            name: row.name,
+                            description: row.description || '',
+                            nodeCount: row.node_count,
+                            edgeCount: row.edge_count,
+                            lastModified: new Date(row.modified_at),
+                            created: new Date(row.created_at)
+                        };
+                        console.log('[DatabaseManager.listGraphs] Processed graph:', graph);
+                        return graph;
+                    });
+                    
+                    console.log('[DatabaseManager.listGraphs] Final graphs:', graphs);
                     resolve(graphs);
                 }
             });

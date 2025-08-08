@@ -179,13 +179,13 @@ function createWindow() {
 }
 
 // IPC handlers for database files
-ipcMain.handle('save-graph-file', async (event, data, graphId) => {
+ipcMain.handle('save-graph-file', async (event, data) => {
     try {
         const result = await dialog.showSaveDialog(mainWindow, {
             filters: [
                 { name: 'SQLite Database', extensions: ['db'] }
             ],
-            defaultPath: `${graphId || 'graph'}.db`
+            defaultPath: 'graph.db'
         });
         
         if (result.canceled) {
@@ -198,14 +198,12 @@ ipcMain.handle('save-graph-file', async (event, data, graphId) => {
         await dbManager.init();
         
         // Save the graph data
-        const finalGraphId = graphId || `graph-${Date.now()}`;
-        await dbManager.saveGraph(finalGraphId, data);
+        await dbManager.saveGraph(data);
         await dbManager.close();
         
         return { 
             success: true, 
             fileName: path.basename(result.filePath),
-            graphId: finalGraphId,
             filePath: result.filePath
         };
     } catch (error) {
@@ -231,20 +229,13 @@ ipcMain.handle('open-graph-file', async () => {
         const dbManager = new DatabaseManager(filePath);
         await dbManager.init();
         
-        // Get the first available graph
-        const graphs = await dbManager.listGraphs();
-        if (graphs.length === 0) {
-            await dbManager.close();
-            return { success: false, error: 'No graphs found in database' };
-        }
-        
-        const graphData = await dbManager.loadGraph(graphs[0].id);
+        // Get the graph data
+        const graphData = await dbManager.loadGraph();
         await dbManager.close();
         
         return { 
             success: true, 
             graphData,
-            graphId: graphs[0].id,
             fileName: path.basename(filePath),
             filePath: filePath
         };
@@ -263,20 +254,18 @@ ipcMain.handle('save-graph', async (event, data, filePath) => {
     }
 });
 
-ipcMain.handle('save-graph-file-request', async (event, filePath, data, graphId) => {
+ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
     try {
         const DatabaseManager = require('./database-manager');
         const dbManager = new DatabaseManager(filePath);
         await dbManager.init();
         
-        const finalGraphId = graphId || `graph-${Date.now()}`;
-        await dbManager.saveGraph(finalGraphId, data);
+        await dbManager.saveGraph(data);
         await dbManager.close();
         
         return { 
             success: true, 
             fileName: path.basename(filePath),
-            graphId: finalGraphId,
             filePath: filePath
         };
     } catch (error) {

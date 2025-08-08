@@ -126,14 +126,7 @@ function setupEventListeners() {
                     console.log('Database now pointing to:', dbManager.dbPath);
                     
                     // Load the graph data from the new database
-                    const graphs = await dbManager.listGraphs();
-                    if (graphs.length > 0) {
-                        const graphData = await dbManager.loadGraph();
-                        loadGraphData(graphData);
-                    } else {
-                        console.log('No graphs found in new database');
-                        loadGraphData({nodes: [], edges: [], scale: 1, offset: {x: 0, y: 0}});
-                                        }
+                    await loadGraphFromDatabase();
                 } else {
                     // Fallback to using the returned data
                     loadGraphData(result.graphData);
@@ -199,13 +192,9 @@ function setupIPC() {
                         console.log('Opening database via openFile:', result.filePath);
                         await dbManager.openFile(result.filePath);
                         console.log('Database switched to:', result.filePath);
-                    }
-                    
-                    // Load the most recent graph from the new database
-                    await loadGraphFromDatabase();
-                    
-                    // Use the returned data if no graphs found in database
-                    if (graph.nodes.length === 0 && result.graphData && result.graphData.nodes && result.graphData.nodes.length > 0) {
+                        await loadGraphFromDatabase();
+                    } else if (result.graphData) {
+                        // Fallback to using the returned data
                         loadGraphData(result.graphData);
                     }
                     
@@ -284,28 +273,41 @@ function setupIPC() {
 }
 
 async function initializeDatabase() {
+    console.log('[initializeDatabase] Starting database initialization...');
+    
     if (typeof require !== 'undefined') {
         try {
+            console.log('[initializeDatabase] Electron mode detected');
             const DatabaseManager = require('./database-manager');
+            console.log('[initializeDatabase] DatabaseManager loaded successfully');
+            
             dbManager = new DatabaseManager();
+            console.log('[initializeDatabase] DatabaseManager instance created');
+            console.log('[initializeDatabase] Initial database path:', dbManager.dbPath);
             
             try {
+                console.log('[initializeDatabase] Calling dbManager.init()...');
                 await dbManager.init();
+                console.log('[initializeDatabase] Database initialized successfully');
                 
                 // Automatically load the most recent graph
+                console.log('[initializeDatabase] Loading most recent graph...');
                 await loadGraphFromDatabase();
             } catch (error) {
-                console.error('Error initializing database:', error);
+                console.error('[initializeDatabase] Error initializing database:', error);
+                console.error('[initializeDatabase] Error stack:', error.stack);
                 // Fallback to default graph
+                console.log('[initializeDatabase] Falling back to default graph');
                 await loadDefaultGraph();
             }
         } catch (error) {
-            console.log('DatabaseManager not available, using web mode');
+            console.error('[initializeDatabase] Error loading DatabaseManager:', error);
+            console.log('[initializeDatabase] Falling back to web mode');
             await loadDefaultGraph();
         }
     } else {
         // Web mode - use default graph
-        console.log('Running in web mode (no require)');
+        console.log('[initializeDatabase] Running in web mode (no require)');
         await loadDefaultGraph();
     }
 }
@@ -523,34 +525,69 @@ async function openFromDatabase() {
 }
 
 async function loadGraphFromDatabase() {
-    if (!dbManager) return;
+    if (!dbManager) {
+        console.error('[loadGraphFromDatabase] No database manager available');
+        return;
+    }
+    
+    console.log('[loadGraphFromDatabase] Starting to load graph from database...');
+    console.log('[loadGraphFromDatabase] Database path:', dbManager.dbPath);
+    
+    // CRITICAL: Disable auto-save during load to prevent data loss
+    if (window.saveTimeout) {
+        clearTimeout(window.saveTimeout);
+        console.log('[loadGraphFromDatabase] Auto-save disabled during load');
+    }
     
     try {
+        console.log('[loadGraphFromDatabase] Calling dbManager.loadGraph()...');
         const data = await dbManager.loadGraph();
-        if (data) {
+        console.log('[loadGraphFromDatabase] Received data from dbManager:', data);
+        
+        if (data && data.nodes && data.nodes.length > 0) {
+            console.log('[loadGraphFromDatabase] Loading graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
             loadGraphData(data);
             appState.isModified = false;
             showNotification('Graph loaded from database!');
+        } else if (data && data.nodes && data.nodes.length === 0) {
+            console.log('[loadGraphFromDatabase] Empty graph loaded from database');
+            loadGraphData({nodes: [], edges: [], scale: 1, offset: {x: 0, y: 0}});
         } else {
-            // Empty database - start fresh
-            console.log('Empty database, starting fresh');
+            console.log('[loadGraphFromDatabase] No valid data returned from database, creating default graph');
+            console.log('[loadGraphFromDatabase] Data structure:', JSON.stringify(data, null, 2));
             await loadDefaultGraph();
         }
     } catch (error) {
-        console.error('Error loading graph from database:', error);
+        console.error('[loadGraphFromDatabase] Error loading graph from database:', error);
+        console.error('[loadGraphFromDatabase] Error stack:', error.stack);
         showNotification('Error loading graph: ' + error.message, 'error');
     }
 }
 
 function loadGraphData(data) {
+    console.log('[loadGraphData] Loading graph data:', data);
+    console.log('[loadGraphData] Nodes count:', data?.nodes?.length || 0);
+    console.log('[loadGraphData] Edges count:', data?.edges?.length || 0);
+    
+    if (!data || !data.nodes || !data.edges) {
+        console.error('[loadGraphData] Invalid data structure:', data);
+        return;
+    }
+    
     graph.importData(data);
     
     appState.undoStack = [];
     appState.redoStack = [];
     appState.isModified = false;
     
+    console.log('[loadGraphData] Graph imported successfully');
+    console.log('[loadGraphData] Current nodes:', graph.nodes.length);
+    console.log('[loadGraphData] Current edges:', graph.edges.length);
+    
     updateGraphInfo();
-    saveState();
+    // CRITICAL: Do NOT call saveState() during load - it triggers auto-save which overwrites the database!
+    // Instead, just render the graph without triggering any save operations
+    graph.render();
 }
 
 function exportSVG() {
@@ -993,8 +1030,13 @@ function loadDefaultGraph() {
     graph.addEdge(node1.id, node2.id, 1);
     graph.addEdge(node2.id, node3.id, 2);
     
-    saveState();
+    // CRITICAL: Don't trigger saveState() during initial load - it overwrites database!
+    // Only update UI without triggering save operations
+    appState.undoStack = [];
+    appState.redoStack = [];
+    appState.isModified = false;
     updateGraphInfo();
+    graph.render();
 }
 
 // CSS for notifications and dialogs
