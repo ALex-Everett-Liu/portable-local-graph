@@ -142,7 +142,18 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | `filterLocalGraph(centerNodeId, maxDistance, maxDepth)` | Returns filtered subgraph | centerNodeId: string, maxDistance: number, maxDepth: number | Object with filtered nodes and edges |
 | `applyLocalGraphFilter(centerNodeId, maxDistance, maxDepth)` | Applies filter and centers view | centerNodeId: string, maxDistance: number, maxDepth: number | boolean success |
 | `resetFilter()` | Restores original graph | None | boolean success |
-| `getAllNodes()` | Returns node list for dropdown population | None | Array of node objects |
+| `getAllNodes()` | Returns node list for search functionality | None | Array of node objects |
+
+### Search System - Intelligent Node Navigation
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `setupSearchComponents()` | Initialize search UI and event handlers | None | void |
+| `handleNodeSearch(query, container, type)` | Real-time node search with filtering | query: string, container: HTMLElement, type: string | void |
+| `renderSearchResults(results, container, type)` | Display search results with highlighting | results: array, container: HTMLElement, type: string | void |
+| `selectAndCenterNode(nodeId)` | Center view on selected node | nodeId: string | void |
+| `highlightSearchResults(results)` | Apply visual highlighting to matches | results: array | void |
+| `clearNodeHighlighting()` | Remove search highlights | None | void |
+| `handleSearchKeydown(e, container, type)` | Keyboard navigation for search results | e: KeyboardEvent, container: HTMLElement, type: string | void |
 
 ### View Management System
 | Function | Purpose | Parameters | Returns |
@@ -452,6 +463,21 @@ Apply filter → View subgraph → Save configuration → Quick access for futur
 Create filter configuration → Save with descriptive name → 
 Access from quick access panel → Apply with one click → 
 Manage saved configurations → Delete unused views
+```
+
+### 9. Search Navigation Workflow
+```
+Press 'F' key → Type node name → See real-time results → 
+Use arrow keys to navigate → Press Enter to select → 
+View centers on selected node → Clear search to reset
+```
+
+### 10. Large Graph Filtering Workflow
+```
+Load graph with thousands of nodes → Use search to find center → 
+Set distance/depth parameters → Apply filter → 
+View focused subgraph → Save configuration → 
+Access saved view with one click later
 ```
 
 ---

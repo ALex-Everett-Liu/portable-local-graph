@@ -233,6 +233,10 @@ class Graph {
                 this.ctx.fillStyle = '#007bff';
                 this.ctx.strokeStyle = '#0056b3';
                 this.ctx.lineWidth = 3 / this.scale;
+            } else if (node.highlighted) {
+                this.ctx.fillStyle = node.color;
+                this.ctx.strokeStyle = '#ffc107';
+                this.ctx.lineWidth = 4 / this.scale;
             } else {
                 this.ctx.fillStyle = node.color;
                 this.ctx.strokeStyle = '#2563eb';

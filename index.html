@@ -133,29 +133,46 @@
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>Local Graph Filter</h3>
-                    <div class="filter-controls">
-                        <label>Center Node:</label>
-                        <select id="center-node-select">
-                            <option value="">Select a node...</option>
-                        </select>
-                        
-                        <label>Max Distance:</label>
-                        <input type="range" id="max-distance" min="0.1" max="30" value="10" step="0.1">
-                        <span id="distance-value">10</span>
-                        
-                        <label>Max Depth:</label>
-                        <input type="range" id="max-depth" min="1" max="10" value="3" step="1">
-                        <span id="depth-value">3</span>
-                        
-                        <button id="apply-filter-btn" class="tool-btn">Apply Filter</button>
-                        <button id="reset-filter-btn" class="tool-btn">Reset</button>
-                        <button id="save-view-btn" class="tool-btn">Save View</button>
-                    </div>
+                    <h3>Search & Filter</h3>
                     
-                    <div class="quick-access">
-                        <h4>Quick Access</h4>
-                        <div id="quick-access-list"></div>
+                    <div class="sidebar-section">
+                        <h4>Node Search</h4>
+                        <div class="search-container">
+                            <input type="text" id="node-search" placeholder="Search nodes by label..." autocomplete="off">
+                            <div id="search-results" class="search-dropdown hidden"></div>
+                        </div>
+                        <div class="search-controls" style="margin-top: 8px;">
+                            <button id="clear-search-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Clear</button>
+                            <span id="search-count" style="font-size: 11px; color: #666; margin-left: 8px;"></span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h4>Local Graph Filter</h4>
+                        <div class="filter-controls">
+                            <label>Center Node:</label>
+                            <div class="search-container">
+                                <input type="text" id="center-node-search" placeholder="Search nodes..." autocomplete="off">
+                                <div id="center-node-dropdown" class="search-dropdown hidden"></div>
+                            </div>
+                            
+                            <label>Max Distance:</label>
+                            <input type="range" id="max-distance" min="0.1" max="30" value="10" step="0.1">
+                            <span id="distance-value">10</span>
+                            
+                            <label>Max Depth:</label>
+                            <input type="range" id="max-depth" min="1" max="10" value="3" step="1">
+                            <span id="depth-value">3</span>
+                            
+                            <button id="apply-filter-btn" class="tool-btn">Apply Filter</button>
+                            <button id="reset-filter-btn" class="tool-btn">Reset</button>
+                            <button id="save-view-btn" class="tool-btn">Save View</button>
+                        </div>
+                        
+                        <div class="quick-access">
+                            <h4>Quick Access</h4>
+                            <div id="quick-access-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>

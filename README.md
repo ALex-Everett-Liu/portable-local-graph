@@ -130,11 +130,18 @@ Explore subgraphs using powerful distance-based filtering:
 - **Real-time Updates**: Adjust parameters and see results instantly
 
 #### Usage
-1. Select a center node from the dropdown
-2. Set maximum distance and depth using sliders
-3. Click "Apply Filter" to see the subgraph
-4. Save the configuration for future use
-5. Reset to view the full graph at any time
+1. **Search for center node**: Type in the search box to find nodes by English or Chinese labels
+2. **Set parameters**: Use sliders for maximum distance and depth
+3. **Apply filter**: Click "Apply Filter" to see the subgraph
+4. **Save configuration**: Store frequently used combinations
+5. **Reset anytime**: Click "Reset Filter" to view the full graph
+
+#### Search Integration
+- **Node Selection**: Search replaces dropdown for large graphs
+- **Real-time Results**: Instant filtering as you type
+- **Visual Feedback**: Yellow highlighting on matched nodes
+- **Keyboard Navigation**: Use arrow keys and Enter to select
+- **F Key Shortcut**: Press 'F' anywhere to focus search
 
 ### Working with Categories
 
@@ -149,6 +156,32 @@ You can now assign categories to both nodes and edges for better organization:
 - **Create categorized edges**: When connecting nodes, edges can be assigned categories
 - **Update categories**: Right-click edges to modify their category and weight
 - **Relationship types**: Use categories to define different types of relationships (e.g., "friend", "colleague", "family")
+
+### Intelligent Node Search
+
+Navigate large graphs efficiently with powerful search capabilities:
+
+#### Search Features
+- **Multi-language Support**: Search both English and Chinese node labels simultaneously
+- **Real-time Filtering**: Instant results as you type
+- **Visual Highlighting**: Yellow borders highlight matched nodes on canvas
+- **Keyboard Navigation**: Use arrow keys to navigate results, Enter to select
+- **F Key Shortcut**: Press 'F' anywhere to instantly focus search
+
+#### Search Integration
+- **Filter Center Selection**: Search replaces impractical dropdown menus
+- **Standalone Search**: Dedicated search component in sidebar for general node finding
+- **Clear Results**: One-click clearing of search highlights
+- **Result Counting**: Shows "X of Y nodes found" for immediate feedback
+
+#### Usage
+1. **General Search**: Use the sidebar search box to find any node
+2. **Filter Selection**: Use search in filter panel to select center nodes
+3. **Keyboard Shortcuts**: 
+   - Type to filter results
+   - Arrow keys to navigate
+   - Enter to select and center view
+   - Escape to clear
 
 ### Working with Modes
 

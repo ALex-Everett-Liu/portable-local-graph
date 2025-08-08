@@ -164,12 +164,14 @@ function setupEventListeners() {
     document.getElementById('node-delete').addEventListener('click', handleNodeDelete);
     
     // Filter controls
-    document.getElementById('center-node-select').addEventListener('change', updateFilterParams);
     document.getElementById('max-distance').addEventListener('input', updateDistanceDisplay);
     document.getElementById('max-depth').addEventListener('input', updateDepthDisplay);
     document.getElementById('apply-filter-btn').addEventListener('click', applyFilter);
     document.getElementById('reset-filter-btn').addEventListener('click', resetFilter);
     document.getElementById('save-view-btn').addEventListener('click', saveViewConfig);
+    
+    // Search functionality
+    setupSearchComponents();
     
     // Load saved quick access
     loadQuickAccess();
@@ -679,7 +681,6 @@ function updateGraphInfo() {
     document.getElementById('current-mode').textContent = 
         appState.mode.charAt(0).toUpperCase() + appState.mode.slice(1);
     
-    updateCenterNodeSelect();
     updateSelectionInfo();
 }
 
@@ -722,24 +723,228 @@ function updateSelectionInfo() {
     }
 }
 
-// Local Graph Filter functions
-function updateCenterNodeSelect() {
-    const select = document.getElementById('center-node-select');
-    const currentValue = select.value;
+// Search and Filter Functions
+function setupSearchComponents() {
+    const nodeSearchInput = document.getElementById('node-search');
+    const centerNodeSearchInput = document.getElementById('center-node-search');
+    const searchResults = document.getElementById('search-results');
+    const centerNodeDropdown = document.getElementById('center-node-dropdown');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
     
-    select.innerHTML = '<option value="">Select a node...</option>';
+    // Node search functionality
+    nodeSearchInput.addEventListener('input', (e) => handleNodeSearch(e.target.value, searchResults, 'search'));
+    nodeSearchInput.addEventListener('keydown', (e) => handleSearchKeydown(e, searchResults, 'search'));
     
-    graph.getAllNodes().forEach(node => {
-        const option = document.createElement('option');
-        option.value = node.id;
-        option.textContent = node.label + (node.chineseLabel ? ` (${node.chineseLabel})` : '');
-        select.appendChild(option);
+    // Center node search functionality
+    centerNodeSearchInput.addEventListener('input', (e) => handleNodeSearch(e.target.value, centerNodeDropdown, 'filter'));
+    centerNodeSearchInput.addEventListener('keydown', (e) => handleSearchKeydown(e, centerNodeDropdown, 'filter'));
+    
+    // Clear search
+    clearSearchBtn.addEventListener('click', clearNodeSearch);
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+            searchResults.classList.add('hidden');
+            centerNodeDropdown.classList.add('hidden');
+        }
     });
+}
+
+function handleNodeSearch(query, container, type) {
+    if (!query.trim()) {
+        container.classList.add('hidden');
+        if (type === 'search') clearNodeHighlighting();
+        return;
+    }
     
-    if (currentValue) {
-        select.value = currentValue;
+    const nodes = graph.getAllNodes();
+    const searchTerm = query.toLowerCase();
+    
+    const results = nodes.filter(node => 
+        node.label.toLowerCase().includes(searchTerm) ||
+        (node.chineseLabel && node.chineseLabel.toLowerCase().includes(searchTerm))
+    ).slice(0, 20); // Limit to 20 results for performance
+    
+    renderSearchResults(results, container, type, query);
+    
+    if (type === 'search') {
+        updateSearchCount(results.length, nodes.length);
+        highlightSearchResults(results);
     }
 }
+
+function renderSearchResults(results, container, type, query) {
+    container.innerHTML = '';
+    
+    if (results.length === 0) {
+        container.innerHTML = '<div class="search-result">No nodes found</div>';
+    } else {
+        results.forEach((node, index) => {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'search-result';
+            resultDiv.dataset.nodeId = node.id;
+            resultDiv.dataset.index = index;
+            
+            const labelMatch = highlightMatch(node.label, query);
+            const chineseMatch = node.chineseLabel ? highlightMatch(node.chineseLabel, query) : '';
+            
+            resultDiv.innerHTML = `
+                <div class="node-label">${labelMatch}</div>
+                ${chineseMatch ? `<div class="node-chinese">${chineseMatch}</div>` : ''}
+            `;
+            
+            resultDiv.addEventListener('click', () => {
+                if (type === 'search') {
+                    selectAndCenterNode(node.id);
+                } else {
+                    selectCenterNodeForFilter(node.id, node.label);
+                }
+                container.classList.add('hidden');
+            });
+            
+            container.appendChild(resultDiv);
+        });
+    }
+    
+    container.classList.remove('hidden');
+}
+
+function highlightMatch(text, query) {
+    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    if (index === -1) return text;
+    
+    const before = text.substring(0, index);
+    const match = text.substring(index, index + query.length);
+    const after = text.substring(index + query.length);
+    
+    return `${before}<strong style="background: #fff3cd;">${match}</strong>${after}`;
+}
+
+function handleSearchKeydown(e, container, type) {
+    if (container.classList.contains('hidden')) return;
+    
+    const results = container.querySelectorAll('.search-result');
+    const active = container.querySelector('.search-result.active');
+    
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (active) {
+            active.classList.remove('active');
+            const next = active.nextElementSibling;
+            if (next) next.classList.add('active');
+        } else {
+            results[0]?.classList.add('active');
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (active) {
+            active.classList.remove('active');
+            const prev = active.previousElementSibling;
+            if (prev) prev.classList.add('active');
+        } else {
+            results[results.length - 1]?.classList.add('active');
+        }
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const activeResult = container.querySelector('.search-result.active') || results[0];
+        if (activeResult) {
+            const nodeId = activeResult.dataset.nodeId;
+            const node = graph.nodes.find(n => n.id == nodeId);
+            
+            if (type === 'search') {
+                selectAndCenterNode(nodeId);
+            } else {
+                selectCenterNodeForFilter(nodeId, node.label);
+            }
+            container.classList.add('hidden');
+        }
+    } else if (e.key === 'Escape') {
+        container.classList.add('hidden');
+    }
+}
+
+function selectAndCenterNode(nodeId) {
+    const node = graph.nodes.find(n => n.id == nodeId);
+    if (!node) return;
+    
+    // Clear previous selections
+    graph.selectedNode = null;
+    graph.selectedEdge = null;
+    
+    // Select the node
+    graph.selectedNode = node;
+    
+    // Center the view on the node
+    graph.offset.x = -node.x * graph.scale + graph.canvas.width / 2;
+    graph.offset.y = -node.y * graph.scale + graph.canvas.height / 2;
+    
+    graph.render();
+    updateGraphInfo();
+    showNotification(`Selected: ${node.label}`);
+}
+
+function selectCenterNodeForFilter(nodeId, label) {
+    appState.filterParams.centerNodeId = nodeId;
+    document.getElementById('center-node-search').value = label;
+    document.getElementById('center-node-dropdown').classList.add('hidden');
+}
+
+function highlightSearchResults(results) {
+    // Clear previous highlighting
+    clearNodeHighlighting();
+    
+    // Add highlighting class to found nodes
+    results.forEach(node => {
+        const nodeIndex = graph.nodes.findIndex(n => n.id === node.id);
+        if (nodeIndex !== -1) {
+            graph.nodes[nodeIndex].highlighted = true;
+        }
+    });
+    
+    graph.render();
+}
+
+function clearNodeHighlighting() {
+    graph.nodes.forEach(node => {
+        delete node.highlighted;
+    });
+    graph.render();
+}
+
+function clearNodeSearch() {
+    document.getElementById('node-search').value = '';
+    document.getElementById('search-results').classList.add('hidden');
+    clearNodeHighlighting();
+    updateSearchCount(0, graph.nodes.length);
+}
+
+function updateSearchCount(found, total) {
+    const countElement = document.getElementById('search-count');
+    if (found > 0) {
+        countElement.textContent = `${found} of ${total} nodes`;
+        countElement.style.color = '#28a745';
+    } else if (document.getElementById('node-search').value.trim()) {
+        countElement.textContent = `No nodes found (${total} total)`;
+        countElement.style.color = '#dc3545';
+    } else {
+        countElement.textContent = `${total} nodes`;
+        countElement.style.color = '#666';
+    }
+}
+
+// Update graph info including search count
+function updateGraphInfo() {
+    document.getElementById('node-count').textContent = graph.nodes.length;
+    document.getElementById('edge-count').textContent = graph.edges.length;
+    document.getElementById('current-mode').textContent = 
+        appState.mode.charAt(0).toUpperCase() + appState.mode.slice(1);
+    
+    updateSelectionInfo();
+    updateSearchCount(0, graph.nodes.length);
+}
+
+// Local Graph Filter functions (updated to use search)
 
 function updateDistanceDisplay() {
     const value = document.getElementById('max-distance').value;
@@ -1045,6 +1250,7 @@ function handleKeyDown(e) {
     switch (e.key) {
         case 'Escape':
             setMode('select');
+            clearNodeSearch();
             break;
         case 'Delete':
         case 'Backspace':
@@ -1053,6 +1259,13 @@ function handleKeyDown(e) {
                 graph.deleteNode(appState.selectedNode.id);
                 updateGraphInfo();
                 appState.isModified = true;
+            }
+            break;
+        case 'f':
+        case 'F':
+            if (!e.target.closest('input')) {
+                e.preventDefault();
+                document.getElementById('node-search').focus();
             }
             break;
     }

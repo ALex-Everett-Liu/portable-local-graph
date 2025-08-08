@@ -133,6 +133,33 @@
 - **Migration Support**: Automatic detection and upgrade of existing database files
 - **Error Handling**: Robust handling of schema version mismatches
 
+## [0.2.1] - 2025-08-08
+
+### Added
+- **Comprehensive Search System**: Intelligent node search functionality for large graphs
+- **Real-time Node Search**: Instant filtering across English and Chinese labels
+- **Searchable Node Selection**: Replaced impractical dropdown with intelligent search
+- **Visual Search Results**: Yellow highlighting of matched nodes on canvas
+- **Keyboard Navigation**: F key to focus search, arrow keys for navigation, Enter for selection
+- **Standalone Search UI**: Dedicated search component in sidebar
+- **Search Integration**: Seamless integration with local graph filtering
+- **Clear Search Functionality**: One-click clearing of search results
+- **Result Counting**: Shows number of matches and total nodes
+
+### Technical Details
+- **Multi-language Support**: Searches both English labels and Chinese labels simultaneously
+- **Performance Optimized**: Limited to 20 results for large graphs
+- **Real-time Updates**: Instant visual feedback as you type
+- **Keyboard Shortcuts**: F key anywhere to focus search input
+- **Contextual Integration**: Works with both general search and filter center selection
+- **Persistent UI**: Search state maintained across graph operations
+
+### User Experience Improvements
+- **Large Graph Navigation**: Efficiently find nodes in graphs with thousands of elements
+- **Visual Feedback**: Yellow borders on search results for immediate recognition
+- **One-click Access**: Saved filter configurations remain accessible via quick access panel
+- **Smart Defaults**: Search automatically focuses when switching to relevant modes
+
 ## [0.2.0] - 2025-08-08
 
 ### Added
