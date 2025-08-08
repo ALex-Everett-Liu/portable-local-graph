@@ -23,8 +23,10 @@ class DatabaseManager {
     }
 
     async openFile(filePath) {
+        console.log('Opening database file:', filePath);
         await this.close();
         this.dbPath = filePath;
+        console.log('Database path set to:', this.dbPath);
         return await this.init();
     }
 

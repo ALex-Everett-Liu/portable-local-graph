@@ -85,21 +85,9 @@ function setupEventListeners() {
                 const { ipcRenderer } = require('electron');
                 console.log('Requesting save via IPC...');
                 
-                if (dbManager && currentGraphId) {
-                    // Save to current database (no dialog)
-                    await saveGraphToDatabase();
-                    showNotification('Graph saved to current file');
-                } else {
-                    // No current file - fallback to Save As
-                    const result = await ipcRenderer.invoke('save-graph-file', graph.exportData(), 'graph');
-                    if (result.success) {
-                        appState.isModified = false;
-                        currentGraphId = result.graphId;
-                        showNotification(`Graph saved as ${result.fileName}`);
-                    } else if (!result.cancelled) {
-                        showNotification('Error saving graph: ' + result.error, 'error');
-                    }
-                }
+                // Save to current database using the existing database manager
+                await saveGraphToDatabase();
+                showNotification('Graph saved to current file');
             } catch (error) {
                 console.error('Error saving file:', error);
                 showNotification('Error saving file: ' + error.message, 'error');
@@ -121,23 +109,42 @@ function setupEventListeners() {
         console.log('Load button clicked');
         
         if (typeof require !== 'undefined') {
-            // Electron mode - use proper IPC
-            try {
-                const { ipcRenderer } = require('electron');
-                console.log('Requesting file open via IPC...');
-                const result = await ipcRenderer.invoke('open-graph-file');
+            // Electron mode - use SAME mechanism as menu (Ctrl+O)
+            const { ipcRenderer } = require('electron');
+            console.log('Requesting file open via IPC (same as menu)...');
+            
+            // Use the same invoke as the menu uses
+            const result = await ipcRenderer.invoke('open-graph-file');
+            
+            if (result.success) {
+                console.log('File opened successfully:', result.filePath);
                 
-                if (result.success) {
+                // CRITICAL: Switch database to the new file and load from it
+                if (result.filePath && dbManager) {
+                    console.log('Switching database to:', result.filePath);
+                    await dbManager.openFile(result.filePath);
+                    console.log('Database now pointing to:', dbManager.dbPath);
+                    
+                    // Load the graph data from the new database
+                    const graphs = await dbManager.listGraphs();
+                    if (graphs.length > 0) {
+                        const graphData = await dbManager.loadGraph(graphs[0].id);
+                        loadGraphData(graphData);
+                        currentGraphId = graphs[0].id;
+                    } else {
+                        console.log('No graphs found in new database');
+                        loadGraphData({nodes: [], edges: [], scale: 1, offset: {x: 0, y: 0}});
+                        currentGraphId = uuidv7();
+                    }
+                } else {
+                    // Fallback to using the returned data
                     loadGraphData(result.graphData);
                     currentGraphId = result.graphId;
-                    appState.isModified = false;
-                    showNotification(`Graph opened from ${result.fileName}`);
-                } else if (!result.cancelled) {
-                    showNotification('Error opening graph: ' + result.error, 'error');
                 }
-            } catch (error) {
-                console.error('Error opening file:', error);
-                showNotification('Error opening file: ' + error.message, 'error');
+                appState.isModified = false;
+                showNotification(`Graph opened from ${result.fileName}`);
+            } else if (!result.cancelled) {
+                showNotification('Error opening graph: ' + result.error, 'error');
             }
         } else {
             // Web mode
@@ -190,13 +197,11 @@ function setupIPC() {
             
             ipcRenderer.on('open-graph-file-result', async (event, result) => {
                 if (result.success) {
-                    // Switch to the new database file
+                    // Switch to the new database file - USE THE SAME MECHANISM AS MENU
                     if (result.filePath && dbManager) {
-                        try {
-                            await dbManager.openFile(result.filePath);
-                        } catch (error) {
-                            console.error('Error switching database file:', error);
-                        }
+                        console.log('Opening database via openFile:', result.filePath);
+                        await dbManager.openFile(result.filePath);
+                        console.log('Database switched to:', result.filePath);
                     }
                     loadGraphData(result.graphData);
                     currentGraphId = result.graphId;
@@ -208,6 +213,10 @@ function setupIPC() {
             });
 
             ipcRenderer.on('save-current-graph', async () => {
+                console.log('Save triggered for current file');
+                console.log('Current graph ID:', currentGraphId);
+                console.log('Database path:', dbManager ? dbManager.dbPath : 'no db manager');
+                
                 if (dbManager && currentGraphId) {
                     await saveGraphToDatabase();
                     showNotification('Graph saved to current file');

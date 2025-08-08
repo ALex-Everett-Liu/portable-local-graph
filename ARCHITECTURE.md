@@ -175,6 +175,31 @@ distanceToLineSegment(px, py, x1, y1, x2, y2) {
 **Problem**: JSON files don't provide real-time persistence and can lose data on crashes
 **Solution**: SQLite database as primary storage with JSON as backup format
 
+### 6. Unified File Operations
+**Problem**: Menu items and toolbar buttons used different code paths for file operations
+**Solution**: Centralized database context switching with consistent save/load mechanisms
+
+**Implementation**:
+```javascript
+// Unified file operations across all UI elements
+// Load button now uses same mechanism as Ctrl+O menu
+const result = await ipcRenderer.invoke('open-graph-file');
+if (result.success) {
+    await dbManager.openFile(result.filePath);  // Switch database context
+    const graphs = await dbManager.listGraphs();  // Load fresh data
+    const graphData = await dbManager.loadGraph(graphs[0].id);
+    loadGraphData(graphData);  // Use data from switched database
+}
+```
+
+**Benefits**:
+- Consistent behavior between menu items and toolbar buttons
+- Proper database context switching after file selection
+- Elimination of stale data issues from IPC-based loading
+- Unified save target (always saves to currently loaded database)
+
+### 5. Database-first Storage Architecture
+
 ```javascript
 // Real-time database persistence
 let dbManager = null;

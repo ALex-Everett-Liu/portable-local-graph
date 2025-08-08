@@ -133,6 +133,20 @@
 - **Migration Support**: Automatic detection and upgrade of existing database files
 - **Error Handling**: Robust handling of schema version mismatches
 
+## [0.1.11] - 2025-08-08
+
+### Fixed
+- **Save/Load Button Consistency**: Fixed database context switching between menu items and toolbar buttons
+- **Database File Switching**: Load button now properly switches to new database file like Ctrl+O menu
+- **Data Loading**: Resolved empty graph issue after loading database files
+- **Unified File Operations**: All save/load operations now use consistent underlying mechanisms
+
+### Technical Details
+- **Database Context**: Fixed load button to switch database context properly after file selection
+- **Data Freshness**: Load button now loads graph data from switched database instead of using IPC stale data
+- **Save Target**: Save button now consistently saves to currently loaded database file
+- **Code Path Unification**: Eliminated duplicate code paths between menu and button operations
+
 ## [0.1.10] - 2025-08-08
 
 ### Added

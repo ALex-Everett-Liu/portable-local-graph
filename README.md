@@ -103,6 +103,8 @@ The application now uses **SQLite database as primary storage** with JSON as bac
 - **Graph selection**: Browse available graphs with interactive dialog
 - **No data loss**: Survives crashes and browser restarts
 - **Multiple graphs**: Support for unlimited saved graphs
+- **Consistent file operations**: Unified save/load behavior across menu and toolbar buttons
+- **Proper context switching**: Save button always saves to currently loaded database file
 
 #### **JSON Format (Backup/Export)**
 - **Import/Export**: JSON files for backup and sharing
