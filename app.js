@@ -169,6 +169,7 @@ function setupEventListeners() {
     document.getElementById('apply-filter-btn').addEventListener('click', applyFilter);
     document.getElementById('reset-filter-btn').addEventListener('click', resetFilter);
     document.getElementById('save-view-btn').addEventListener('click', saveViewConfig);
+    document.getElementById('analyze-distances-btn').addEventListener('click', showDistanceAnalysis);
     
     // Search functionality
     setupSearchComponents();
@@ -181,6 +182,115 @@ function setupEventListeners() {
     
     // Window events
     window.addEventListener('beforeunload', handleBeforeUnload);
+}
+
+// Distance Analysis Functions
+function showDistanceAnalysis() {
+    if (!appState.filterParams.centerNodeId) {
+        showNotification('Please select a center node first', 'error');
+        return;
+    }
+
+    const centerNode = graph.nodes.find(n => n.id === appState.filterParams.centerNodeId);
+    if (!centerNode) {
+        showNotification('Selected center node not found', 'error');
+        return;
+    }
+
+    try {
+        const analysis = graph.analyzeDistancesTable(
+            appState.filterParams.centerNodeId,
+            appState.filterParams.maxDistance,
+            appState.filterParams.maxDepth
+        );
+
+        if (analysis.nodes.length === 0) {
+            showNotification('No nodes found within the specified constraints', 'info');
+            return;
+        }
+
+        displayDistanceAnalysisTable(analysis);
+    } catch (error) {
+        showNotification('Error analyzing distances: ' + error.message, 'error');
+    }
+}
+
+function displayDistanceAnalysisTable(analysis) {
+    const dialog = createDistanceAnalysisDialog(analysis);
+    document.body.appendChild(dialog);
+}
+
+function createDistanceAnalysisDialog(analysis) {
+    const dialog = document.createElement('div');
+    dialog.id = 'distance-analysis-dialog';
+    dialog.className = 'dialog-overlay';
+    dialog.innerHTML = `
+        <div class="dialog-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Distance Analysis - ${analysis.centerNode.label}</h3>
+                <button onclick="closeDistanceAnalysis()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+            </div>
+            
+            <div style="margin-bottom: 15px; font-size: 14px; color: #666;">
+                Center: <strong>${analysis.centerNode.label}</strong> | 
+                Max Distance: ${appState.filterParams.maxDistance} | 
+                Max Depth: ${appState.filterParams.maxDepth} | 
+                Total Nodes: ${analysis.totalCount}
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6;">Node</th>
+                            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #dee2e6;">Distance</th>
+                            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #dee2e6;">Depth</th>
+                            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #dee2e6;">Position</th>
+                            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #dee2e6;">Color</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${analysis.nodes.map(node => `
+                            <tr style="border-bottom: 1px solid #dee2e6;">
+                                <td style="padding: 8px;">
+                                    <div style="font-weight: 500;">${node.label}</div>
+                                    ${node.chineseLabel ? `<div style="font-size: 12px; color: #666;">${node.chineseLabel}</div>` : ''}
+                                </td>
+                                <td style="padding: 8px; text-align: center; font-weight: 500;">${node.distance.toFixed(2)}</td>
+                                <td style="padding: 8px; text-align: center;">${node.depth}</td>
+                                <td style="padding: 8px; text-align: center; font-family: monospace; font-size: 12px;">(${Math.round(node.x)}, ${Math.round(node.y)})</td>
+                                <td style="padding: 8px; text-align: center;">
+                                    <span style="display: inline-block; width: 20px; height: 20px; background-color: ${node.color}; border-radius: 3px; border: 1px solid #ccc;"></span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeDistanceAnalysis()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Close on overlay click
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            closeDistanceAnalysis();
+        }
+    });
+
+    return dialog;
+}
+
+function closeDistanceAnalysis() {
+    const dialog = document.getElementById('distance-analysis-dialog');
+    if (dialog) {
+        dialog.remove();
+    }
 }
 
 function setupIPC() {
@@ -1533,6 +1643,88 @@ style.textContent = `
     
     .graph-selector-dialog button:hover {
         background: #f0f0f0;
+    }
+    
+    #distance-analysis-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    #distance-analysis-dialog .dialog-content {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-width: 900px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    #distance-analysis-dialog h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+        font-size: 18px;
+    }
+    
+    #distance-analysis-dialog table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    
+    #distance-analysis-dialog th,
+    #distance-analysis-dialog td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    #distance-analysis-dialog th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        font-size: 13px;
+    }
+    
+    #distance-analysis-dialog td {
+        font-size: 13px;
+    }
+    
+    #distance-analysis-dialog tr:hover {
+        background: #f8f9fa;
+    }
+    
+    #distance-analysis-dialog .node-label {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    #distance-analysis-dialog .node-chinese {
+        font-size: 12px;
+        color: #666;
+        margin-top: 2px;
+    }
+    
+    #distance-analysis-dialog .color-swatch {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
     }
 `;
 document.head.appendChild(style);

@@ -558,6 +558,49 @@ class Graph {
         return false;
     }
 
+    // Distance analysis table functionality
+    analyzeDistancesTable(centerNodeId, maxDistance = 10, maxDepth = 5) {
+        const centerNode = this.nodes.find(n => n.id === centerNodeId);
+        if (!centerNode) {
+            return { nodes: [], centerNode: null };
+        }
+
+        const { distances, depths } = this.calculateDistances(centerNodeId, maxDistance, maxDepth);
+        
+        // Create analysis data for all reachable nodes
+        const analysisData = [];
+        distances.forEach((distance, nodeId) => {
+            const node = this.nodes.find(n => n.id === nodeId);
+            if (node) {
+                analysisData.push({
+                    id: node.id,
+                    label: node.label,
+                    chineseLabel: node.chineseLabel || '',
+                    x: node.x,
+                    y: node.y,
+                    distance: distance,
+                    depth: depths.get(nodeId) || 0,
+                    color: node.color,
+                    radius: node.radius
+                });
+            }
+        });
+
+        // Sort by distance then by depth
+        analysisData.sort((a, b) => {
+            if (a.distance !== b.distance) {
+                return a.distance - b.distance;
+            }
+            return a.depth - b.depth;
+        });
+
+        return {
+            nodes: analysisData,
+            centerNode: centerNode,
+            totalCount: analysisData.length
+        };
+    }
+
     getAllNodes() {
         return this.nodes.map(node => ({
             id: node.id,
