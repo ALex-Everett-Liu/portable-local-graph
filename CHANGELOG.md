@@ -160,6 +160,28 @@
 - **One-click Access**: Saved filter configurations remain accessible via quick access panel
 - **Smart Defaults**: Search automatically focuses when switching to relevant modes
 
+## [0.2.6] - 2025-08-09
+
+### Added
+- **Resizable Sidebar**: Users can now freely adjust sidebar width by dragging the resize handle
+- **Persistent Width Settings**: Sidebar width automatically saved to localStorage and restored on page reload
+- **Responsive Constraints**: Smart width limits (200px min, 60% viewport max) prevent usability issues
+- **Visual Feedback**: Hover and active states for resize handle with smooth cursor transitions
+- **Window Resize Handling**: Automatic adjustment when window size changes below saved width
+
+### Technical Details
+- **Drag Implementation**: Mouse event handlers for smooth drag-to-resize functionality
+- **localStorage Integration**: Width preferences persist across browser sessions
+- **Boundary Enforcement**: Real-time validation prevents excessive sizing
+- **Performance Optimized**: CSS transforms and efficient event handling for smooth interaction
+- **Responsive Design**: Automatically adapts to viewport constraints
+
+### User Experience
+- **One-hand Operation**: Simple drag gesture for width adjustment
+- **Persistent Preferences**: Width settings remembered between sessions
+- **Smooth Interaction**: Real-time width adjustment during drag operations
+- **Visual Cues**: Clear resize handle with hover/active feedback
+
 ## [0.2.5] - 2025-08-09
 
 ### Fixed
