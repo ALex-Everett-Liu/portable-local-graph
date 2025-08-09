@@ -230,6 +230,77 @@ async function newGraph() {
 - **Database protection**: Load operations never modify source files
 - **Clear intent**: User actions have predictable outcomes
 
+### 5.1 Critical Data Loss Incident - Lessons Learned
+**Incident**: Filtering system caused complete data loss when saving filtered graphs
+
+**Root Cause Analysis**:
+- **Design Flaw**: `exportData()` method only exported currently filtered data
+- **User Impact**: Original complete graph data was permanently overwritten
+- **Timing**: Occurred when users applied filters then saved their work
+- **Severity**: Complete data loss with no recovery mechanism
+
+**Technical Details**:
+```javascript
+// BUGGY CODE - Original implementation
+exportData() {
+    return {
+        nodes: this.nodes,        // Only filtered nodes!
+        edges: this.edges,        // Only filtered edges!
+        scale: this.scale,
+        offset: this.offset
+    };
+}
+
+// FIXED CODE - Smart merge implementation
+exportData() {
+    if (this.originalNodes && this.originalEdges) {
+        // Merge strategy: original data + new changes
+        const mergedNodes = mergeOriginalWithChanges(
+            this.originalNodes, 
+            this.nodes
+        );
+        const mergedEdges = mergeOriginalWithChanges(
+            this.originalEdges, 
+            this.edges
+        );
+        return { nodes: mergedNodes, edges: mergedEdges, ... };
+    }
+    return { nodes: this.nodes, edges: this.edges, ... };
+}
+```
+
+**Prevention Strategies Implemented**:
+1. **Smart Data Merging**: Original data preserved + new changes integrated
+2. **State Tracking**: `originalNodes`/`originalEdges` arrays maintain reference
+3. **Change Detection**: New nodes/edges identified and preserved
+4. **Update Propagation**: Modifications to existing nodes/edges properly merged
+5. **Zero Data Loss**: Complete original graph always recoverable
+
+**Developer Safeguards**:
+- **Comprehensive Testing**: Filter-save-reset workflows thoroughly tested
+- **Data Validation**: Export data structure validation before save operations
+- **Backup Verification**: Original data integrity checks during reset operations
+- **User Feedback**: Clear notifications for filter state and save operations
+
+**User Communication**:
+- **Filter State Indicator**: Visual warning when in filtered mode
+- **Save Confirmation**: Explicit confirmation for filtered state saves
+- **Reset Safety**: Filter reset preserves all data including new additions
+- **Documentation**: Clear user guidance on filter behavior and data safety
+
+**Testing Protocol**:
+1. **Filter-Save-Reset**: Verify complete data preservation
+2. **New Node Creation**: Ensure filter-state additions are saved
+3. **Edge Modifications**: Validate changes propagate correctly
+4. **Cross-Session**: Test persistence across browser sessions
+5. **Import/Export**: Verify JSON compatibility with merged data
+
+**Long-term Architecture Impact**:
+- **Immutable Data Patterns**: Consider immutable state management
+- **Event Sourcing**: Potential for complete change history
+- **Snapshot System**: Periodic complete state backups
+- **Recovery Mechanisms**: Automatic data recovery from corrupted states
+
 ### 5. Database-first Storage Architecture
 
 ```javascript

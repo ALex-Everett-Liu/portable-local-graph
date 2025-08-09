@@ -160,6 +160,27 @@
 - **One-click Access**: Saved filter configurations remain accessible via quick access panel
 - **Smart Defaults**: Search automatically focuses when switching to relevant modes
 
+## [0.2.5] - 2025-08-09
+
+### Fixed
+- **CRITICAL: Data Loss Prevention in Filter Mode**: Fixed severe bug causing complete data loss when saving filtered graphs
+- **Smart Data Merging**: Original complete graph data now preserved when saving from filtered view
+- **Filter State Data Integrity**: New nodes/edges created in filter mode are properly saved
+- **Zero Data Loss Guarantee**: Complete original graph always recoverable after filter operations
+
+### Technical Details
+- **Export Data Fix**: Modified `exportData()` method to intelligently merge original data with new changes
+- **State Tracking**: Added `originalNodes`/`originalEdges` arrays to maintain complete data reference
+- **Change Detection**: Identifies and preserves new nodes/edges created during filtering
+- **Update Propagation**: Ensures modifications to existing nodes/edges are properly merged
+- **Comprehensive Testing**: Added test protocol for filter-save-reset workflows
+
+### User Experience
+- **Filter Safety**: No data loss when applying filters and saving
+- **New Data Preservation**: Nodes/edges created in filter mode are saved to complete graph
+- **Reset Confidence**: Filter reset always returns complete original graph
+- **Clear Notifications**: Visual feedback for filter state and save operations
+
 ## [0.2.4] - 2025-08-09
 
 ### Added

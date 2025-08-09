@@ -427,6 +427,60 @@ class Graph {
     }
 
     exportData() {
+        // If currently filtered, merge new changes with original data
+        if (this.originalNodes && this.originalEdges) {
+            // Create maps for efficient lookup
+            const originalNodeMap = new Map(this.originalNodes.map(n => [n.id, n]));
+            const currentNodeMap = new Map(this.nodes.map(n => [n.id, n]));
+            
+            // Start with original nodes, then add/update with current nodes
+            const mergedNodes = [...this.originalNodes];
+            
+            // Add new nodes (that don't exist in original)
+            this.nodes.forEach(currentNode => {
+                if (!originalNodeMap.has(currentNode.id)) {
+                    mergedNodes.push(currentNode);
+                }
+            });
+            
+            // Update existing nodes with any changes
+            mergedNodes.forEach((node, index) => {
+                if (currentNodeMap.has(node.id)) {
+                    const currentNode = currentNodeMap.get(node.id);
+                    mergedNodes[index] = { ...currentNode };
+                }
+            });
+            
+            // Same process for edges
+            const originalEdgeMap = new Map(this.originalEdges.map(e => [e.id, e]));
+            const currentEdgeMap = new Map(this.edges.map(e => [e.id, e]));
+            
+            const mergedEdges = [...this.originalEdges];
+            
+            // Add new edges
+            this.edges.forEach(currentEdge => {
+                if (!originalEdgeMap.has(currentEdge.id)) {
+                    mergedEdges.push(currentEdge);
+                }
+            });
+            
+            // Update existing edges
+            mergedEdges.forEach((edge, index) => {
+                if (currentEdgeMap.has(edge.id)) {
+                    const currentEdge = currentEdgeMap.get(edge.id);
+                    mergedEdges[index] = { ...currentEdge };
+                }
+            });
+            
+            return {
+                nodes: mergedNodes,
+                edges: mergedEdges,
+                scale: this.scale,
+                offset: this.offset
+            };
+        }
+        
+        // Not filtered, export current data
         return {
             nodes: this.nodes,
             edges: this.edges,
