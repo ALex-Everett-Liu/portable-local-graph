@@ -160,6 +160,25 @@
 - **One-click Access**: Saved filter configurations remain accessible via quick access panel
 - **Smart Defaults**: Search automatically focuses when switching to relevant modes
 
+## [0.2.4] - 2025-08-09
+
+### Added
+- **Edge Deletion from Properties Dialog**: Added missing delete button to edge properties dialog
+- **Consistent UX**: Edge dialog now matches node dialog with OK, Cancel, and Delete options
+- **Direct Edge Deletion**: Users can now delete edges directly from the properties dialog
+- **Visual Confirmation**: Red delete button for clear visual distinction
+
+### Technical Details
+- **Event Handler**: New `handleWeightDelete()` function for edge deletion from dialog
+- **State Management**: Proper cleanup after edge deletion including undo stack updates
+- **UI Consistency**: Edge properties dialog now has same button layout as node properties dialog
+- **Safety**: Edge deletion includes proper state management and visual updates
+
+### User Experience
+- **Accessible Deletion**: Right-click edge → Properties → Delete for immediate removal
+- **Consistent Interface**: Same three-button layout (OK, Cancel, Delete) as node editing
+- **Visual Feedback**: Clear confirmation when edge is successfully deleted
+
 ## [0.2.3] - 2025-08-09
 
 ### Added
