@@ -114,6 +114,38 @@ body {
     border-left: 1px solid rgba(0, 0, 0, 0.1);
     padding: 16px;
     overflow-y: auto;
+    position: relative;
+    min-width: 200px;
+    max-width: 60vw;
+}
+
+.resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background: transparent;
+    cursor: col-resize;
+    z-index: 1000;
+    transition: background-color 0.2s;
+}
+
+.resize-handle:hover {
+    background: rgba(0, 123, 255, 0.3);
+}
+
+.resize-handle:active {
+    background: rgba(0, 123, 255, 0.5);
+}
+
+body.local-graph-resizing {
+    cursor: col-resize !important;
+    user-select: none;
+}
+
+body.local-graph-resizing .resize-handle {
+    background: rgba(0, 123, 255, 0.5);
 }
 
 .sidebar-section {
