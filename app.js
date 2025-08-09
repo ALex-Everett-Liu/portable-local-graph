@@ -158,6 +158,7 @@ function setupEventListeners() {
     // Dialog buttons
     document.getElementById('weight-ok').addEventListener('click', handleWeightOK);
     document.getElementById('weight-cancel').addEventListener('click', handleWeightCancel);
+    document.getElementById('weight-delete').addEventListener('click', handleWeightDelete);
     
     document.getElementById('node-ok').addEventListener('click', handleNodeOK);
     document.getElementById('node-cancel').addEventListener('click', handleNodeCancel);
@@ -231,7 +232,8 @@ function setupEdgeSearchListeners() {
     // Target node search
     targetSearch.addEventListener('input', (e) => {
         handleEdgeNodeSearch(e.target.value, targetDropdown, 'target');
-    });\n    targetSearch.addEventListener('keydown', (e) => {
+    });
+    targetSearch.addEventListener('keydown', (e) => {
         handleEdgeSearchKeydown(e, targetDropdown, 'target');
     });
     
@@ -1527,6 +1529,20 @@ function handleWeightOK() {
 
 function handleWeightCancel() {
     document.getElementById('weight-dialog').classList.add('hidden');
+}
+
+function handleWeightDelete() {
+    const dialog = document.getElementById('weight-dialog');
+    const edgeId = dialog.dataset.edgeId;
+    
+    if (edgeId) {
+        saveState();
+        graph.deleteEdge(edgeId);
+        graph.render();
+        appState.isModified = true;
+    }
+    
+    dialog.classList.add('hidden');
 }
 
 function handleKeyDown(e) {
