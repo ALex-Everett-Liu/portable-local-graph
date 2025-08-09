@@ -101,6 +101,49 @@
                         </div>
                     </div>
                 </div>
+                
+                <div id="edge-search-dialog" class="dialog hidden">
+                    <div class="dialog-content">
+                        <h3>Create Edge between Nodes</h3>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
+                            Search and select two nodes to create an edge between them
+                        </p>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label>Source Node:</label>
+                            <div class="search-container">
+                                <input type="text" id="edge-source-search" placeholder="Search source node..." autocomplete="off">
+                                <div id="edge-source-dropdown" class="search-dropdown hidden"></div>
+                            </div>
+                            <div class="node-info" id="edge-source-info" style="font-size: 11px; color: #666; margin-top: 4px;">
+                                No source node selected
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label>Target Node:</label>
+                            <div class="search-container">
+                                <input type="text" id="edge-target-search" placeholder="Search target node..." autocomplete="off">
+                                <div id="edge-target-dropdown" class="search-dropdown hidden"></div>
+                            </div>
+                            <div class="node-info" id="edge-target-info" style="font-size: 11px; color: #666; margin-top: 4px;">
+                                No target node selected
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label>Weight:</label>
+                            <input type="number" id="edge-search-weight" placeholder="Edge weight" step="0.1" min="0.1" value="1">
+                            <label>Category:</label>
+                            <input type="text" id="edge-search-category" placeholder="Category (optional)">
+                        </div>
+                        
+                        <div class="dialog-buttons">
+                            <button id="edge-search-ok">Create Edge</button>
+                            <button id="edge-search-cancel">Cancel</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="sidebar">
@@ -168,6 +211,12 @@
                             <button id="reset-filter-btn" class="tool-btn">Reset</button>
                             <button id="save-view-btn" class="tool-btn">Save View</button>
                             <button id="analyze-distances-btn" class="tool-btn">Analyze Distances</button>
+                        </div>
+                        
+                        <div class="sidebar-section">
+                            <h4>Create Edge</h4>
+                            <p style="font-size: 11px; color: #666; margin-bottom: 8px;">Connect distant nodes via search</p>
+                            <button id="create-edge-search-btn" class="tool-btn">Create Edge</button>
                         </div>
                         
                         <div class="quick-access">

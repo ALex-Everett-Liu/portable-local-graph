@@ -93,8 +93,9 @@ npm run server
 1. **Launch the App**: Start the application and you'll see a grid canvas
 2. **Add Nodes**: Select "Node Mode" (⚫) and click anywhere to add nodes
 3. **Connect Nodes**: Switch to "Edge Mode" (🔗) and click two nodes to connect them
-4. **Edit Properties**: Right-click nodes or edges to edit labels and weights
-5. **Save Your Work**: Use Ctrl+S or the Save button to save as JSON
+4. **Create Distant Edges**: Use "Create Edge" button to connect nodes via search
+5. **Edit Properties**: Right-click nodes or edges to edit labels and weights
+6. **Save Your Work**: Use Ctrl+S or the Save button to save to database
 
 ### Database Storage
 

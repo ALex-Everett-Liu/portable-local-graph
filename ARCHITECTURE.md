@@ -480,6 +480,14 @@ View focused subgraph → Save configuration →
 Access saved view with one click later
 ```
 
+### 11. Edge Creation via Search Workflow
+```
+Click "Create Edge" button → Search for source node → Select from results → 
+Search for target node → Select from results → Set weight and category → 
+Click "Create Edge" → Edge created between distant nodes → 
+Visual confirmation with notification → Continue editing
+```
+
 ---
 
 ## Code Conventions

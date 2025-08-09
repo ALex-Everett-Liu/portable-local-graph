@@ -1,0 +1,154 @@
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: E:\Coding-2025\portable-local-graph        │
+│                                                   │
+│   ─────────────────────────────────────────────── │
+│                                                   │
+│   Overrides (via env):                            │
+│                                                   │
+│   • API Key: sk-ant-…msjaN6IyKNjsUfTt5GNajFFkGCep │
+│   • API Base URL:                                 │
+│   https://api.moonshot.cn/anthropic/              │
+╰───────────────────────────────────────────────────╯
+● Compact summary (ctrl+r to expand)
+  ⎿  Read app.js (1730 lines)
+  ⎿  Read index.html (186 lines)
+  ⎿  Read graph.js (611 lines)
+  ⎿  Read CHANGELOG.md (272 lines)
+  ⎿  Read ARCHITECTURE.md (666 lines)
+  ⎿  Todo list read (5 items)
+
+> /compact 
+  ⎿  Compacted. ctrl+r to see full summary
+
+> update @CHANGELOG.md and @README.md accordingly. then git commit with version number [0.2.2]
+  ⎿  Read CHANGELOG.md (272 lines)
+  ⎿  Read README.md (351 lines)
+
+● I'll update the CHANGELOG.md and README.md to document the new distance analysis table functionality, then commit with version [0.2.2].
+
+● Update(CHANGELOG.md)
+  ⎿  Updated CHANGELOG.md with 23 additions                                                                                        
+       160    - **One-click Access**: Saved filter configurations remain accessible via quick access panel
+       161    - **Smart Defaults**: Search automatically focuses when switching to relevant modes
+       162    
+       163 +  ## [0.2.2] - 2025-08-08
+       164 +  
+       165 +  ### Added
+       166 +  - **Distance Analysis Table**: New popup table showing depth and distance values for all nodes within specified range
+       167 +  - **Non-Filtering Analysis**: View node distances without filtering the actual graph
+       168 +  - **Comprehensive Display**: Shows node label, Chinese label, distance, depth, position, and color for each node
+       169 +  - **Real-time Updates**: Table updates instantly when distance/depth parameters change
+       170 +  - **Visual Integration**: Seamless integration with existing filter panel and center node selection
+       171 +  - **Export-ready Format**: Table format suitable for copying data for external analysis
+       172 +  
+       173 +  ### Technical Details
+       174 +  - **Enhanced Graph Analysis**: Leverages existing `calculateDistances()` method for consistent calculations
+       175 +  - **Popup Dialog**: Modal overlay with scrollable table for large result sets
+       176 +  - **Sortable Results**: Nodes sorted by distance, then by depth for logical organization
+       177 +  - **Color Visualization**: Node colors displayed as swatches in table for easy identification
+       178 +  - **Coordinate Display**: Exact node positions shown for reference and external use
+       179 +  
+       180 +  ### User Experience
+       181 +  - **One-click Access**: "Analyze Distances" button added to filter panel
+       182 +  - **No Graph Modification**: Analysis performed without affecting the current graph view
+       183 +  - **Temporary View**: Dialog can be closed to return to normal graph view
+       184 +  - **Context Preservation**: All existing graph state maintained during analysis
+       185 +  
+       186    ## [0.2.0] - 2025-08-08
+       187    
+       188    ### Added
+
+● Update(README.md)
+  ⎿  Updated README.md with 21 additions and 7 removals                                                          
+       113    - **Migration**: Existing JSON files automatically imported to database
+       114    - **Compatibility**: Full backward compatibility maintained
+       115    
+       116 -  ### Local Graph Filtering
+       116 +  ### Local Graph Filtering & Analysis
+       117    
+       118 -  Explore subgraphs using powerful distance-based filtering:
+       118 +  Explore subgraphs using powerful distance-based filtering and analysis:
+       119    
+       120    #### Distance-Based Filtering
+       121    - **Center Node Selection**: Choose any node as the filter center point
+     ...
+       123    - **Maximum Depth**: Limit exploration by hop count from center
+       124    - **Dual Constraints**: Use distance OR depth constraints (inclusive logic)
+       125    
+       126 +  #### Distance Analysis Table
+       127 +  - **Non-Filtering Analysis**: View node distances without modifying the graph
+       128 +  - **Comprehensive Display**: Shows all nodes within range with distance, depth, position, and color
+       129 +  - **Export-Ready Format**: Table data easily copied for external analysis
+       130 +  - **Real-time Updates**: Updates instantly when parameters change
+       131 +  - **Popup Dialog**: Modal table view that preserves original graph
+       132 +  
+       133    #### View Management
+       134    - **Save Configurations**: Store frequently used filter combinations
+       135    - **Quick Access Panel**: One-click access to saved views
+     ...
+       130    - **Real-time Updates**: Adjust parameters and see results instantly
+       131    
+       132    #### Usage
+       133 -  1. **Search for center node**: Type in the search box to find nodes by English or Chinese labels
+       134 -  2. **Set parameters**: Use sliders for maximum distance and depth
+       135 -  3. **Apply filter**: Click "Apply Filter" to see the subgraph
+       136 -  4. **Save configuration**: Store frequently used combinations
+       137 -  5. **Reset anytime**: Click "Reset Filter" to view the full graph
+       133 +  1. **Distance Analysis**: 
+       134 +     - Select center node via search
+       135 +     - Set distance and depth parameters
+       136 +     - Click "Analyze Distances" to view table of all nodes within range
+       137 +     - Review distance, depth, position, and color for each node
+       138    
+       139 +  2. **Graph Filtering**:
+       140 +     - Search for center node: Type in the search box to find nodes by English or Chinese labels
+       141 +     - Set parameters: Use sliders for maximum distance and depth
+       142 +     - Apply filter: Click "Apply Filter" to see the subgraph
+       143 +     - Save configuration: Store frequently used combinations
+       144 +     - Reset anytime: Click "Reset Filter" to view the full graph
+       145 +  
+       146    #### Search Integration
+       147    - **Node Selection**: Search replaces dropdown for large graphs
+       148    - **Real-time Results**: Instant filtering as you type
+
+● Bash(git add CHANGELOG.md README.md)
+  ⎿  (No content)
+
+● Bash(git commit -m "[0.2.2] Add Distance Analysis Table feature…)
+  ⎿  Error: /usr/bin/bash: eval: line 42: unexpected EOF while looking for matching `"'
+
+● Bash(git commit -m "[0.2.2] Add Distance Analysis Table feature…)
+  ⎿  [main 20385e3] [0.2.2] Add Distance Analysis Table feature
+      2 files changed, 44 insertions(+), 7 deletions(-)
+
+● ✅ Version 0.2.2 Released
+
+  The distance analysis table feature is now complete and documented. Here's what was delivered:
+
+  New Functionality
+
+  - Distance Analysis Table: Popup table showing depth and distance values for all nodes within specified range
+  - Non-Filtering Analysis: View node distances without filtering the actual graph
+  - Comprehensive Display: Shows node label, Chinese label, distance, depth, position, and color for each node
+  - One-click Access: "Analyze Distances" button in filter panel
+  - Real-time Updates: Table updates instantly when parameters change
+
+  Technical Implementation
+
+  - Enhanced Graph Analysis: Leverages existing calculateDistances() method for consistent calculations
+  - Popup Dialog: Modal overlay with scrollable table for large result sets
+  - Sortable Results: Nodes sorted by distance, then by depth for logical organization
+  - Color Visualization: Node colors displayed as swatches in table for easy identification
+
+  Documentation Updated
+
+  - CHANGELOG.md: Added comprehensive [0.2.2] section with technical details and user experience improvements
+  - README.md: Updated "Local Graph Filtering & Analysis" section with new distance analysis features
+
+  The feature is ready for immediate use - users can now select a center node, set distance/depth parameters, and click "Analyze Distances" to view a detailed table of
+   all nodes within the specified range.
+

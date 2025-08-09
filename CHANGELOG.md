@@ -160,6 +160,31 @@
 - **One-click Access**: Saved filter configurations remain accessible via quick access panel
 - **Smart Defaults**: Search automatically focuses when switching to relevant modes
 
+## [0.2.3] - 2025-08-09
+
+### Added
+- **Edge Creation via Search**: New functionality to create edges between distant nodes using intelligent search
+- **Dual Node Selection**: Search and select source and target nodes independently for edge creation
+- **Visual Search Integration**: Real-time node search with highlighting for both source and target selection
+- **Edge Property Configuration**: Set weight and category for new edges during creation process
+- **Validation System**: Prevents duplicate edges and self-loops with clear user feedback
+- **Keyboard Navigation**: Arrow keys and Enter for quick selection in search results
+- **Multi-language Support**: Search across both English and Chinese labels simultaneously
+
+### Technical Details
+- **Search Integration**: Leverages existing node search system with dual search containers
+- **Validation Logic**: Checks for existing edges between selected nodes and prevents self-loops
+- **Real-time Feedback**: Instant validation messages and search result highlighting
+- **State Management**: Temporary state variables for source/target node selection
+- **Modal Dialog**: Dedicated edge creation dialog with integrated search functionality
+
+### User Experience
+- **Accessible Creation**: "Create Edge" button in sidebar for one-click access
+- **Distant Node Support**: Connect nodes that are far apart without manual navigation
+- **Clear Workflow**: Step-by-step process with visual confirmation at each stage
+- **Error Prevention**: Comprehensive validation with helpful error messages
+- **Seamless Integration**: Works with existing search system and keyboard shortcuts
+
 ## [0.2.2] - 2025-08-08
 
 ### Added
