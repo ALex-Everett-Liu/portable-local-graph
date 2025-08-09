@@ -160,6 +160,29 @@
 - **One-click Access**: Saved filter configurations remain accessible via quick access panel
 - **Smart Defaults**: Search automatically focuses when switching to relevant modes
 
+## [0.2.2] - 2025-08-08
+
+### Added
+- **Distance Analysis Table**: New popup table showing depth and distance values for all nodes within specified range
+- **Non-Filtering Analysis**: View node distances without filtering the actual graph
+- **Comprehensive Display**: Shows node label, Chinese label, distance, depth, position, and color for each node
+- **Real-time Updates**: Table updates instantly when distance/depth parameters change
+- **Visual Integration**: Seamless integration with existing filter panel and center node selection
+- **Export-ready Format**: Table format suitable for copying data for external analysis
+
+### Technical Details
+- **Enhanced Graph Analysis**: Leverages existing `calculateDistances()` method for consistent calculations
+- **Popup Dialog**: Modal overlay with scrollable table for large result sets
+- **Sortable Results**: Nodes sorted by distance, then by depth for logical organization
+- **Color Visualization**: Node colors displayed as swatches in table for easy identification
+- **Coordinate Display**: Exact node positions shown for reference and external use
+
+### User Experience
+- **One-click Access**: "Analyze Distances" button added to filter panel
+- **No Graph Modification**: Analysis performed without affecting the current graph view
+- **Temporary View**: Dialog can be closed to return to normal graph view
+- **Context Preservation**: All existing graph state maintained during analysis
+
 ## [0.2.0] - 2025-08-08
 
 ### Added

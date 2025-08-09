@@ -113,15 +113,22 @@ The application now uses **SQLite database as primary storage** with JSON as bac
 - **Migration**: Existing JSON files automatically imported to database
 - **Compatibility**: Full backward compatibility maintained
 
-### Local Graph Filtering
+### Local Graph Filtering & Analysis
 
-Explore subgraphs using powerful distance-based filtering:
+Explore subgraphs using powerful distance-based filtering and analysis:
 
 #### Distance-Based Filtering
 - **Center Node Selection**: Choose any node as the filter center point
 - **Maximum Distance**: Set distance threshold using weighted edge calculations
 - **Maximum Depth**: Limit exploration by hop count from center
 - **Dual Constraints**: Use distance OR depth constraints (inclusive logic)
+
+#### Distance Analysis Table
+- **Non-Filtering Analysis**: View node distances without modifying the graph
+- **Comprehensive Display**: Shows all nodes within range with distance, depth, position, and color
+- **Export-Ready Format**: Table data easily copied for external analysis
+- **Real-time Updates**: Updates instantly when parameters change
+- **Popup Dialog**: Modal table view that preserves original graph
 
 #### View Management
 - **Save Configurations**: Store frequently used filter combinations
@@ -130,11 +137,18 @@ Explore subgraphs using powerful distance-based filtering:
 - **Real-time Updates**: Adjust parameters and see results instantly
 
 #### Usage
-1. **Search for center node**: Type in the search box to find nodes by English or Chinese labels
-2. **Set parameters**: Use sliders for maximum distance and depth
-3. **Apply filter**: Click "Apply Filter" to see the subgraph
-4. **Save configuration**: Store frequently used combinations
-5. **Reset anytime**: Click "Reset Filter" to view the full graph
+1. **Distance Analysis**: 
+   - Select center node via search
+   - Set distance and depth parameters
+   - Click "Analyze Distances" to view table of all nodes within range
+   - Review distance, depth, position, and color for each node
+
+2. **Graph Filtering**:
+   - Search for center node: Type in the search box to find nodes by English or Chinese labels
+   - Set parameters: Use sliders for maximum distance and depth
+   - Apply filter: Click "Apply Filter" to see the subgraph
+   - Save configuration: Store frequently used combinations
+   - Reset anytime: Click "Reset Filter" to view the full graph
 
 #### Search Integration
 - **Node Selection**: Search replaces dropdown for large graphs
