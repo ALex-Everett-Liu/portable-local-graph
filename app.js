@@ -1020,16 +1020,76 @@ function updateSelectionInfo() {
         
         let centralityDisplay = '';
         if (node.centrality) {
+            // Get rankings for each centrality type
+            const degreeRank = graph.getCentralityRank(node.id, 'degree');
+            const betweennessRank = graph.getCentralityRank(node.id, 'betweenness');
+            const closenessRank = graph.getCentralityRank(node.id, 'closeness');
+            const eigenvectorRank = graph.getCentralityRank(node.id, 'eigenvector');
+            const pagerankRank = graph.getCentralityRank(node.id, 'pagerank');
+
+            // Helper function to get rank color and indicator
+            function getRankIndicator(rank, total) {
+                if (!rank || !total) return { color: '#666', indicator: '' };
+                const ratio = rank / total;
+                let color, indicator;
+                if (ratio <= 0.1) { color = '#28a745'; indicator = '🔥'; } // Top 10%
+                else if (ratio <= 0.25) { color = '#ffc107'; indicator = '⭐'; } // Top 25%
+                else if (ratio <= 0.5) { color = '#17a2b8'; indicator = '👍'; } // Top 50%
+                else { color = '#6c757d'; indicator = '⚪'; } // Bottom 50%
+                return { color, indicator };
+            }
+
+            const degreeIndicator = getRankIndicator(degreeRank, graph.nodes.length);
+            const betweennessIndicator = getRankIndicator(betweennessRank, graph.nodes.length);
+            const closenessIndicator = getRankIndicator(closenessRank, graph.nodes.length);
+            const eigenvectorIndicator = getRankIndicator(eigenvectorRank, graph.nodes.length);
+            const pagerankIndicator = getRankIndicator(pagerankRank, graph.nodes.length);
+
             centralityDisplay = `
                 <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #ddd;">
-                    <p style="font-weight: bold; margin-bottom: 4px;">Centrality Values:</p>
-                    <table style="width: 100%; font-size: 11px;">
-                        <tr><td><strong>Degree:</strong></td><td>${node.centrality.degree || 'N/A'}</td></tr>
-                        <tr><td><strong>Betweenness:</strong></td><td>${node.centrality.betweenness || 'N/A'}</td></tr>
-                        <tr><td><strong>Closeness:</strong></td><td>${node.centrality.closeness || 'N/A'}</td></tr>
-                        <tr><td><strong>Eigenvector:</strong></td><td>${node.centrality.eigenvector || 'N/A'}</td></tr>
-                        <tr><td><strong>PageRank:</strong></td><td>${node.centrality.pagerank || 'N/A'}</td></tr>
+                    <p style="font-weight: bold; margin-bottom: 6px; font-size: 12px; color: #495057;">
+                        📊 Centrality Analysis (${graph.nodes.length} nodes total)
+                    </p>
+                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 2px 0; font-weight: 600;">Degree</td>
+                            <td style="padding: 2px 0; text-align: right; font-family: monospace; color: #007bff;">${node.centrality.degree || 'N/A'}</td>
+                            <td style="padding: 2px 0; text-align: right; font-size: 10px; color: ${degreeIndicator.color};">
+                                ${degreeIndicator.indicator} ${degreeRank ? `#${degreeRank}` : 'N/A'}
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 2px 0; font-weight: 600;">Betweenness</td>
+                            <td style="padding: 2px 0; text-align: right; font-family: monospace; color: #007bff;">${node.centrality.betweenness || 'N/A'}</td>
+                            <td style="padding: 2px 0; text-align: right; font-size: 10px; color: ${betweennessIndicator.color};">
+                                ${betweennessIndicator.indicator} ${betweennessRank ? `#${betweennessRank}` : 'N/A'}
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 2px 0; font-weight: 600;">Closeness</td>
+                            <td style="padding: 2px 0; text-align: right; font-family: monospace; color: #007bff;">${node.centrality.closeness || 'N/A'}</td>
+                            <td style="padding: 2px 0; text-align: right; font-size: 10px; color: ${closenessIndicator.color};">
+                                ${closenessIndicator.indicator} ${closenessRank ? `#${closenessRank}` : 'N/A'}
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 2px 0; font-weight: 600;">Eigenvector</td>
+                            <td style="padding: 2px 0; text-align: right; font-family: monospace; color: #007bff;">${node.centrality.eigenvector || 'N/A'}</td>
+                            <td style="padding: 2px 0; text-align: right; font-size: 10px; color: ${eigenvectorIndicator.color};">
+                                ${eigenvectorIndicator.indicator} ${eigenvectorRank ? `#${eigenvectorRank}` : 'N/A'}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0; font-weight: 600;">PageRank</td>
+                            <td style="padding: 2px 0; text-align: right; font-family: monospace; color: #007bff;">${node.centrality.pagerank || 'N/A'}</td>
+                            <td style="padding: 2px 0; text-align: right; font-size: 10px; color: ${pagerankIndicator.color};">
+                                ${pagerankIndicator.indicator} ${pagerankRank ? `#${pagerankRank}` : 'N/A'}
+                            </td>
+                        </tr>
                     </table>
+                    <div style="margin-top: 6px; font-size: 9px; color: #666; text-align: center;">
+                        🔥 Top 10% ⭐ Top 25% 👍 Top 50% ⚪ Others
+                    </div>
                 </div>
             `;
         }

@@ -677,6 +677,43 @@ class Graph {
         this.calculateClosenessCentrality();
         this.calculateEigenvectorCentrality();
         this.calculatePageRank();
+        
+        // Calculate rankings after all centralities are computed
+        this.calculateCentralityRankings();
+    }
+
+    calculateCentralityRankings() {
+        if (this.nodes.length === 0) return;
+
+        // Store all centrality values for ranking
+        this.centralityRankings = {};
+        const centralityTypes = ['degree', 'betweenness', 'closeness', 'eigenvector', 'pagerank'];
+
+        centralityTypes.forEach(type => {
+            // Create array of [nodeId, value] pairs
+            const values = this.nodes.map(node => ({
+                nodeId: node.id,
+                value: parseFloat(node.centrality[type]) || 0
+            }));
+
+            // Sort by value (descending)
+            values.sort((a, b) => b.value - a.value);
+
+            // Create ranking map
+            const rankings = new Map();
+            values.forEach((item, index) => {
+                rankings.set(item.nodeId, index + 1); // 1-based ranking
+            });
+
+            this.centralityRankings[type] = rankings;
+        });
+    }
+
+    getCentralityRank(nodeId, centralityType) {
+        if (!this.centralityRankings || !this.centralityRankings[centralityType]) {
+            return null;
+        }
+        return this.centralityRankings[centralityType].get(nodeId);
     }
 
     calculateDegreeCentrality() {

@@ -26,6 +26,32 @@
 - **Weight Awareness**: Algorithms correctly interpret edge weight semantics (distance/cost vs connection strength)
 - **No Configuration**: Works automatically with existing graph structure and weights
 
+## [0.3.1] - 2025-08-10
+
+### Added
+- **Centrality Rankings**: Enhanced centrality display with node ranking across all 5 algorithms
+- **Visual Ranking Indicators**: Color-coded ranking system with intuitive icons:
+  - 🔥 **Top 10%** - Green flame indicator for highest-ranking nodes
+  - ⭐ **Top 25%** - Yellow star indicator for high-ranking nodes  
+  - 👍 **Top 50%** - Blue thumbs-up indicator for medium-ranking nodes
+  - ⚪ **Others** - Gray circle indicator for remaining nodes
+- **Rank Context Display**: Shows exact rank position (e.g., #3/47) alongside centrality values
+- **Comprehensive Ranking System**: All centrality types (Degree, Betweenness, Closeness, Eigenvector, PageRank) now include ranking information
+
+### Technical Details
+- **Ranking Algorithm**: Efficient O(n log n) ranking calculation after centrality computation
+- **Storage Optimization**: Rankings computed on-demand and cached in memory for performance
+- **Visual Design**: Professional table layout with color-coded ranking indicators
+- **Consistency**: Ranking system integrated seamlessly with existing centrality display
+- **Performance Impact**: Zero additional storage overhead, optimized for large graphs
+
+### User Experience
+- **Instant Recognition**: Visual indicators immediately show node importance at a glance
+- **Contextual Understanding**: Rank positions provide clear context within the entire graph
+- **Professional Display**: Clean table layout with consistent formatting and color scheme
+- **No Configuration**: Rankings appear automatically when centralities are calculated
+- **Responsive Design**: Ranking display adapts to different graph sizes and node counts
+
 ## [0.2.6] - 2025-08-09
 
 ### Added
