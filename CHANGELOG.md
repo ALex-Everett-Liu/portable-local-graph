@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0] - 2025-08-10
+
+### Added
+- **Graph Centrality Analysis**: Comprehensive centrality calculation system with 5 algorithms
+- **Advanced Algorithms**: Betweenness, Closeness, Eigenvector, Degree Centrality, and PageRank
+- **Weight-Aware Calculations**: All algorithms properly use edge weights (0.1-30 range) for accurate metrics
+- **Real-time Display**: Centrality values shown in sidebar when selecting individual nodes
+- **One-click Calculation**: "Calculate Centralities" button in sidebar for instant analysis
+- **Dijkstra Integration**: Replaced BFS with weighted shortest path calculations for accuracy
+- **Semantic Weight Handling**: Lower weights (0.1) = stronger connections, higher weights (30) = weaker connections
+
+### Technical Details
+- **Algorithm Implementation**: Full weighted graph analysis with proper distance/cost semantics
+- **Performance Optimized**: Efficient O(n²) Betweenness centrality with weighted Dijkstra's algorithm
+- **Weighted PageRank**: Uses inverse edge weights for transition probabilities
+- **Weighted Eigenvector**: Employs 1/weight adjacency matrix for connection strength representation
+- **Distance Normalization**: Closeness centrality properly normalized for 0.1-30 weight range
+- **Real-time Updates**: Values recalculated and displayed instantly upon node selection
+
+### User Experience
+- **Instant Analysis**: Single button click calculates all centrality measures
+- **Contextual Display**: Values appear in sidebar selection info when clicking nodes
+- **Visual Confirmation**: Success notification shows "Centralities calculated for X nodes"
+- **Weight Awareness**: Algorithms correctly interpret edge weight semantics (distance/cost vs connection strength)
+- **No Configuration**: Works automatically with existing graph structure and weights
+
 ## [0.2.6] - 2025-08-09
 
 ### Added

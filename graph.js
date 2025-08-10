@@ -706,71 +706,81 @@ class Graph {
             betweenness.set(node.id, 0);
         });
 
-        // For each pair of nodes, find shortest paths
+        // For each source node, find weighted shortest paths
         for (let s = 0; s < this.nodes.length; s++) {
             const source = this.nodes[s];
             
-            // BFS to find shortest paths
-            const stack = [];
-            const paths = new Map();
-            const sigma = new Map();
-            const delta = new Map();
+            // Dijkstra's algorithm for weighted shortest paths
+            const distances = new Map();
+            const sigma = new Map(); // Number of shortest paths
+            const paths = new Map(); // Predecessors
+            const delta = new Map(); // Dependency
             
             this.nodes.forEach(node => {
-                paths.set(node.id, []);
+                distances.set(node.id, Infinity);
                 sigma.set(node.id, 0);
+                paths.set(node.id, []);
                 delta.set(node.id, 0);
             });
             
-            sigma.set(source.id, 1);
-            const queue = [source];
-            const distances = new Map();
-            this.nodes.forEach(node => distances.set(node.id, -1));
             distances.set(source.id, 0);
+            sigma.set(source.id, 1);
+            
+            const queue = [{ nodeId: source.id, distance: 0 }];
+            const processed = [];
 
             while (queue.length > 0) {
-                const v = queue.shift();
-                stack.push(v);
+                queue.sort((a, b) => a.distance - b.distance);
+                const current = queue.shift();
+                
+                if (distances.get(current.nodeId) < current.distance) continue;
+                
+                processed.push(current.nodeId);
 
-                // Find neighbors
-                const neighbors = this.edges.filter(edge => 
-                    edge.from === v.id || edge.to === v.id
-                ).map(edge => edge.from === v.id ? edge.to : edge.from);
+                // Find connected edges
+                const connectedEdges = this.edges.filter(edge => 
+                    edge.from === current.nodeId || edge.to === current.nodeId
+                );
 
-                neighbors.forEach(wId => {
-                    const w = this.nodes.find(n => n.id === wId);
-                    if (!w) return;
+                connectedEdges.forEach(edge => {
+                    const neighborId = edge.from === current.nodeId ? edge.to : edge.from;
+                    const neighbor = this.nodes.find(n => n.id === neighborId);
+                    if (!neighbor) return;
 
-                    if (distances.get(w.id) < 0) {
-                        queue.push(w);
-                        distances.set(w.id, distances.get(v.id) + 1);
+                    const newDist = current.distance + edge.weight;
+                    
+                    if (newDist < distances.get(neighborId)) {
+                        distances.set(neighborId, newDist);
+                        sigma.set(neighborId, 0);
+                        paths.set(neighborId, []);
+                        queue.push({ nodeId: neighborId, distance: newDist });
                     }
-
-                    if (distances.get(w.id) === distances.get(v.id) + 1) {
-                        sigma.set(w.id, sigma.get(w.id) + sigma.get(v.id));
-                        paths.get(w.id).push(v);
+                    
+                    if (Math.abs(newDist - distances.get(neighborId)) < 1e-10) {
+                        sigma.set(neighborId, sigma.get(neighborId) + sigma.get(current.nodeId));
+                        paths.get(neighborId).push(current.nodeId);
                     }
                 });
             }
 
-            // Accumulation
-            while (stack.length > 0) {
-                const w = stack.pop();
-                paths.get(w.id).forEach(v => {
-                    const contribution = (sigma.get(v.id) / sigma.get(w.id)) * (1 + delta.get(w.id));
-                    delta.set(v.id, delta.get(v.id) + contribution);
+            // Accumulation (reverse order of processing)
+            while (processed.length > 0) {
+                const w = processed.pop();
+                paths.get(w).forEach(v => {
+                    const contribution = (sigma.get(v) / sigma.get(w)) * (1 + delta.get(w));
+                    delta.set(v, delta.get(v) + contribution);
                 });
-
-                if (w.id !== source.id) {
-                    betweenness.set(w.id, betweenness.get(w.id) + delta.get(w.id));
+                
+                if (w !== source.id) {
+                    betweenness.set(w, betweenness.get(w) + delta.get(w));
                 }
             }
         }
 
-        // Normalize
-        const norm = (nodeCount >= 3) ? 2 / ((nodeCount - 1) * (nodeCount - 2)) : 1;
+        // Normalize for weighted graphs
+        const norm = (nodeCount >= 3) ? 1 : 0;
         this.nodes.forEach(node => {
-            node.centrality.betweenness = (betweenness.get(node.id) * norm).toFixed(4);
+            node.centrality.betweenness = betweenness.get(node.id).toFixed(4);
         });
     }
 
@@ -780,13 +790,26 @@ class Graph {
 
         this.nodes.forEach(node => {
             const distances = this.calculateShortestPaths(node.id);
-            const reachable = Array.from(distances.values()).filter(d => d !== Infinity);
+            const reachable = Array.from(distances.values()).filter(d => d !== Infinity && d > 0);
             
-            if (reachable.length === 0 || reachable.length < nodeCount) {
+            if (reachable.length === 0) {
                 node.centrality.closeness = "0.0000";
             } else {
+                // Weighted closeness: higher is better (lower total distance)
                 const sumDistance = reachable.reduce((sum, d) => sum + d, 0);
-                const closeness = (reachable.length - 1) / sumDistance;
+                const avgDistance = sumDistance / reachable.length;
+                
+                // Normalize based on your weight range (0.1-30)
+                const maxPossibleDistance = 30 * (nodeCount - 1);
+                const minPossibleDistance = 0.1 * (nodeCount - 1);
+                
+                let closeness = 0;
+                if (sumDistance > 0) {
+                    // Invert so lower distances = higher centrality
+                    closeness = minPossibleDistance / Math.max(sumDistance, minPossibleDistance);
+                    if (closeness > 1) closeness = 1;
+                }
+                
                 node.centrality.closeness = closeness.toFixed(4);
             }
         });
@@ -796,23 +819,25 @@ class Graph {
         const nodeCount = this.nodes.length;
         if (nodeCount <= 1) return;
 
-        // Create adjacency matrix
+        // Create weighted adjacency matrix
         const adjacency = new Map();
         this.nodes.forEach(node => {
             adjacency.set(node.id, new Map());
         });
 
-        // Build adjacency matrix
+        // Build weighted adjacency matrix using inverse edge weights
         this.edges.forEach(edge => {
             const fromNode = this.nodes.find(n => n.id === edge.from);
             const toNode = this.nodes.find(n => n.id === edge.to);
             if (fromNode && toNode) {
-                adjacency.get(edge.from).set(edge.to, 1);
-                adjacency.get(edge.to).set(edge.from, 1);
+                // Use inverse weight: lower weight = stronger connection = higher weight in matrix
+                const weight = 1 / edge.weight;
+                adjacency.get(edge.from).set(edge.to, weight);
+                adjacency.get(edge.to).set(edge.from, weight);
             }
         });
 
-        // Power iteration for eigenvector centrality
+        // Power iteration for weighted eigenvector centrality
         let eigenvector = new Map();
         this.nodes.forEach(node => {
             eigenvector.set(node.id, 1.0);
@@ -825,15 +850,16 @@ class Graph {
             this.nodes.forEach(node => {
                 let sum = 0;
                 this.nodes.forEach(neighbor => {
-                    if (adjacency.get(neighbor.id).has(node.id)) {
-                        sum += eigenvector.get(neighbor.id);
-                    }
+                    const weight = adjacency.get(neighbor.id).get(node.id) || 0;
+                    sum += weight * eigenvector.get(neighbor.id);
                 });
                 newEigenvector.set(node.id, sum);
                 norm += sum * sum;
             });
 
+            if (norm < 1e-10) break;
             norm = Math.sqrt(norm);
+            
             this.nodes.forEach(node => {
                 eigenvector.set(node.id, newEigenvector.get(node.id) / norm);
             });
@@ -860,31 +886,43 @@ class Graph {
             pr.set(node.id, 1.0 / nodeCount);
         });
 
-        // Build adjacency lists
+        // Build weighted adjacency lists using inverse edge weights
         const outLinks = new Map();
         const inLinks = new Map();
+        const outWeights = new Map(); // Total outbound weight for each node
         
         this.nodes.forEach(node => {
             outLinks.set(node.id, []);
             inLinks.set(node.id, []);
+            outWeights.set(node.id, 0);
         });
 
+        // Build weighted connections
         this.edges.forEach(edge => {
-            outLinks.get(edge.from).push(edge.to);
-            inLinks.get(edge.to).push(edge.from);
+            // Use inverse weight: lower weight = stronger connection = higher transition probability
+            const weight = 1 / edge.weight;
+            
+            outLinks.get(edge.from).push({ to: edge.to, weight: weight });
+            inLinks.get(edge.to).push({ from: edge.from, weight: weight });
+            outWeights.set(edge.from, outWeights.get(edge.from) + weight);
         });
 
-        // Power iteration
+        // Power iteration with weighted transitions
         for (let iter = 0; iter < 100; iter++) {
             const newPr = new Map();
             let sumPr = 0;
 
             this.nodes.forEach(node => {
                 let sum = 0;
-                inLinks.get(node.id).forEach(fromId => {
-                    const outDegree = outLinks.get(fromId).length;
-                    if (outDegree > 0) {
-                        sum += pr.get(fromId) / outDegree;
+                
+                // Sum weighted contributions from incoming edges
+                inLinks.get(node.id).forEach(link => {
+                    const fromId = link.from;
+                    const edgeWeight = link.weight;
+                    const totalOutWeight = outWeights.get(fromId);
+                    
+                    if (totalOutWeight > 0) {
+                        sum += pr.get(fromId) * (edgeWeight / totalOutWeight);
                     }
                 });
                 
@@ -922,22 +960,30 @@ class Graph {
         });
         distances.set(startNodeId, 0);
 
-        const queue = [startNodeId];
-        
+        const visited = new Set();
+        const queue = [{ nodeId: startNodeId, distance: 0 }];
+
         while (queue.length > 0) {
-            const currentId = queue.shift();
-            const currentDist = distances.get(currentId);
+            // Find node with minimum distance (Dijkstra's algorithm)
+            queue.sort((a, b) => a.distance - b.distance);
+            const current = queue.shift();
+            
+            if (visited.has(current.nodeId)) continue;
+            visited.add(current.nodeId);
 
-            // Find neighbors
-            const neighbors = this.edges.filter(edge => 
-                edge.from === currentId || edge.to === currentId
-            ).map(edge => edge.from === currentId ? edge.to : edge.from);
+            // Find connected edges with their weights
+            const connectedEdges = this.edges.filter(edge => 
+                edge.from === current.nodeId || edge.to === current.nodeId
+            );
 
-            neighbors.forEach(neighborId => {
-                const newDist = currentDist + 1; // Unweighted for this calculation
-                if (newDist < distances.get(neighborId)) {
-                    distances.set(neighborId, newDist);
-                    queue.push(neighborId);
+            connectedEdges.forEach(edge => {
+                const neighborId = edge.from === current.nodeId ? edge.to : edge.from;
+                if (!visited.has(neighborId)) {
+                    const newDist = current.distance + edge.weight;
+                    if (newDist < distances.get(neighborId)) {
+                        distances.set(neighborId, newDist);
+                        queue.push({ nodeId: neighborId, distance: newDist });
+                    }
                 }
             });
         }
