@@ -662,4 +662,286 @@ class Graph {
             chineseLabel: node.chineseLabel || ''
         }));
     }
+
+    // Centrality calculation methods
+    calculateCentralities() {
+        if (this.nodes.length === 0) return;
+
+        // Initialize centrality storage
+        this.nodes.forEach(node => {
+            node.centrality = node.centrality || {};
+        });
+
+        this.calculateDegreeCentrality();
+        this.calculateBetweennessCentrality();
+        this.calculateClosenessCentrality();
+        this.calculateEigenvectorCentrality();
+        this.calculatePageRank();
+    }
+
+    calculateDegreeCentrality() {
+        const nodeCount = this.nodes.length;
+        if (nodeCount <= 1) return;
+
+        this.nodes.forEach(node => {
+            const degree = this.edges.filter(edge => 
+                edge.from === node.id || edge.to === node.id
+            ).length;
+            node.centrality.degree = (degree / (nodeCount - 1)).toFixed(4);
+        });
+    }
+
+    calculateBetweennessCentrality() {
+        const nodeCount = this.nodes.length;
+        if (nodeCount <= 2) {
+            this.nodes.forEach(node => {
+                node.centrality.betweenness = "0.0000";
+            });
+            return;
+        }
+
+        // Initialize betweenness for all nodes
+        const betweenness = new Map();
+        this.nodes.forEach(node => {
+            betweenness.set(node.id, 0);
+        });
+
+        // For each pair of nodes, find shortest paths
+        for (let s = 0; s < this.nodes.length; s++) {
+            const source = this.nodes[s];
+            
+            // BFS to find shortest paths
+            const stack = [];
+            const paths = new Map();
+            const sigma = new Map();
+            const delta = new Map();
+            
+            this.nodes.forEach(node => {
+                paths.set(node.id, []);
+                sigma.set(node.id, 0);
+                delta.set(node.id, 0);
+            });
+            
+            sigma.set(source.id, 1);
+            const queue = [source];
+            const distances = new Map();
+            this.nodes.forEach(node => distances.set(node.id, -1));
+            distances.set(source.id, 0);
+
+            while (queue.length > 0) {
+                const v = queue.shift();
+                stack.push(v);
+
+                // Find neighbors
+                const neighbors = this.edges.filter(edge => 
+                    edge.from === v.id || edge.to === v.id
+                ).map(edge => edge.from === v.id ? edge.to : edge.from);
+
+                neighbors.forEach(wId => {
+                    const w = this.nodes.find(n => n.id === wId);
+                    if (!w) return;
+
+                    if (distances.get(w.id) < 0) {
+                        queue.push(w);
+                        distances.set(w.id, distances.get(v.id) + 1);
+                    }
+
+                    if (distances.get(w.id) === distances.get(v.id) + 1) {
+                        sigma.set(w.id, sigma.get(w.id) + sigma.get(v.id));
+                        paths.get(w.id).push(v);
+                    }
+                });
+            }
+
+            // Accumulation
+            while (stack.length > 0) {
+                const w = stack.pop();
+                paths.get(w.id).forEach(v => {
+                    const contribution = (sigma.get(v.id) / sigma.get(w.id)) * (1 + delta.get(w.id));
+                    delta.set(v.id, delta.get(v.id) + contribution);
+                });
+
+                if (w.id !== source.id) {
+                    betweenness.set(w.id, betweenness.get(w.id) + delta.get(w.id));
+                }
+            }
+        }
+
+        // Normalize
+        const norm = (nodeCount >= 3) ? 2 / ((nodeCount - 1) * (nodeCount - 2)) : 1;
+        this.nodes.forEach(node => {
+            node.centrality.betweenness = (betweenness.get(node.id) * norm).toFixed(4);
+        });
+    }
+
+    calculateClosenessCentrality() {
+        const nodeCount = this.nodes.length;
+        if (nodeCount <= 1) return;
+
+        this.nodes.forEach(node => {
+            const distances = this.calculateShortestPaths(node.id);
+            const reachable = Array.from(distances.values()).filter(d => d !== Infinity);
+            
+            if (reachable.length === 0 || reachable.length < nodeCount) {
+                node.centrality.closeness = "0.0000";
+            } else {
+                const sumDistance = reachable.reduce((sum, d) => sum + d, 0);
+                const closeness = (reachable.length - 1) / sumDistance;
+                node.centrality.closeness = closeness.toFixed(4);
+            }
+        });
+    }
+
+    calculateEigenvectorCentrality() {
+        const nodeCount = this.nodes.length;
+        if (nodeCount <= 1) return;
+
+        // Create adjacency matrix
+        const adjacency = new Map();
+        this.nodes.forEach(node => {
+            adjacency.set(node.id, new Map());
+        });
+
+        // Build adjacency matrix
+        this.edges.forEach(edge => {
+            const fromNode = this.nodes.find(n => n.id === edge.from);
+            const toNode = this.nodes.find(n => n.id === edge.to);
+            if (fromNode && toNode) {
+                adjacency.get(edge.from).set(edge.to, 1);
+                adjacency.get(edge.to).set(edge.from, 1);
+            }
+        });
+
+        // Power iteration for eigenvector centrality
+        let eigenvector = new Map();
+        this.nodes.forEach(node => {
+            eigenvector.set(node.id, 1.0);
+        });
+
+        for (let iter = 0; iter < 100; iter++) {
+            const newEigenvector = new Map();
+            let norm = 0;
+
+            this.nodes.forEach(node => {
+                let sum = 0;
+                this.nodes.forEach(neighbor => {
+                    if (adjacency.get(neighbor.id).has(node.id)) {
+                        sum += eigenvector.get(neighbor.id);
+                    }
+                });
+                newEigenvector.set(node.id, sum);
+                norm += sum * sum;
+            });
+
+            norm = Math.sqrt(norm);
+            this.nodes.forEach(node => {
+                eigenvector.set(node.id, newEigenvector.get(node.id) / norm);
+            });
+        }
+
+        // Normalize to [0,1]
+        const maxVal = Math.max(...Array.from(eigenvector.values()));
+        this.nodes.forEach(node => {
+            node.centrality.eigenvector = maxVal > 0 ? 
+                (eigenvector.get(node.id) / maxVal).toFixed(4) : "0.0000";
+        });
+    }
+
+    calculatePageRank() {
+        const nodeCount = this.nodes.length;
+        if (nodeCount <= 1) return;
+
+        const damping = 0.85;
+        const epsilon = 1e-6;
+        
+        // Initialize PageRank
+        let pr = new Map();
+        this.nodes.forEach(node => {
+            pr.set(node.id, 1.0 / nodeCount);
+        });
+
+        // Build adjacency lists
+        const outLinks = new Map();
+        const inLinks = new Map();
+        
+        this.nodes.forEach(node => {
+            outLinks.set(node.id, []);
+            inLinks.set(node.id, []);
+        });
+
+        this.edges.forEach(edge => {
+            outLinks.get(edge.from).push(edge.to);
+            inLinks.get(edge.to).push(edge.from);
+        });
+
+        // Power iteration
+        for (let iter = 0; iter < 100; iter++) {
+            const newPr = new Map();
+            let sumPr = 0;
+
+            this.nodes.forEach(node => {
+                let sum = 0;
+                inLinks.get(node.id).forEach(fromId => {
+                    const outDegree = outLinks.get(fromId).length;
+                    if (outDegree > 0) {
+                        sum += pr.get(fromId) / outDegree;
+                    }
+                });
+                
+                newPr.set(node.id, (1 - damping) / nodeCount + damping * sum);
+                sumPr += newPr.get(node.id);
+            });
+
+            // Normalize
+            this.nodes.forEach(node => {
+                newPr.set(node.id, newPr.get(node.id) / sumPr);
+            });
+
+            // Check convergence
+            let maxDiff = 0;
+            this.nodes.forEach(node => {
+                maxDiff = Math.max(maxDiff, Math.abs(newPr.get(node.id) - pr.get(node.id)));
+            });
+
+            pr = newPr;
+            if (maxDiff < epsilon) break;
+        }
+
+        // Normalize to [0,1]
+        const maxVal = Math.max(...Array.from(pr.values()));
+        this.nodes.forEach(node => {
+            node.centrality.pagerank = maxVal > 0 ? 
+                (pr.get(node.id) / maxVal).toFixed(4) : "0.0000";
+        });
+    }
+
+    calculateShortestPaths(startNodeId) {
+        const distances = new Map();
+        this.nodes.forEach(node => {
+            distances.set(node.id, Infinity);
+        });
+        distances.set(startNodeId, 0);
+
+        const queue = [startNodeId];
+        
+        while (queue.length > 0) {
+            const currentId = queue.shift();
+            const currentDist = distances.get(currentId);
+
+            // Find neighbors
+            const neighbors = this.edges.filter(edge => 
+                edge.from === currentId || edge.to === currentId
+            ).map(edge => edge.from === currentId ? edge.to : edge.from);
+
+            neighbors.forEach(neighborId => {
+                const newDist = currentDist + 1; // Unweighted for this calculation
+                if (newDist < distances.get(neighborId)) {
+                    distances.set(neighborId, newDist);
+                    queue.push(neighborId);
+                }
+            });
+        }
+
+        return distances;
+    }
 }

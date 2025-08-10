@@ -177,6 +177,7 @@ function setupEventListeners() {
     
     // Edge creation via search
     document.getElementById('create-edge-search-btn').addEventListener('click', showEdgeSearchDialog);
+    document.getElementById('calculate-centrality-btn').addEventListener('click', calculateCentralities);
     
     // Search functionality
     setupSearchComponents();
@@ -1016,6 +1017,22 @@ function updateSelectionInfo() {
         const chineseLabelDisplay = node.chineseLabel ? 
             `<p><strong>中文:</strong> ${node.chineseLabel}</p>` : 
             '';
+        
+        let centralityDisplay = '';
+        if (node.centrality) {
+            centralityDisplay = `
+                <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #ddd;">
+                    <p style="font-weight: bold; margin-bottom: 4px;">Centrality Values:</p>
+                    <table style="width: 100%; font-size: 11px;">
+                        <tr><td><strong>Degree:</strong></td><td>${node.centrality.degree || 'N/A'}</td></tr>
+                        <tr><td><strong>Betweenness:</strong></td><td>${node.centrality.betweenness || 'N/A'}</td></tr>
+                        <tr><td><strong>Closeness:</strong></td><td>${node.centrality.closeness || 'N/A'}</td></tr>
+                        <tr><td><strong>Eigenvector:</strong></td><td>${node.centrality.eigenvector || 'N/A'}</td></tr>
+                        <tr><td><strong>PageRank:</strong></td><td>${node.centrality.pagerank || 'N/A'}</td></tr>
+                    </table>
+                </div>
+            `;
+        }
             
         selectionInfo.innerHTML = `
             <div style="font-size: 12px; line-height: 1.4;">
@@ -1025,6 +1042,7 @@ function updateSelectionInfo() {
                 <p><strong>Color:</strong> <span style="display: inline-block; width: 12px; height: 12px; background-color: ${node.color}; border: 1px solid #333; vertical-align: middle; margin-right: 4px;"></span>${node.color}</p>
                 <p><strong>Size:</strong> ${node.radius}px</p>
                 ${node.category ? `<p><strong>Category:</strong> ${node.category}</p>` : ''}
+                ${centralityDisplay}
             </div>
         `;
     } else if (graph.selectedEdge) {
@@ -1850,6 +1868,28 @@ function loadDefaultGraph() {
     graph.render();
 }
 
+function calculateCentralities() {
+    if (graph.nodes.length === 0) {
+        showNotification('No nodes to analyze', 'error');
+        return;
+    }
+
+    if (graph.nodes.length === 1) {
+        showNotification('Need at least 2 nodes for centrality analysis', 'error');
+        return;
+    }
+
+    try {
+        graph.calculateCentralities();
+        document.getElementById('centrality-info').style.display = 'block';
+        updateSelectionInfo(); // Refresh selection info if a node is selected
+        showNotification(`Centralities calculated for ${graph.nodes.length} nodes`);
+    } catch (error) {
+        console.error('Error calculating centralities:', error);
+        showNotification('Error calculating centralities: ' + error.message, 'error');
+    }
+}
+
 // CSS for notifications and dialogs
 const style = document.createElement('style');
 style.textContent = `
@@ -2018,6 +2058,53 @@ style.textContent = `
         height: 20px;
         border-radius: 3px;
         border: 1px solid #ccc;
+    }
+
+    /* Centrality Display Styles */
+    #selection-info table {
+        margin-top: 4px;
+    }
+
+    #selection-info table tr td:first-child {
+        padding-right: 8px;
+        color: #495057;
+    }
+
+    #selection-info table tr td:last-child {
+        text-align: right;
+        font-family: monospace;
+        color: #007bff;
+    }
+
+    #calculate-centrality-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        width: 100%;
+    }
+
+    #calculate-centrality-btn:hover {
+        background: #218838;
+    }
+
+    #calculate-centrality-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+
+    #centrality-info {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        padding: 8px;
+        margin-top: 8px;
+        font-size: 11px;
+        color: #155724;
     }
 `;
 document.head.appendChild(style);
