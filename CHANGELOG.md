@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.4] - 2025-08-11
+
+### Added
+- **Node Label Truncation**: Automatic text truncation for long node labels to maintain visual clarity
+- **Length Limit**: Node labels truncated to 20 characters with "..." suffix when exceeded
+- **Visual Balance**: Prevents overly wide text backgrounds while preserving label readability
+- **Smart Truncation**: Full label preserved in data, only display is truncated for aesthetics
+
+### Technical Details
+- **Character Limit**: 20-character maximum for displayed node labels
+- **Ellipsis Indicator**: "..." suffix clearly indicates truncated labels
+- **Data Preservation**: Complete original labels maintained in graph data structure
+- **Responsive Design**: Truncation adapts to actual displayed length regardless of zoom level
+- **Background Optimization**: Text backgrounds sized to truncated labels for cleaner appearance
+
+### User Experience
+- **Cleaner Visuals**: Eliminates wide text boxes from long node labels
+- **Readable Labels**: Maintains essential information while preventing visual clutter
+- **Consistent Display**: Uniform label presentation across all nodes
+- **Hover Context**: Full label available through node selection in sidebar
+
 ## [0.3.3] - 2025-08-11
 
 ### Added
