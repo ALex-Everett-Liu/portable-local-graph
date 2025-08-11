@@ -73,6 +73,7 @@ class DatabaseManager {
                 color TEXT DEFAULT '#3b82f6',
                 radius REAL DEFAULT 20,
                 category TEXT,
+                layers TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -192,8 +193,8 @@ async saveGraph(data) {
 
                 // Insert nodes
                 const nodeStmt = this.db.prepare(`
-                    INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `);
                 
                 nodes.forEach(node => {
@@ -206,7 +207,8 @@ async saveGraph(data) {
                         node.chineseLabel || '',
                         node.color || '#3b82f6',
                         node.radius || 20,
-                        node.category || null
+                        node.category || null,
+                        (node.layers || []).join(',')
                     );
                 });
                 nodeStmt.finalize();
@@ -292,7 +294,8 @@ async saveGraph(data) {
                                 chineseLabel: row.chinese_label || '',
                                 color: row.color,
                                 radius: row.radius,
-                                category: row.category
+                                category: row.category,
+                                layers: row.layers ? row.layers.split(',').map(l => l.trim()).filter(l => l) : []
                             };
                             console.log('[DatabaseManager.loadGraph] Processed node:', node);
                             return node;

@@ -1529,13 +1529,29 @@ function showNodeDialog(node) {
     const categoryInput = document.getElementById('node-category');
     const sizeInput = document.getElementById('node-size');
     const sizeDisplay = document.getElementById('size-display');
+    const layersInput = document.getElementById('node-layers');
     
-    labelInput.value = node.label;
-    chineseInput.value = node.chineseLabel || '';
-    colorInput.value = node.color;
-    categoryInput.value = node.category || '';
-    sizeInput.value = node.radius;
-    sizeDisplay.textContent = node.radius;
+    // Clear form fields for new nodes, populate for existing nodes
+    const isExistingNode = node.id && graph && graph.nodes && graph.nodes.find(n => n.id === node.id);
+    if (isExistingNode) {
+        // Existing node - populate with current values
+        labelInput.value = node.label || '';
+        chineseInput.value = node.chineseLabel || '';
+        colorInput.value = node.color || '#3b82f6';
+        categoryInput.value = node.category || '';
+        sizeInput.value = node.radius || 20;
+        sizeDisplay.textContent = node.radius || 20;
+        layersInput.value = (node.layers || []).join(', ');
+    } else {
+        // New node - clear all fields
+        labelInput.value = '';
+        chineseInput.value = '';
+        colorInput.value = '#3b82f6';
+        categoryInput.value = '';
+        sizeInput.value = 20;
+        sizeDisplay.textContent = 20;
+        layersInput.value = '';
+    }
     
     // Update size display when slider changes
     sizeInput.oninput = () => {
@@ -1592,7 +1608,15 @@ function handleNodeOK() {
 }
 
 function handleNodeCancel() {
-    document.getElementById('node-dialog').classList.add('hidden');
+    const dialog = document.getElementById('node-dialog');
+    // Clear form fields to prevent persistence
+    document.getElementById('node-label').value = '';
+    document.getElementById('node-chinese').value = '';
+    document.getElementById('node-color').value = '#3b82f6';
+    document.getElementById('node-category').value = '';
+    document.getElementById('node-layers').value = '';
+    document.getElementById('node-size').value = '20';
+    dialog.classList.add('hidden');
 }
 
 function handleNodeDelete() {
