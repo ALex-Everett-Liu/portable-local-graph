@@ -158,14 +158,43 @@ Explore subgraphs using powerful distance-based filtering and analysis:
 - **Keyboard Navigation**: Use arrow keys and Enter to select
 - **F Key Shortcut**: Press 'F' anywhere to focus search
 
+### Layer-based Filtering System
+
+Manage complex graphs with multi-layer classification and filtering capabilities:
+
+#### Multi-layer Node Support
+- **Layer Assignment**: Nodes can belong to multiple layers simultaneously using comma-separated tags
+- **Flexible Organization**: Use descriptive layer names like "workflow", "core", "processing", "infrastructure"
+- **Cross-domain Mapping**: Nodes can span multiple conceptual domains for comprehensive analysis
+
+#### Layer Management UI
+- **Intuitive Interface**: Checkbox-based layer selection in the sidebar
+- **Real-time Filtering**: Instant visual updates when layer selection changes
+- **Dynamic Discovery**: Automatic layer list population from existing node data
+- **Persistent Selection**: Layer filters maintained across browser sessions
+
+#### Filtering Operations
+- **Selective Display**: Show/hide nodes based on active layer selection
+- **Edge Filtering**: Connected edges automatically filtered based on visible nodes
+- **Layer Combinations**: Use multiple layers simultaneously for complex views
+- **Quick Reset**: "Show All Layers" button for instant full graph restoration
+- **Filter Reset**: One-click reset to display complete graph
+
+#### Usage Examples
+1. **Layer Assignment**: Edit node properties and add layers like "frontend,api,data"
+2. **Filter Application**: Check specific layers to focus on relevant subgraphs
+3. **Multi-layer Views**: Combine layers like "workflow+core" for targeted analysis
+4. **Cross-domain Analysis**: Use layers to separate concerns like "security", "performance", "user-experience"
+
 ### Working with Categories
 
 You can now assign categories to both nodes and edges for better organization:
 
 #### Node Categories
 - **Add categorized nodes**: When adding nodes programmatically, include a category parameter
-- **Edit categories**: Right-click nodes to edit their category along with label and color
+- **Edit categories**: Right-click nodes to edit their category along with label, color, and layers
 - **Visual grouping**: Nodes with the same category can be styled consistently
+- **Layer Integration**: Categories work alongside layer filtering for enhanced organization
 
 #### Edge Categories
 - **Create categorized edges**: When connecting nodes, edges can be assigned categories

@@ -144,6 +144,41 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | `resetFilter()` | Restores original graph | None | boolean success |
 | `getAllNodes()` | Returns node list for search functionality | None | Array of node objects |
 
+### Layer-based Filtering System
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `parseNodeLayers(layersText)` | Parse comma-separated layer string | layersText: string | Array of layer strings |
+| `getUniqueLayers()` | Discover all unique layers from nodes | None | Array of unique layer strings |
+| `filterByLayers(activeLayers)` | Filter nodes by active layers | activeLayers: Set<string> | Object with filtered nodes and edges |
+| `updateLayerUI()` | Update layer checkbox interface | None | void |
+| `resetLayerFilter()` | Show all layers | None | void |
+| `toggleLayer(layerName)` | Toggle specific layer visibility | layerName: string | void |
+
+### Layer Management Architecture
+| Component | Purpose | Key Features |
+|-----------|---------|--------------|
+| **Layer Parser** | Parse comma-separated layer strings | Handles spaces, duplicates, case sensitivity |
+| **Layer Discovery** | Dynamically discover available layers | Real-time layer list population |
+| **Filter Engine** | Apply layer-based filtering | Set-based matching with O(n) complexity |
+| **UI Controller** | Manage layer checkbox interface | Real-time updates, persistent selection |
+| **State Manager** | Track active layer filters | Cross-session persistence |
+
+### Database Layer Integration
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveLayersToDatabase(nodeId, layers)` | Persist layer data to SQLite | nodeId: string, layers: string | Promise<void> |
+| `loadLayersFromDatabase()` | Load layer data from SQLite | None | Promise<object> |
+| `exportLayersToJSON()` | Export layer data to JSON format | None | object with layer information |
+| `importLayersFromJSON(data)` | Import layer data from JSON | data: object | Promise<void> |
+
+### Layer Data Structures
+| Data Structure | Purpose | Schema |
+|----------------|---------|---------|
+| **Node Layers** | Multi-layer assignment for nodes | `layers: "layer1,layer2,layer3"` |
+| **Active Filters** | Currently selected layers | `activeLayers: Set<string>` |
+| **Layer Metadata** | Layer discovery and statistics | `{layerName: count, ...}` |
+| **Filter State** | Complete filter configuration | `{activeLayers: [], originalNodes: [], ...}` |
+
 ### Search System - Intelligent Node Navigation
 | Function | Purpose | Parameters | Returns |
 |----------|---------|------------|---------|
@@ -559,6 +594,23 @@ Click "Create Edge" → Edge created between distant nodes →
 Visual confirmation with notification → Continue editing
 ```
 
+### 12. Layer-based Filtering Workflow
+```
+Create nodes with layer assignments → Use comma-separated values like "core,api,data" → 
+Access layer filter panel → Check desired layers → 
+View filtered subgraph → Save configurations → 
+Apply multiple layer combinations → Reset to show all layers → 
+Cross-domain analysis with multi-layer nodes
+```
+
+### 13. Layer Management Workflow
+```
+Edit node properties → Add layer tags → Dynamic layer discovery → 
+Real-time filtering → Persistent selection across sessions → 
+Layer-based organization → Combined with categories → 
+Export/import with layer data → Complete data preservation
+```
+
 ---
 
 ## Code Conventions
@@ -576,9 +628,11 @@ Visual confirmation with notification → Continue editing
 - **Grid**: 20px grid spacing with light gray lines
 
 ### Data Structures
-- **Nodes**: `{id, x, y, label, color, radius, category}`
+- **Nodes**: `{id, x, y, label, color, radius, category, layers}`
 - **Edges**: `{id, from, to, weight, category}`
 - **Graph export**: `{nodes, edges, scale, offset}`
+- **Layer Data**: `{layerName: nodeCount, ...}`
+- **Filter State**: `{activeLayers: Set<string>, originalNodes: [], originalEdges: []}`
 
 ---
 
