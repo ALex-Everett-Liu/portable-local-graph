@@ -179,6 +179,15 @@ function setupEventListeners() {
     document.getElementById('create-edge-search-btn').addEventListener('click', showEdgeSearchDialog);
     document.getElementById('calculate-centrality-btn').addEventListener('click', calculateCentralities);
     
+    // Layer filtering controls
+    document.getElementById('apply-layer-filter-btn').addEventListener('click', applyLayerFilter);
+    document.getElementById('reset-layer-filter-btn').addEventListener('click', resetLayerFilter);
+    document.getElementById('show-all-layers-btn').addEventListener('click', showAllLayers);
+    document.getElementById('layer-filter-input').addEventListener('input', updateLayerFilter);
+    
+    // Initialize layer filtering
+    updateLayerList();
+    
     // Search functionality
     setupSearchComponents();
     
@@ -1556,6 +1565,7 @@ function handleNodeOK() {
     const color = document.getElementById('node-color').value;
     const category = document.getElementById('node-category').value;
     const radius = parseInt(document.getElementById('node-size').value);
+    const layersInput = document.getElementById('node-layers').value;
     
     const node = graph.nodes.find(n => n.id == nodeId);
     if (node) {
@@ -1565,8 +1575,17 @@ function handleNodeOK() {
         node.color = color;
         node.category = category || null;
         node.radius = Math.max(1, Math.min(100, radius));
+        
+        // Parse layers from comma-separated input
+        if (layersInput.trim()) {
+            node.layers = layersInput.split(',').map(l => l.trim()).filter(l => l);
+        } else {
+            node.layers = [];
+        }
+        
         graph.render();
         appState.isModified = true;
+        updateLayerList(); // Refresh layer list
     }
     
     dialog.classList.add('hidden');
@@ -1912,9 +1931,9 @@ function handleBeforeUnload(e) {
 
 function loadDefaultGraph() {
     // Create a simple default graph with bilingual labels
-    const node1 = graph.addNode(200, 200, 'Start', '#3b82f6', null, 20, '开始');
-    const node2 = graph.addNode(400, 200, 'Process', '#3b82f6', null, 20, '处理');
-    const node3 = graph.addNode(300, 350, 'End', '#3b82f6', null, 20, '结束');
+    const node1 = graph.addNode(200, 200, 'Start', '#3b82f6', null, 20, '开始', ['workflow', 'core']);
+    const node2 = graph.addNode(400, 200, 'Process', '#3b82f6', null, 20, '处理', ['workflow', 'processing']);
+    const node3 = graph.addNode(300, 350, 'End', '#3b82f6', null, 20, '结束', ['workflow', 'core']);
     
     graph.addEdge(node1.id, node2.id, 1);
     graph.addEdge(node2.id, node3.id, 2);
@@ -1925,7 +1944,94 @@ function loadDefaultGraph() {
     appState.redoStack = [];
     appState.isModified = false;
     updateGraphInfo();
+    updateLayerList();
     graph.render();
+}
+
+// Layer filtering functions
+function updateLayerList() {
+    const layers = graph.getAllLayers();
+    const layerList = document.getElementById('layer-list');
+    
+    if (layers.length === 0) {
+        layerList.innerHTML = '<p style="font-size: 11px; color: #666;">No layers found</p>';
+        return;
+    }
+    
+    layerList.innerHTML = '';
+    layers.forEach(layer => {
+        const layerItem = document.createElement('div');
+        layerItem.className = 'layer-item';
+        layerItem.innerHTML = `
+            <label style="display: flex; align-items: center; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" 
+                       class="layer-checkbox" 
+                       data-layer="${layer}" 
+                       ${graph.isLayerActive(layer) ? 'checked' : ''}
+                       style="margin-right: 6px;">
+                ${layer}
+            </label>
+        `;
+        layerList.appendChild(layerItem);
+    });
+    
+    // Add event listeners to checkboxes
+    layerList.querySelectorAll('.layer-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const layer = e.target.dataset.layer;
+            graph.toggleLayer(layer);
+            updateLayerList();
+        });
+    });
+}
+
+function applyLayerFilter() {
+    const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
+    const selectedLayers = Array.from(checkboxes).map(cb => cb.dataset.layer);
+    
+    if (selectedLayers.length > 0) {
+        graph.setActiveLayers(selectedLayers);
+        showNotification(`Showing ${selectedLayers.length} layer(s): ${selectedLayers.join(', ')}`);
+    } else {
+        graph.clearLayerFilter();
+        showNotification('Showing all layers');
+    }
+    
+    updateLayerList();
+    updateGraphInfo();
+}
+
+function resetLayerFilter() {
+    graph.clearLayerFilter();
+    updateLayerList();
+    updateGraphInfo();
+    showNotification('Layer filter reset - showing all nodes');
+}
+
+function showAllLayers() {
+    const allLayers = graph.getAllLayers();
+    if (allLayers.length > 0) {
+        graph.setActiveLayers(allLayers);
+        showNotification(`Showing all ${allLayers.length} layers`);
+    } else {
+        showNotification('No layers to show');
+    }
+    updateLayerList();
+    updateGraphInfo();
+}
+
+function updateLayerFilter() {
+    const filterInput = document.getElementById('layer-filter-input').value.toLowerCase();
+    const layerItems = document.querySelectorAll('.layer-item');
+    
+    layerItems.forEach(item => {
+        const layerName = item.textContent.toLowerCase();
+        if (filterInput === '' || layerName.includes(filterInput)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
 }
 
 function calculateCentralities() {
@@ -2165,6 +2271,39 @@ style.textContent = `
         margin-top: 8px;
         font-size: 11px;
         color: #155724;
+    }
+
+    /* Layer filtering styles */
+    .layer-item {
+        margin: 4px 0;
+        padding: 4px 0;
+    }
+
+    .layer-item label {
+        user-select: none;
+    }
+
+    .layer-item input[type="checkbox"] {
+        cursor: pointer;
+    }
+
+    #layer-list {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 8px;
+        background: #f8f9fa;
+    }
+
+    #layer-filter-input {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    #layer-filter-input:focus {
+        outline: none;
+        border-color: #007bff;
     }
 `;
 document.head.appendChild(style);

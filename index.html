@@ -92,6 +92,8 @@
                         <input type="text" id="node-chinese" placeholder="中文标签 (Chinese)">
                         <input type="color" id="node-color" value="#3b82f6">
                         <input type="text" id="node-category" placeholder="Category (optional)">
+                        <label>Layers:</label>
+                        <input type="text" id="node-layers" placeholder="Enter layers (comma-separated)">
                         <label>Size:</label>
                         <input type="range" id="node-size" min="1" max="100" value="20" step="1">
                         <span id="size-display">20</span>
@@ -231,6 +233,20 @@
                             </div>
                         </div>
 
+                        <div class="sidebar-section">
+                            <h4>Layer Filtering</h4>
+                            <div class="filter-controls">
+                                <label>Active Layers:</label>
+                                <div id="layer-list" style="margin: 8px 0; max-height: 120px; overflow-y: auto;">
+                                    <p style="font-size: 11px; color: #666;">No layers found</p>
+                                </div>
+                                <input type="text" id="layer-filter-input" placeholder="Filter by layer..." style="width: 100%; margin-bottom: 8px;">
+                                <button id="apply-layer-filter-btn" class="tool-btn">Apply Filter</button>
+                                <button id="reset-layer-filter-btn" class="tool-btn">Reset</button>
+                                <button id="show-all-layers-btn" class="tool-btn">Show All</button>
+                            </div>
+                        </div>
+                        
                         <div class="quick-access">
                             <h4>Quick Access</h4>
                             <div id="quick-access-list"></div>

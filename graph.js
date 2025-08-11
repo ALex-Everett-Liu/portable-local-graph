@@ -19,6 +19,10 @@ class Graph {
         this.onGraphUpdate = options.onGraphUpdate || (() => {});
         this.onSelectionChange = options.onSelectionChange || (() => {});
         
+        // Layer filtering state
+        this.activeLayers = new Set(); // Empty set means show all layers
+        this.layerFilterEnabled = false;
+        
         this.setupCanvas();
         this.setupEventListeners();
     }
@@ -51,7 +55,8 @@ class Graph {
         };
     }
 
-    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20, chineseLabel = null) {
+    // Create a new node at specified coordinates with customizable properties.
+    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20, chineseLabel = null, layers = []) {
         // Generate consistent UUID format
         let uuid;
         if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -78,7 +83,8 @@ class Graph {
             chineseLabel: chineseLabel || '',
             color: color,
             radius: Math.max(1, Math.min(100, radius || 20)),
-            category: category
+            category: category,
+            layers: Array.isArray(layers) ? layers : (layers ? [layers] : [])
         };
         this.nodes.push(node);
         return node;
@@ -226,6 +232,13 @@ class Graph {
 
     renderNodes() {
         this.nodes.forEach(node => {
+            // Skip rendering if layer filter is enabled and node doesn't match
+            if (this.layerFilterEnabled && this.activeLayers.size > 0) {
+                const nodeLayers = node.layers || [];
+                const hasMatchingLayer = nodeLayers.some(layer => this.activeLayers.has(layer));
+                if (!hasMatchingLayer) return;
+            }
+            
             this.ctx.beginPath();
             this.ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
             
@@ -302,6 +315,17 @@ class Graph {
             const to = this.nodes.find(n => n.id === edge.to);
             
             if (from && to) {
+                // Skip rendering if layer filter is enabled and either node doesn't match
+                if (this.layerFilterEnabled && this.activeLayers.size > 0) {
+                    const fromLayers = from.layers || [];
+                    const toLayers = to.layers || [];
+                    const fromHasLayer = fromLayers.some(layer => this.activeLayers.has(layer));
+                    const toHasLayer = toLayers.some(layer => this.activeLayers.has(layer));
+                    
+                    // Only render edge if both nodes are visible in active layers
+                    if (!fromHasLayer || !toHasLayer) return;
+                }
+                
                 this.ctx.beginPath();
                 this.ctx.moveTo(from.x, from.y);
                 this.ctx.lineTo(to.x, to.y);
@@ -659,8 +683,57 @@ class Graph {
         return this.nodes.map(node => ({
             id: node.id,
             label: node.label,
-            chineseLabel: node.chineseLabel || ''
+            chineseLabel: node.chineseLabel || '',
+            layers: node.layers || []
         }));
+    }
+
+    // Layer filtering methods
+    getAllLayers() {
+        const layers = new Set();
+        this.nodes.forEach(node => {
+            if (node.layers && Array.isArray(node.layers)) {
+                node.layers.forEach(layer => layers.add(layer.trim()));
+            }
+        });
+        return Array.from(layers).sort();
+    }
+
+    setActiveLayers(layers) {
+        this.activeLayers = new Set(layers);
+        this.layerFilterEnabled = this.activeLayers.size > 0;
+        this.render();
+    }
+
+    addActiveLayer(layer) {
+        this.activeLayers.add(layer.trim());
+        this.layerFilterEnabled = true;
+        this.render();
+    }
+
+    removeActiveLayer(layer) {
+        this.activeLayers.delete(layer.trim());
+        this.layerFilterEnabled = this.activeLayers.size > 0;
+        this.render();
+    }
+
+    clearLayerFilter() {
+        this.activeLayers.clear();
+        this.layerFilterEnabled = false;
+        this.render();
+    }
+
+    toggleLayer(layer) {
+        const trimmedLayer = layer.trim();
+        if (this.activeLayers.has(trimmedLayer)) {
+            this.removeActiveLayer(trimmedLayer);
+        } else {
+            this.addActiveLayer(trimmedLayer);
+        }
+    }
+
+    isLayerActive(layer) {
+        return this.activeLayers.has(layer.trim());
     }
 
     // Centrality calculation methods
