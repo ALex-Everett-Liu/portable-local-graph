@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.7] - 2025-08-11
+
+### Added
+- **Layer Inheritance System**: New nodes automatically inherit layer assignments from the last created node
+- **Seamless Layer Continuity**: When creating multiple nodes, they inherit the same layer context as the previous node
+- **Intuitive Layer Workflow**: No need to manually assign layers to each new node - they inherit from the working context
+- **Dynamic Layer Updates**: Layer list automatically refreshes when new nodes are created with inherited layers
+
+### Technical Details
+- **Inheritance Logic**: New nodes inherit `layers` array from the most recently created node
+- **Explicit Override**: When explicitly provided, custom layer assignments take precedence over inheritance
+- **Empty Graph Handling**: First node in empty graph gets empty layers array (no inheritance)
+- **Real-time UI Updates**: Layer filtering interface automatically updates when new nodes are created
+- **Backward Compatibility**: Existing layer functionality unchanged, inheritance is additive
+
+### User Experience
+- **Reduced Friction**: Create multiple nodes in the same layer context without repetitive layer assignment
+- **Context Preservation**: Working within a specific layer context continues seamlessly across node creation
+- **Visual Consistency**: New nodes appear in active layer filters without manual configuration
+- **Flexible Override**: Users can still manually set layers for any node via the properties dialog
+
 ## [0.3.3] - 2025-08-11
 
 ### Added

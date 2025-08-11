@@ -56,7 +56,7 @@ class Graph {
     }
 
     // Create a new node at specified coordinates with customizable properties.
-    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20, chineseLabel = null, layers = []) {
+    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20, chineseLabel = null, layers = null) {
         // Generate consistent UUID format
         let uuid;
         if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -75,6 +75,20 @@ class Graph {
             uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
         }
         
+        // Inherit layers from the last created node if no explicit layers provided
+        let nodeLayers = [];
+        if (layers !== null) {
+            // Explicit layers provided
+            nodeLayers = Array.isArray(layers) ? layers : [layers];
+        } else if (this.nodes.length > 0) {
+            // Inherit from last created node
+            const lastNode = this.nodes[this.nodes.length - 1];
+            nodeLayers = lastNode.layers || [];
+        } else {
+            // First node or empty graph
+            nodeLayers = [];
+        }
+        
         const node = {
             id: uuid,
             x: x,
@@ -84,7 +98,7 @@ class Graph {
             color: color,
             radius: Math.max(1, Math.min(100, radius || 20)),
             category: category,
-            layers: Array.isArray(layers) ? layers : (layers ? [layers] : [])
+            layers: nodeLayers
         };
         this.nodes.push(node);
         return node;
@@ -363,6 +377,8 @@ class Graph {
                 if (!node) {
                     this.addNode(pos.x, pos.y);
                     if (this.onGraphUpdate) this.onGraphUpdate();
+                    // Ensure layer list is updated when new node is created
+                    if (window.updateLayerList) window.updateLayerList();
                 }
             } else if (this.mode === 'select') {
                 if (node) {
