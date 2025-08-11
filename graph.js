@@ -56,7 +56,7 @@ class Graph {
     }
 
     // Create a new node at specified coordinates with customizable properties.
-    addNode(x, y, label = null, color = '#3b82f6', category = null, radius = 20, chineseLabel = null, layers = null) {
+    addNode(x, y, label = null, color = '#6737E8', category = null, radius = 20, chineseLabel = null, layers = null) {
         // Generate consistent UUID format
         let uuid;
         if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -272,10 +272,16 @@ class Graph {
             
             this.ctx.fill();
             this.ctx.stroke();
+
+            // Truncate long labels
+            const maxLabelLength = 20;
+            const displayLabel = node.label.length > maxLabelLength 
+                ? node.label.substring(0, maxLabelLength) + '...' 
+                : node.label;
             
             // Calculate text width for background
             this.ctx.font = `${14 / this.scale}px Arial`;
-            const textWidth = this.ctx.measureText(node.label).width;
+            const textWidth = this.ctx.measureText(displayLabel).width;
             const textHeight = 14 / this.scale;
             
             // Only add background if text is larger than node
@@ -294,7 +300,7 @@ class Graph {
             this.ctx.fillStyle = '#ffffff';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(node.label, node.x, node.y);
+            this.ctx.fillText(displayLabel, node.x, node.y);
         });
     }
 

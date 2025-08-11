@@ -1537,7 +1537,7 @@ function showNodeDialog(node) {
         // Existing node - populate with current values
         labelInput.value = node.label || '';
         chineseInput.value = node.chineseLabel || '';
-        colorInput.value = node.color || '#3b82f6';
+        colorInput.value = node.color || '#6737E8';
         categoryInput.value = node.category || '';
         sizeInput.value = node.radius || 20;
         sizeDisplay.textContent = node.radius || 20;
@@ -1546,7 +1546,7 @@ function showNodeDialog(node) {
         // New node - clear all fields
         labelInput.value = '';
         chineseInput.value = '';
-        colorInput.value = '#3b82f6';
+        colorInput.value = '#6737E8';
         categoryInput.value = '';
         sizeInput.value = 20;
         sizeDisplay.textContent = 20;
@@ -1612,7 +1612,7 @@ function handleNodeCancel() {
     // Clear form fields to prevent persistence
     document.getElementById('node-label').value = '';
     document.getElementById('node-chinese').value = '';
-    document.getElementById('node-color').value = '#3b82f6';
+    document.getElementById('node-color').value = '#6737E8';
     document.getElementById('node-category').value = '';
     document.getElementById('node-layers').value = '';
     document.getElementById('node-size').value = '20';
