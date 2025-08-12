@@ -167,24 +167,33 @@ Manage complex graphs with multi-layer classification and filtering capabilities
 - **Flexible Organization**: Use descriptive layer names like "workflow", "core", "processing", "infrastructure"
 - **Cross-domain Mapping**: Nodes can span multiple conceptual domains for comprehensive analysis
 
+#### Dual-mode Filtering System
+- **Include Mode (default)**: Show only nodes/edges with selected layers
+- **Exclude Mode**: Hide nodes/edges with selected layers (show everything else)
+- **Instant Mode Switching**: Toggle between include/exclude without losing layer selections
+- **Visual Mode Indicator**: Radio buttons clearly show current filtering mode
+
 #### Layer Management UI
 - **Intuitive Interface**: Checkbox-based layer selection in the sidebar
 - **Real-time Filtering**: Instant visual updates when layer selection changes
 - **Dynamic Discovery**: Automatic layer list population from existing node data
 - **Persistent Selection**: Layer filters maintained across browser sessions
+- **Mode Persistence**: Include/exclude mode setting remembered across sessions
 
 #### Filtering Operations
-- **Selective Display**: Show/hide nodes based on active layer selection
+- **Selective Display**: Show/hide nodes based on active layer selection and chosen mode
 - **Edge Filtering**: Connected edges automatically filtered based on visible nodes
 - **Layer Combinations**: Use multiple layers simultaneously for complex views
+- **Mode Flexibility**: Same layer selection works for both inclusion and exclusion
 - **Quick Reset**: "Show All Layers" button for instant full graph restoration
 - **Filter Reset**: One-click reset to display complete graph
 
 #### Usage Examples
 1. **Layer Assignment**: Edit node properties and add layers like "frontend,api,data"
-2. **Filter Application**: Check specific layers to focus on relevant subgraphs
-3. **Multi-layer Views**: Combine layers like "workflow+core" for targeted analysis
+2. **Focus Mode**: Use "Include" to show only specific layers like "workflow+core"
+3. **Hide Mode**: Use "Exclude" to hide distracting layers like "debug+test"
 4. **Cross-domain Analysis**: Use layers to separate concerns like "security", "performance", "user-experience"
+5. **Mode Switching**: Toggle between "show only these" vs "hide these" without reselecting layers
 
 ### Working with Categories
 

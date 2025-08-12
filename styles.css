@@ -434,7 +434,7 @@ body.local-graph-resizing .resize-handle {
 }
 
 .edge.selected {
-    stroke: #007bff;
+    stroke: #00FA9A;
     stroke-width: 3;
 }
 

@@ -236,6 +236,17 @@
                         <div class="sidebar-section">
                             <h4>Layer Filtering</h4>
                             <div class="filter-controls">
+                                <div style="margin-bottom: 8px;">
+                                    <label style="font-size: 12px; margin-right: 8px;">Mode:</label>
+                                    <label style="font-size: 11px; margin-right: 8px;">
+                                        <input type="radio" name="layer-filter-mode" value="include" checked style="margin-right: 3px;">
+                                        Include
+                                    </label>
+                                    <label style="font-size: 11px;">
+                                        <input type="radio" name="layer-filter-mode" value="exclude" style="margin-right: 3px;">
+                                        Exclude
+                                    </label>
+                                </div>
                                 <label>Active Layers:</label>
                                 <div id="layer-list" style="margin: 8px 0; max-height: 120px; overflow-y: auto;">
                                     <p style="font-size: 11px; color: #666;">No layers found</p>

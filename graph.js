@@ -22,6 +22,7 @@ class Graph {
         // Layer filtering state
         this.activeLayers = new Set(); // Empty set means show all layers
         this.layerFilterEnabled = false;
+        this.layerFilterMode = 'include'; // 'include' or 'exclude'
         
         this.setupCanvas();
         this.setupEventListeners();
@@ -246,11 +247,18 @@ class Graph {
 
     renderNodes() {
         this.nodes.forEach(node => {
-            // Skip rendering if layer filter is enabled and node doesn't match
+            // Skip rendering based on layer filter mode
             if (this.layerFilterEnabled && this.activeLayers.size > 0) {
                 const nodeLayers = node.layers || [];
                 const hasMatchingLayer = nodeLayers.some(layer => this.activeLayers.has(layer));
-                if (!hasMatchingLayer) return;
+                
+                if (this.layerFilterMode === 'include') {
+                    // Include mode: show only nodes with matching layers
+                    if (!hasMatchingLayer) return;
+                } else {
+                    // Exclude mode: hide nodes with matching layers
+                    if (hasMatchingLayer) return;
+                }
             }
             
             this.ctx.beginPath();
@@ -287,7 +295,7 @@ class Graph {
             // Only add background if text is larger than node
             if (textWidth > node.radius * 1.5) {
                 // Draw text background
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillStyle = 'rgba(105, 105, 105, 0.7)';
                 this.ctx.fillRect(
                     node.x - textWidth / 2 - 4 / this.scale,
                     node.y - textHeight / 2 - 2 / this.scale,
@@ -335,15 +343,20 @@ class Graph {
             const to = this.nodes.find(n => n.id === edge.to);
             
             if (from && to) {
-                // Skip rendering if layer filter is enabled and either node doesn't match
+                // Skip rendering based on layer filter mode
                 if (this.layerFilterEnabled && this.activeLayers.size > 0) {
                     const fromLayers = from.layers || [];
                     const toLayers = to.layers || [];
                     const fromHasLayer = fromLayers.some(layer => this.activeLayers.has(layer));
                     const toHasLayer = toLayers.some(layer => this.activeLayers.has(layer));
                     
-                    // Only render edge if both nodes are visible in active layers
-                    if (!fromHasLayer || !toHasLayer) return;
+                    if (this.layerFilterMode === 'include') {
+                        // Include mode: show only edges where both nodes have matching layers
+                        if (!fromHasLayer || !toHasLayer) return;
+                    } else {
+                        // Exclude mode: hide edges where either node has matching layers
+                        if (fromHasLayer || toHasLayer) return;
+                    }
                 }
                 
                 this.ctx.beginPath();
@@ -353,10 +366,10 @@ class Graph {
                 const lineWidth = this.getEdgeLineWidth(edge.weight);
                 
                 if (edge === this.selectedEdge) {
-                    this.ctx.strokeStyle = '#007bff';
+                    this.ctx.strokeStyle = '#F4A460';
                     this.ctx.lineWidth = (lineWidth + 1) / this.scale;
                 } else {
-                    this.ctx.strokeStyle = '#94a3b8';
+                    this.ctx.strokeStyle = '#FFEBCD';
                     this.ctx.lineWidth = lineWidth / this.scale;
                 }
                 
@@ -725,6 +738,17 @@ class Graph {
         this.activeLayers = new Set(layers);
         this.layerFilterEnabled = this.activeLayers.size > 0;
         this.render();
+    }
+
+    setLayerFilterMode(mode) {
+        if (mode === 'include' || mode === 'exclude') {
+            this.layerFilterMode = mode;
+            this.render();
+        }
+    }
+
+    getLayerFilterMode() {
+        return this.layerFilterMode;
     }
 
     addActiveLayer(layer) {

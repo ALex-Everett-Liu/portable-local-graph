@@ -35,16 +35,24 @@ function updateLayerList() {
             updateLayerList();
         });
     });
+    
+    // Update mode radio buttons to reflect current mode
+    const currentMode = graph.getLayerFilterMode();
+    document.querySelector(`input[name="layer-filter-mode"][value="${currentMode}"]`).checked = true;
 }
 
 // Apply layer filter
 function applyLayerFilter() {
     const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
     const selectedLayers = Array.from(checkboxes).map(cb => cb.dataset.layer);
+    const mode = document.querySelector('input[name="layer-filter-mode"]:checked').value;
+    
+    graph.setLayerFilterMode(mode);
     
     if (selectedLayers.length > 0) {
         graph.setActiveLayers(selectedLayers);
-        showNotification(`Showing ${selectedLayers.length} layer(s): ${selectedLayers.join(', ')}`);
+        const modeText = mode === 'include' ? 'Showing' : 'Excluding';
+        showNotification(`${modeText} ${selectedLayers.length} layer(s): ${selectedLayers.join(', ')}`);
     } else {
         graph.clearLayerFilter();
         showNotification('Showing all layers');
@@ -65,9 +73,12 @@ function resetLayerFilter() {
 // Show all layers
 function showAllLayers() {
     const allLayers = graph.getAllLayers();
+    const mode = document.querySelector('input[name="layer-filter-mode"]:checked').value;
+    
     if (allLayers.length > 0) {
         graph.setActiveLayers(allLayers);
-        showNotification(`Showing all ${allLayers.length} layers`);
+        const modeText = mode === 'include' ? 'Showing' : 'Excluding';
+        showNotification(`${modeText} all ${allLayers.length} layers`);
     } else {
         showNotification('No layers to show');
     }
@@ -89,6 +100,27 @@ function updateLayerFilter() {
         }
     });
 }
+
+// Add event listeners for mode radio buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const modeRadios = document.querySelectorAll('input[name="layer-filter-mode"]');
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                graph.setLayerFilterMode(this.value);
+                
+                // Re-apply current filter with new mode
+                const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
+                const selectedLayers = Array.from(checkboxes).map(cb => cb.dataset.layer);
+                
+                if (selectedLayers.length > 0) {
+                    const modeText = this.value === 'include' ? 'Showing' : 'Excluding';
+                    showNotification(`${modeText} ${selectedLayers.length} layer(s): ${selectedLayers.join(', ')}`);
+                }
+            }
+        });
+    });
+});
 
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
