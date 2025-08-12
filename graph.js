@@ -257,16 +257,16 @@ class Graph {
             this.ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
             
             if (node === this.selectedNode) {
-                this.ctx.fillStyle = '#007bff';
-                this.ctx.strokeStyle = '#0056b3';
+                this.ctx.fillStyle = '#87CEFA';
+                this.ctx.strokeStyle = '#B0C4DE';
                 this.ctx.lineWidth = 3 / this.scale;
-            } else if (node.highlighted) {
+            } else if (node.highlighted) { // Highlighted: original color with yellow border
                 this.ctx.fillStyle = node.color;
                 this.ctx.strokeStyle = '#ffc107';
                 this.ctx.lineWidth = 4 / this.scale;
-            } else {
+            } else { // Default: original color with gray border
                 this.ctx.fillStyle = node.color;
-                this.ctx.strokeStyle = '#2563eb';
+                this.ctx.strokeStyle = '#C0C0C0';
                 this.ctx.lineWidth = 2 / this.scale;
             }
             
