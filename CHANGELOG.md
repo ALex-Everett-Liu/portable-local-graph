@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.9] - 2025-08-12
+
+### Fixed
+- **Slider Value Synchronization**: Distance analysis and apply filter now use live slider values instead of defaults
+- **Distance Analysis Table**: Fixed to display current max distance and max depth values from sliders
+- **Apply Filter Function**: Now uses real-time slider values for filtering instead of stale state values
+- **Dialog Visibility**: Distance analysis dialog now has proper white background for better readability
+
+### Technical Details
+- **Live DOM Values**: All filter functions now read current slider values from DOM elements
+- **Parameter Passing**: Enhanced function signatures to pass slider values explicitly
+- **State Synchronization**: Eliminated disconnect between UI controls and functional parameters
+- **User Experience**: Slider changes immediately reflected in analysis and filtering results
+
 ## [0.3.8] - 2025-08-12
 
 ### Added

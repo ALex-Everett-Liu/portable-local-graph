@@ -15,7 +15,9 @@
       "Bash(npm run server:*)",
       "Bash(curl:*)",
       "Bash(dir:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(sed:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
