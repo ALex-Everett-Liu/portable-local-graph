@@ -16,7 +16,7 @@
 
 The Portable Local Graph is a lightweight, browser-based graph drawing application for creating and manipulating node-edge diagrams. It provides an intuitive interface for building graphs with support for nodes, edges, weights, and categories, all running locally in the browser without external dependencies.
 
-**Core Design Philosophy**: Simple, accessible graph creation with powerful features hidden behind a clean interface - no server required for basic usage.
+**Core Design Philosophy**: Simple, accessible graph creation with powerful features hidden behind a clean interface.
 
 ---
 
@@ -28,11 +28,11 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
 │  │   HTML/CSS UI   │  │   JavaScript     │  │   Canvas API    │ │
-│  │                 │  │   Application    │  │                 │ │
-│  │ • Toolbar       │  │ • Graph logic    │  │ • 2D Rendering  │ │
-│  │ • Mode buttons  │  │ • Event handling │  │ • Zoom/pan      │ │
-│  │ • Dialog boxes  │  │ • SQLite DB      │  │ • Grid system   │ │
-│  │ • Status bar    │  │ • Auto-save      │  │ • Hit detection │ │
+│  │                 │  │   Modules        │  │                 │ │
+│  │ • Toolbar       │  │ • 16 modules     │  │ • 2D Rendering  │ │
+│  │ • Mode buttons  │  │ • Separation     │  │ • Zoom/pan      │ │
+│  │ • Dialog boxes  │  │ • Browser compat │  │ • Grid system   │ │
+│  │ • Status bar    │  │ • Modular design │  │ • Hit detection │ │
 │  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
 │                              │                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
@@ -42,16 +42,19 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │  │  │ • Position   │  │ • Weight    │  │ • Mouse events  │ │ │
 │  │  │ • Label      │  │ • Category  │  │ • Mode switching│ │ │
 │  │  │ • Color      │  │ • Direction │  │ • Selection     │ │ │
+│  │  │ • Layers     │  │ • Layers    │  │ • Filtering     │ │ │
 │  │  └──────────────┘  └─────────────┘  └─────────────────┘ │ │
 │  └───────────────────────────────────────────────────────────┘  │
 │                              │                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │                Database Manager (app.js)                  │  │
+│  │                Modular Application                        │  │
 │  │  ┌─────────────────┐  ┌─────────────────┐                │ │
-│  │  │   SQLite DB     │  │   JSON Backup   │                │ │
-│  │  │ • Real-time     │  │ • Import/Export │                │ │
-│  │  │ • Auto-save     │  │ • Migration     │                │ │
-│  │  │ • Graph list    │  │ • Sharing       │                │ │
+│  │  │   js/ modules   │  │   SQLite DB     │                │ │
+│  │  │ • app-state.js  │  │ • Real-time     │                │ │
+│  │  │ • graph-ops.js  │  │ • Multi-graph   │                │ │
+│  │  │ • file-ops.js   │  │ • Transactions  │                │ │
+│  │  │ • ui-functions  │  │ • Backup        │                │ │
+│  │  │ • search-filter │  │ • Migration     │                │ │
 │  │  └─────────────────┘  └─────────────────┘                │ │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -69,42 +72,165 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Modular Architecture - 16 Focused Modules
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     js/ Directory Structure                      │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ app-state.js    │  │ app-initial...  │  │ graph-ops.js    │ │
+│  │ • Global state  │  │ • Graph init    │  │ • Core graph    │ │
+│  │ • App state     │  │ • Setup         │  │ • Save/undo     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ event-handlers  │  │ ui-functions.js │  │ search-filter   │ │
+│  │ • DOM events    │  │ • Dialogs       │  │ • Node search   │ │
+│  │ • Event setup   │  │ • UI updates    │  │ • Filtering     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ layer-manage... │  │ file-operations │  │ ipc-setup.js    │ │
+│  │ • Layer system  │  │ • Save/load     │  │ • Electron IPC  │ │
+│  │ • Multi-layer   │  │ • Import/export │  │ • Communication │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ edge-search.js  │  │ distance-an...  │  │ quick-access    │ │
+│  │ • Edge creation │  │ • Distance calc │  │ • Saved views   │ │
+│  │ • Search edges  │  │ • Graph analysis│  │ • Configuration │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ keyboard-short  │  │ svg-export.js   │  │ sidebar-resize  │ │
+│  │ • Shortcuts     │  │ • SVG generation│  │ • Resizable UI  │ │
+│  │ • Key handling  │  │ • JSON export   │  │ • Width control │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## Function Inventories
 
-### Graph.js - Core Graph Engine
-| Function | Purpose | Parameters | Returns |
-|----------|---------|------------|---------|
-| `constructor(canvas, options)` | Initialize graph engine | canvas: HTMLCanvasElement, options: object | Graph instance |
-| `addNode(x, y, label, color, category, radius)` | Create new node | x, y: number, label: string, color: string, category: string, radius: number | Node object |
-| `addEdge(fromNode, toNode, weight, category)` | Create new edge | fromNode, toNode: number, weight: number, category: string | Edge object |
-| `getNodeAt(x, y)` | Find node at coordinates | x, y: number | Node object or null |
-| `getEdgeAt(x, y)` | Find edge at coordinates | x, y: number | Edge object or null |
-| `getEdgeLineWidth(weight)` | Map weight to line width | weight: number | Line width in pixels |
-| `exportData()` | Serialize graph to JSON | None | Object with nodes, edges, scale, offset |
-| `importData(data)` | Load graph from JSON | data: object | void |
-| `render()` | Redraw entire graph | None | void |
+### Modular Architecture - 16 Focused Modules
 
-### App.js - Application Controller
+### app-state.js - Global Application State
 | Function | Purpose | Parameters | Returns |
 |----------|---------|------------|---------|
-| `setMode(mode)` | Switch interaction mode | mode: 'node'/'edge'/'select' | void |
-| `saveState()` | Save to undo stack | None | void |
+| `appState` | Central state object | None | Global state object |
+| `filterParams` | Filter configuration | None | Filter parameters object |
+
+### app-initialization.js - Graph Initialization
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `initializeGraph()` | Initialize graph canvas | None | void |
+| `uuidv7()` | Generate unique IDs | None | string |
+
+### graph-operations.js - Core Graph Operations
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `setMode(mode)` | Switch interaction mode | mode: string | void |
+| `saveState()` | Save current state | None | void |
 | `undo()` | Revert last action | None | void |
 | `redo()` | Restore undone action | None | void |
-| `loadGraphData(data)` | Load graph from data | data: object | void |
-| `generateSVG()` | Create SVG representation | None | SVG string |
-| `handleKeyDown(e)` | Process keyboard shortcuts | e: KeyboardEvent | void |
+| `newGraph()` | Create empty graph | None | void |
+| `clearGraph()` | Clear all nodes/edges | None | void |
 
-### App.js - Enhanced Database Integration
+### event-handlers.js - DOM Event Management
 | Function | Purpose | Parameters | Returns |
 |----------|---------|------------|---------|
-| `initializeDatabase()` | Initialize SQLite database connection | None | Promise<void> |
-| `saveGraphToDatabase()` | Auto-save graph to database | None | Promise<void> |
-| `loadGraphFromDatabase(id)` | Load graph from database | id: string | Promise<void> |
-| `showGraphSelector(graphs)` | Display graph selection dialog | graphs: array | Promise<string> |
-| `saveState()` | Save to database with auto-save | None | Promise<void> |
+| `setupEventListeners()` | Initialize all event handlers | None | void |
+| `handleMouseDown()` | Mouse down event handler | e: MouseEvent | void |
+| `handleMouseMove()` | Mouse move event handler | e: MouseEvent | void |
+| `handleMouseUp()` | Mouse up event handler | e: MouseEvent | void |
+
+### ui-functions.js - User Interface Management
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `showNotification()` | Display user notifications | message: string, type: string | void |
+| `updateGraphInfo()` | Update sidebar information | None | void |
+| `showNodeDialog()` | Display node properties dialog | node: object | void |
+| `showEdgeDialog()` | Display edge properties dialog | edge: object | void |
+
+### search-filter.js - Node and Edge Search
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `setupSearchComponents()` | Initialize search UI | None | void |
+| `handleNodeSearch()` | Real-time node search | query: string | void |
+| `clearNodeSearch()` | Clear search results | None | void |
+| `selectAndCenterNode()` | Center view on node | nodeId: string | void |
+
+### layer-management.js - Layer System
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `parseNodeLayers()` | Parse layer strings | layersText: string | Array<string> |
+| `getUniqueLayers()` | Discover all layers | None | Array<string> |
+| `filterByLayers()` | Apply layer filtering | activeLayers: Set<string> | object |
+| `updateLayerUI()` | Update layer interface | None | void |
+
+### file-operations.js - File Management
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveGraphToFile()` | Save graph to JSON file | None | Promise<void> |
+| `loadGraphFromFile()` | Load graph from JSON file | None | Promise<void> |
+| `exportSVG()` | Export graph as SVG | None | void |
+| `exportJSON()` | Export graph as JSON | None | void |
+
+### ipc-setup.js - Electron Integration
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `setupIPC()` | Initialize Electron IPC | None | void |
+| `initializeDatabase()` | Setup database connection | None | Promise<void> |
+| `saveGraphToDatabase()` | Save to database | None | Promise<void> |
+| `loadGraphFromDatabase()` | Load from database | None | Promise<void> |
+| `loadDefaultGraph()` | Create empty graph | None | void |
+
+### edge-search.js - Edge Creation via Search
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `showEdgeSearchDialog()` | Display edge creation dialog | None | void |
+| `handleEdgeSearchOK()` | Create edge from search results | None | void |
+| `closeEdgeSearchDialog()` | Close edge creation dialog | None | void |
+
+### distance-analysis.js - Analysis Features
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `showDistanceAnalysis()` | Display distance analysis | None | void |
+| `applyFilter()` | Apply local graph filter | None | void |
+| `resetFilter()` | Reset graph filtering | None | void |
+| `calculateCentralities()` | Calculate node centralities | None | void |
+| `updateDistanceDisplay()` | Update distance slider display | None | void |
+| `updateDepthDisplay()` | Update depth slider display | None | void |
+
+### quick-access.js - View Management
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `saveViewConfig()` | Save current filter configuration | None | void |
+| `loadViewConfig()` | Load saved configuration | configId: string | void |
+| `renderQuickAccess()` | Display saved configurations | None | void |
+| `deleteViewConfig()` | Remove saved configuration | configId: string | void |
+
+### keyboard-shortcuts.js - Keyboard Management
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `handleKeyDown()` | Process keyboard shortcuts | e: KeyboardEvent | void |
+| `handleBeforeUnload()` | Handle page unload events | e: Event | void |
+
+### svg-export.js - Export Engine
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `generateSVG()` | Create SVG representation | None | string |
+| `importJSON()` | Import graph from JSON | None | Promise<void> |
+
+### sidebar-resize.js - UI Responsiveness
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `setupSidebarResize()` | Initialize resizable sidebar | None | void |
+| `handleResizeStart()` | Start sidebar resizing | e: MouseEvent | void |
+| `handleResizeMove()` | Handle sidebar resizing | e: MouseEvent | void |
+
+### app.js - Main Application Orchestrator
+| Function | Purpose | Parameters | Returns |
+|----------|---------|------------|---------|
+| `initializeApplication()` | Initialize all modules | None | void |
 
 ### Server.js - Optional Backend
 | Function | Purpose | Parameters | Returns |

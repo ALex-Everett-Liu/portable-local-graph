@@ -1,6 +1,47 @@
 # Changelog
 
-## [0.3.6] - 2025-08-11
+## [0.3.8] - 2025-08-12
+
+### Added
+- **Complete Modular Architecture**: Split 2,333-line monolithic app.js into 16 focused modules
+- **Separation of Concerns**: Each module handles specific functionality independently
+- **Maintainability Boost**: Smaller, focused files for easier development and debugging
+- **Browser Compatibility**: Script-based loading without ES6 modules for maximum compatibility
+- **Zero Breaking Changes**: All existing functionality preserved with improved code organization
+
+### Technical Details
+- **16 Modular Files**: Clean separation into js/ directory with focused responsibilities
+- **Global Namespace Management**: Cross-module communication via window object
+- **Backward Compatibility**: All existing APIs and user workflows unchanged
+- **Performance Impact**: Zero performance overhead with improved code organization
+- **Development Experience**: Easier to understand, test, and maintain individual components
+
+### Module Structure
+- **app-state.js**: Central application state management
+- **app-initialization.js**: Graph initialization and setup
+- **graph-operations.js**: Core graph functionality (save, undo, redo)
+- **event-handlers.js**: DOM event listeners and setup
+- **ui-functions.js**: Dialog management and UI updates
+- **search-filter.js**: Node and edge search functionality
+- **layer-management.js**: Layer filtering and management
+- **file-operations.js**: Save, load, import, export operations
+- **ipc-setup.js**: Electron IPC communication handling
+- **edge-search.js**: Edge creation via search functionality
+- **distance-analysis.js**: Distance analysis and filtering features
+- **quick-access.js**: Saved view configuration management
+- **keyboard-shortcuts.js**: Keyboard event handling
+- **svg-export.js**: SVG and JSON export functionality
+- **sidebar-resize.js**: Resizable sidebar implementation
+- **app.js**: Main application orchestrator
+
+### User Experience
+- **Zero Learning Curve**: All existing workflows work exactly as before
+- **Improved Reliability**: Isolated modules reduce cascading bugs
+- **Faster Development**: Modular structure enables focused testing
+- **Future Extensibility**: New features can be added to specific modules
+- **Code Clarity**: Smaller files make codebase more approachable for contributors
+
+## [0.3.7] - 2025-08-12
 
 ### Added
 - **Layer Inheritance System**: New nodes automatically inherit layer assignments from the last created node

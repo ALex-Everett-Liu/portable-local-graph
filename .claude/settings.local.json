@@ -8,7 +8,14 @@
       "Bash(npm install:*)",
       "Bash(node:*)",
       "Bash(grep:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(npm run server:*)",
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(start:*)"
     ],
     "deny": []
   }
