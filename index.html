@@ -234,7 +234,7 @@
                         </div>
 
                         <div class="sidebar-section">
-                            <h4>Layer Filtering</h4>
+                            <h4>Layer Management</h4>
                             <div class="filter-controls">
                                 <div style="margin-bottom: 8px;">
                                     <label style="font-size: 12px; margin-right: 8px;">Mode:</label>
@@ -247,14 +247,12 @@
                                         Exclude
                                     </label>
                                 </div>
-                                <label>Active Layers:</label>
-                                <div id="layer-list" style="margin: 8px 0; max-height: 120px; overflow-y: auto;">
-                                    <p style="font-size: 11px; color: #666;">No layers found</p>
+                                <div id="layer-summary" style="font-size: 11px; color: #666; margin-bottom: 8px;">
+                                    No layers defined
                                 </div>
-                                <input type="text" id="layer-filter-input" placeholder="Filter by layer..." style="width: 100%; margin-bottom: 8px;">
+                                <button id="manage-layers-btn" class="tool-btn">Manage Layers</button>
                                 <button id="apply-layer-filter-btn" class="tool-btn">Apply Filter</button>
                                 <button id="reset-layer-filter-btn" class="tool-btn">Reset</button>
-                                <button id="show-all-layers-btn" class="tool-btn">Show All</button>
                             </div>
                         </div>
                         
@@ -264,6 +262,53 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layer Management Dialog -->
+    <div id="layer-management-dialog" class="dialog hidden" style="width: 600px; max-height: 80vh;">
+        <div class="dialog-content" style="max-height: 75vh; overflow-y: auto;">
+            <h3>Layer Management</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label>Filtering Mode:</label>
+                <div style="margin: 8px 0;">
+                    <label style="margin-right: 15px;">
+                        <input type="radio" name="dialog-layer-filter-mode" value="include" checked style="margin-right: 5px;">
+                        Include Mode (Show selected layers only)
+                    </label>
+                    <label>
+                        <input type="radio" name="dialog-layer-filter-mode" value="exclude" style="margin-right: 5px;">
+                        Exclude Mode (Hide selected layers)
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="layer-search-input" placeholder="Search layers..." style="flex: 1;">
+                <button id="select-all-layers-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Select All</button>
+                <button id="select-none-layers-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Select None</button>
+                <button id="invert-selection-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Invert</button>
+            </div>
+
+            <div id="layer-grid" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+                <div style="text-align: center; color: #666; padding: 20px;">
+                    Loading layers...
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; font-size: 11px; color: #666;">
+                <div id="layer-stats">
+                    <span id="total-layers-count">0</span> total layers, 
+                    <span id="selected-layers-count">0</span> selected
+                </div>
+            </div>
+
+            <div class="dialog-buttons">
+                <button id="apply-layers-btn">Apply Filter</button>
+                <button id="cancel-layers-btn">Cancel</button>
+                <button id="reset-layers-btn">Reset All</button>
             </div>
         </div>
     </div>
@@ -286,6 +331,7 @@
     <script src="js/keyboard-shortcuts.js"></script>
     <script src="js/svg-export.js"></script>
     <script src="js/sidebar-resize.js"></script>
+    <script src="js/layer-dialog.js"></script>
     
     <!-- Main Application -->
     <script src="js/app.js"></script>

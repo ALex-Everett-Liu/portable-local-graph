@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.3.11] - 2025-08-12
+
+### Added
+- **Dedicated Layer Management Dialog**: New comprehensive dialog for managing 50+ layers with enhanced UX
+- **Grid-based Layer Display**: CSS grid layout supports unlimited layers with organized presentation
+- **Real-time Search & Filter**: Instant layer filtering as you type with live search capabilities
+- **Bulk Layer Operations**: Select All, Select None, and Invert Selection for efficient layer management
+- **Large Window Support**: 600px wide dialog with 80vh height accommodates extensive layer collections
+- **Sidebar Integration**: Replaced cramped checkbox list with "Manage Layers" button and summary display
+- **Mode Persistence**: Dialog maintains include/exclude mode selection across sessions
+- **Visual Layer Statistics**: Real-time display of total and selected layer counts
+
+### Technical Details
+- **New Module**: Added `layer-dialog.js` with complete dialog management system
+- **Grid Layout**: CSS grid with `repeat(auto-fill, minmax(200px, 1fr))` for responsive layer display
+- **Search Algorithm**: Real-time filtering using case-insensitive substring matching
+- **State Management**: Centralized `layerDialogState` object with layers, selections, search, and mode
+- **Event Handling**: Comprehensive keyboard shortcuts (Escape to close) and click interactions
+- **DOM Optimization**: Efficient rendering with virtual grid creation for performance
+- **Backward Compatibility**: All existing layer functionality preserved and enhanced
+
+### User Experience
+- **Scalable Interface**: Handles 50+ layers efficiently without UI clutter
+- **Intuitive Workflow**: Single "Manage Layers" button opens comprehensive management dialog
+- **Efficient Selection**: Bulk operations reduce repetitive clicking for large layer sets
+- **Visual Clarity**: Grid layout prevents long scrolling lists with better organization
+- **Instant Feedback**: Real-time search and selection updates with visual indicators
+- **Professional Design**: Clean modal interface with consistent styling and interactions
+
 ## [0.3.10] - 2025-08-12
 
 ### Added

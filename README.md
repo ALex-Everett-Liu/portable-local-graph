@@ -174,8 +174,12 @@ Manage complex graphs with multi-layer classification and filtering capabilities
 - **Visual Mode Indicator**: Radio buttons clearly show current filtering mode
 
 #### Layer Management UI
-- **Intuitive Interface**: Checkbox-based layer selection in the sidebar
-- **Real-time Filtering**: Instant visual updates when layer selection changes
+- **Dedicated Management Dialog**: Comprehensive dialog for handling 50+ layers efficiently
+- **Grid-based Display**: CSS grid layout with unlimited layer capacity
+- **Real-time Search & Filter**: Instant layer filtering as you type
+- **Bulk Operations**: Select All, Select None, Invert Selection for efficient management
+- **Scalable Interface**: 600px wide dialog accommodates extensive layer collections
+- **Sidebar Integration**: "Manage Layers" button launches dialog with summary display
 - **Dynamic Discovery**: Automatic layer list population from existing node data
 - **Persistent Selection**: Layer filters maintained across browser sessions
 - **Mode Persistence**: Include/exclude mode setting remembered across sessions

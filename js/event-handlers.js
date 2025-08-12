@@ -52,14 +52,21 @@ function setupEventListeners() {
     document.getElementById('create-edge-search-btn').addEventListener('click', showEdgeSearchDialog);
     document.getElementById('calculate-centrality-btn').addEventListener('click', calculateCentralities);
     
-    // Layer filtering controls
-    document.getElementById('apply-layer-filter-btn').addEventListener('click', applyLayerFilter);
-    document.getElementById('reset-layer-filter-btn').addEventListener('click', resetLayerFilter);
-    document.getElementById('show-all-layers-btn').addEventListener('click', showAllLayers);
-    document.getElementById('layer-filter-input').addEventListener('input', updateLayerFilter);
+    // Layer filtering controls - with null checks
+    const applyLayerFilterBtn = document.getElementById('apply-layer-filter-btn');
+    const resetLayerFilterBtn = document.getElementById('reset-layer-filter-btn');
+    const manageLayersBtn = document.getElementById('manage-layers-btn');
+    const layerFilterInput = document.getElementById('layer-filter-input');
     
-    // Initialize layer filtering
-    updateLayerList();
+    if (applyLayerFilterBtn) applyLayerFilterBtn.addEventListener('click', applyLayerFilter);
+    if (resetLayerFilterBtn) resetLayerFilterBtn.addEventListener('click', resetLayerFilter);
+    if (manageLayersBtn) manageLayersBtn.addEventListener('click', openLayerDialog);
+    if (layerFilterInput) layerFilterInput.addEventListener('input', updateLayerFilter);
+    
+    // Initialize layer filtering - use summary instead of full list
+    if (typeof updateLayerSummary === 'function') {
+        updateLayerSummary();
+    }
     
     // Search functionality
     setupSearchComponents();
