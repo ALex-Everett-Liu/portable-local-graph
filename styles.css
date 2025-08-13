@@ -372,11 +372,12 @@ body.local-graph-resizing .resize-handle {
     gap: 8px;
 }
 
-.highlighted-node {
+/* .highlighted-node - Deprecated: Replaced with Canvas-based enhanced highlighting */
+/* .highlighted-node {
     filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));
-    stroke: #ffc107;
+    stroke: #FFFB00;
     stroke-width: 3;
-}
+} */
 
 .filter-controls button {
     margin: 2px 0;
