@@ -228,24 +228,37 @@ class Graph {
     }
 
     renderGrid() {
-        const gridSize = 20;
-        const width = this.canvas.width / this.scale;
-        const height = this.canvas.height / this.scale;
+        const gridSize = 30;
         
-        this.ctx.strokeStyle = '#e0e0e0';
+        // Calculate the visible bounds in world coordinates
+        const left = -this.offset.x / this.scale;
+        const top = -this.offset.y / this.scale;
+        const right = left + this.canvas.width / this.scale;
+        const bottom = top + this.canvas.height / this.scale;
+        
+        // Add some padding to ensure grid lines extend beyond viewport
+        const padding = gridSize * 2;
+        const startX = Math.floor((left - padding) / gridSize) * gridSize;
+        const endX = Math.ceil((right + padding) / gridSize) * gridSize;
+        const startY = Math.floor((top - padding) / gridSize) * gridSize;
+        const endY = Math.ceil((bottom + padding) / gridSize) * gridSize;
+        
+        this.ctx.strokeStyle = '#F0F0F0';
         this.ctx.lineWidth = 1 / this.scale;
         
-        for (let x = 0; x <= width; x += gridSize) {
+        // Draw vertical lines
+        for (let x = startX; x <= endX; x += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, height);
+            this.ctx.moveTo(x, startY);
+            this.ctx.lineTo(x, endY);
             this.ctx.stroke();
         }
         
-        for (let y = 0; y <= height; y += gridSize) {
+        // Draw horizontal lines
+        for (let y = startY; y <= endY; y += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(width, y);
+            this.ctx.moveTo(startX, y);
+            this.ctx.lineTo(endX, y);
             this.ctx.stroke();
         }
     }

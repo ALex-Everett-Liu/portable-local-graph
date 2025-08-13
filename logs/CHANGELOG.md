@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.1] - 2025-08-14
+
+### Added
+- **Infinite Canvas Grid**: Grid now extends infinitely as you pan across the canvas
+- **Dynamic Grid Calculation**: Grid lines calculated based on current view bounds for seamless panning
+- **Pure White Canvas Background**: Replaced semi-transparent gradient with clean white background
+- **Enhanced Visual Clarity**: Improved contrast and professional appearance for graph visualization
+
+### Technical Details
+- **Dynamic Bounds Calculation**: Grid lines calculated using visible viewport bounds plus padding
+- **Seamless Panning**: Grid follows view transformations during panning and zooming operations
+- **Performance Optimized**: Only renders necessary grid lines for current viewport
+- **Consistent Scaling**: Grid spacing (30px) scales appropriately with zoom level
+- **CSS Cleanup**: Removed complex gradient background from canvas styling
+
+### User Experience
+- **Infinite Exploration**: Grid remains visible regardless of canvas pan distance
+- **Clean Visual Design**: Pure white background provides better contrast for graph elements
+- **Professional Appearance**: Eliminated distracting background patterns
+- **Smooth Interaction**: Grid transitions seamlessly during panning operations
+
 ## [0.4.0] - 2025-08-14
 
 ### Added
