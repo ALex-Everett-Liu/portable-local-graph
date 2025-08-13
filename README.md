@@ -178,6 +178,7 @@ Manage complex graphs with multi-layer classification and filtering capabilities
 - **Grid-based Display**: CSS grid layout with unlimited layer capacity
 - **Real-time Search & Filter**: Instant layer filtering as you type
 - **Bulk Operations**: Select All, Select None, Invert Selection for efficient management
+- **Batch Layer Renaming**: Rename layers across all nodes simultaneously with usage statistics
 - **Scalable Interface**: 600px wide dialog accommodates extensive layer collections
 - **Sidebar Integration**: "Manage Layers" button launches dialog with summary display
 - **Dynamic Discovery**: Automatic layer list population from existing node data
@@ -198,6 +199,7 @@ Manage complex graphs with multi-layer classification and filtering capabilities
 3. **Hide Mode**: Use "Exclude" to hide distracting layers like "debug+test"
 4. **Cross-domain Analysis**: Use layers to separate concerns like "security", "performance", "user-experience"
 5. **Mode Switching**: Toggle between "show only these" vs "hide these" without reselecting layers
+6. **Batch Renaming**: Click ✏️ icon next to any layer name to rename it across all nodes (e.g., "layer1" → "layer11")
 
 ### Working with Categories
 

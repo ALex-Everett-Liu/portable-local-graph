@@ -7,6 +7,12 @@ let layerDialogState = {
     filterMode: 'include'
 };
 
+// Layer renaming dialog state
+let layerRenameState = {
+    currentLayer: '',
+    newLayerName: ''
+};
+
 // Initialize layer dialog when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     // Wait for graph to be available
@@ -55,11 +61,23 @@ function setupLayerDialogEvents() {
 
     // Close dialog with Escape key
     document.addEventListener('keydown', (e) => {
-        const dialog = document.getElementById('layer-management-dialog');
-        if (e.key === 'Escape' && dialog && !dialog.classList.contains('hidden')) {
-            closeLayerDialog();
+        const layerDialog = document.getElementById('layer-management-dialog');
+        const renameDialog = document.getElementById('layer-rename-dialog');
+        
+        if (e.key === 'Escape') {
+            if (renameDialog && !renameDialog.classList.contains('hidden')) {
+                closeLayerRenameDialog();
+            } else if (layerDialog && !layerDialog.classList.contains('hidden')) {
+                closeLayerDialog();
+            }
         }
     });
+
+    // Add event listeners for layer rename dialog
+    const renameNewLayer = document.getElementById('rename-new-layer');
+    if (renameNewLayer) {
+        renameNewLayer.addEventListener('keydown', handleLayerRenameKeydown);
+    }
 }
 
 function openLayerDialog() {
@@ -270,12 +288,196 @@ function updateLayerSummary() {
     }
 }
 
+// Layer renaming functionality
+function openLayerRenameDialog(layerName) {
+    const dialog = document.getElementById('layer-rename-dialog');
+    const oldNameInput = document.getElementById('rename-old-layer');
+    const newNameInput = document.getElementById('rename-new-layer');
+    
+    if (!dialog || !oldNameInput || !newNameInput) return;
+
+    layerRenameState.currentLayer = layerName;
+    oldNameInput.value = layerName;
+    newNameInput.value = layerName;
+    newNameInput.focus();
+    newNameInput.select();
+    
+    // Update usage info
+    const usage = graph.getLayerUsage(layerName);
+    document.getElementById('rename-usage-info').textContent = 
+        `This layer is used by ${usage.count} node(s)`;
+    
+    dialog.classList.remove('hidden');
+}
+
+function closeLayerRenameDialog() {
+    document.getElementById('layer-rename-dialog').classList.add('hidden');
+    layerRenameState.currentLayer = '';
+    layerRenameState.newLayerName = '';
+}
+
+function applyLayerRename() {
+    const oldName = document.getElementById('rename-old-layer').value.trim();
+    const newName = document.getElementById('rename-new-layer').value.trim();
+    
+    if (!oldName || !newName) {
+        showRenameError('Please enter both old and new layer names');
+        return;
+    }
+    
+    if (oldName === newName) {
+        showRenameError('Old and new layer names are identical');
+        return;
+    }
+    
+    // Validate new layer name
+    if (newName.includes(',')) {
+        showRenameError('Layer name cannot contain commas');
+        return;
+    }
+    
+    if (newName.trim().length === 0) {
+        showRenameError('Layer name cannot be empty');
+        return;
+    }
+    
+    const result = graph.renameLayer(oldName, newName);
+    
+    if (result.success) {
+        showNotification(result.message);
+        closeLayerRenameDialog();
+        
+        // Refresh layer dialog if open
+        const layerDialog = document.getElementById('layer-management-dialog');
+        if (layerDialog && !layerDialog.classList.contains('hidden')) {
+            openLayerDialog(); // Refresh the dialog
+        }
+        
+        updateLayerSummary();
+    } else {
+        showRenameError(result.message);
+    }
+}
+
+function showRenameError(message) {
+    const errorDiv = document.getElementById('rename-error');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 3000);
+}
+
+function handleLayerRenameKeydown(e) {
+    if (e.key === 'Enter') {
+        applyLayerRename();
+    } else if (e.key === 'Escape') {
+        closeLayerRenameDialog();
+    }
+}
+
+// Add rename buttons to layer items
+function createLayerItemWithRename(layer) {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: ${layerDialogState.selectedLayers.has(layer) ? '#e3f2fd' : 'white'};
+        border-color: ${layerDialogState.selectedLayers.has(layer) ? '#2196f3' : '#ddd'};
+    `;
+
+    const label = document.createElement('label');
+    label.style.cssText = 'display: flex; align-items: center; cursor: pointer; font-size: 13px; flex: 1;';
+    label.innerHTML = `
+        <input type="checkbox" 
+               ${layerDialogState.selectedLayers.has(layer) ? 'checked' : ''} 
+               style="margin-right: 8px;"
+               onchange="toggleLayerInDialog('${layer}', this.checked)">
+        ${layer}
+    `;
+
+    const renameBtn = document.createElement('button');
+    renameBtn.innerHTML = '✏️';
+    renameBtn.title = 'Rename layer';
+    renameBtn.style.cssText = `
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+        border-radius: 2px;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    `;
+    renameBtn.onmouseover = () => renameBtn.style.opacity = '1';
+    renameBtn.onmouseout = () => renameBtn.style.opacity = '0.7';
+    renameBtn.onclick = (e) => {
+        e.stopPropagation();
+        openLayerRenameDialog(layer);
+    };
+
+    container.appendChild(label);
+    container.appendChild(renameBtn);
+
+    // Click on container to toggle checkbox
+    container.addEventListener('click', (e) => {
+        if (e.target.type !== 'checkbox' && e.target !== renameBtn) {
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            toggleLayerInDialog(layer, checkbox.checked);
+        }
+    });
+
+    return container;
+}
+
+// Update renderLayerGrid to use new layer items with rename buttons
+function renderLayerGrid() {
+    const layerGrid = document.getElementById('layer-grid');
+    const filteredLayers = layerDialogState.layers.filter(layer => 
+        layer.toLowerCase().includes(layerDialogState.searchTerm.toLowerCase())
+    );
+
+    if (filteredLayers.length === 0) {
+        layerGrid.innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px;">
+                ${layerDialogState.layers.length === 0 ? 'No layers defined' : 'No layers match your search'}
+            </div>
+        `;
+        return;
+    }
+
+    // Create grid layout for better organization
+    const gridContainer = document.createElement('div');
+    gridContainer.style.display = 'grid';
+    gridContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+    gridContainer.style.gap = '8px';
+
+    filteredLayers.forEach(layer => {
+        const layerItem = createLayerItemWithRename(layer);
+        gridContainer.appendChild(layerItem);
+    });
+
+    layerGrid.innerHTML = '';
+    layerGrid.appendChild(gridContainer);
+}
+
 // Export functions for global access
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         openLayerDialog,
         closeLayerDialog,
-        updateLayerSummary
+        updateLayerSummary,
+        openLayerRenameDialog,
+        closeLayerRenameDialog,
+        applyLayerRename
     };
 } else {
     Object.assign(window, {
@@ -285,6 +487,10 @@ if (typeof module !== 'undefined' && module.exports) {
         toggleLayerInDialog,
         selectAllLayers,
         selectNoneLayers,
-        invertLayerSelection
+        invertLayerSelection,
+        openLayerRenameDialog,
+        closeLayerRenameDialog,
+        applyLayerRename,
+        handleLayerRenameKeydown
     });
 }

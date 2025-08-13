@@ -266,6 +266,39 @@
         </div>
     </div>
 
+    <!-- Layer Rename Dialog -->
+    <div id="layer-rename-dialog" class="dialog hidden" style="width: 400px;">
+        <div class="dialog-content">
+            <h3>Rename Layer</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label>Current Layer Name:</label>
+                <input type="text" id="rename-old-layer" readonly style="background: #f5f5f5; cursor: not-allowed;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label>New Layer Name:</label>
+                <input type="text" id="rename-new-layer" placeholder="Enter new layer name..." maxlength="50">
+                <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                    Layer names cannot contain commas or be empty
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px; font-size: 12px; color: #666;">
+                <div id="rename-usage-info">
+                    This layer is used by 0 node(s)
+                </div>
+            </div>
+            
+            <div id="rename-error" style="display: none; color: #d32f2f; font-size: 12px; margin-bottom: 15px; padding: 8px; background: #ffebee; border-radius: 4px;"></div>
+            
+            <div class="dialog-buttons">
+                <button id="rename-ok" onclick="applyLayerRename()">Rename</button>
+                <button id="rename-cancel" onclick="closeLayerRenameDialog()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Layer Management Dialog -->
     <div id="layer-management-dialog" class="dialog hidden" style="width: 600px; max-height: 80vh;">
         <div class="dialog-content" style="max-height: 75vh; overflow-y: auto;">

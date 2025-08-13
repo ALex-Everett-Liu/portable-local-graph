@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.3.12] - 2025-08-13
+
+### Added
+- **Batch Layer Renaming**: New functionality to rename layers across all nodes simultaneously
+- **Layer Rename Dialog**: Dedicated dialog for renaming layers with usage statistics and validation
+- **Rename Integration**: Renaming integrated directly into layer management dialog with ✏️ buttons
+- **Usage Statistics**: Shows how many nodes use each layer before renaming
+- **Validation System**: Prevents duplicate names, empty names, and ensures comma-free layer names
+- **Real-time Updates**: Layer lists automatically refresh after renaming operations
+- **Active Layer Preservation**: Renamed layers maintain their active/inactive filter state
+- **Z-index Management**: Proper dialog stacking ensures rename dialog appears above management dialog
+
+### Technical Details
+- **Graph.renameLayer()**: New method in Graph class for batch layer renaming across all nodes
+- **Layer Usage Tracking**: New `getLayerUsage()` method provides node count statistics
+- **Validation Engine**: Comprehensive validation for layer name integrity and uniqueness
+- **State Synchronization**: Active layer filters automatically update when layers are renamed
+- **DOM Integration**: Seamless refresh of layer management dialog after rename operations
+- **Error Handling**: Detailed error messages for common renaming issues
+- **CSS Stacking**: Enhanced z-index management for proper dialog layering
+
+### User Experience
+- **One-click Renaming**: Click ✏️ icon next to any layer name in management dialog
+- **Visual Confirmation**: Clear feedback showing affected node count before renaming
+- **Intuitive Interface**: Simple dialog with current name, new name input, and usage info
+- **Keyboard Shortcuts**: Enter to rename, Escape to cancel, with proper focus management
+- **No Data Loss**: Layer assignments preserved during renaming operations
+- **Workflow Continuity**: Rename layers without closing the main management dialog
+
 ## [0.3.11] - 2025-08-12
 
 ### Added

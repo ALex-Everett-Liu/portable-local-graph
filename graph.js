@@ -734,6 +734,75 @@ class Graph {
         return Array.from(layers).sort();
     }
 
+    // Batch layer renaming functionality
+    renameLayer(oldName, newName) {
+        if (!oldName || !newName || oldName === newName) {
+            return { success: false, message: 'Invalid layer names provided' };
+        }
+
+        oldName = oldName.trim();
+        newName = newName.trim();
+
+        if (oldName === newName) {
+            return { success: false, message: 'Old and new layer names are identical' };
+        }
+
+        let renamedCount = 0;
+        const oldActiveState = this.activeLayers.has(oldName);
+
+        this.nodes.forEach(node => {
+            if (node.layers && Array.isArray(node.layers)) {
+                const layerIndex = node.layers.findIndex(layer => layer.trim() === oldName);
+                if (layerIndex !== -1) {
+                    node.layers[layerIndex] = newName;
+                    renamedCount++;
+                }
+            }
+        });
+
+        // Update active layers if the old layer was active
+        if (oldActiveState) {
+            this.activeLayers.delete(oldName);
+            this.activeLayers.add(newName);
+        }
+
+        this.render();
+        
+        if (renamedCount > 0) {
+            return { 
+                success: true, 
+                message: `Renamed layer "${oldName}" to "${newName}" in ${renamedCount} node(s)`,
+                renamedCount 
+            };
+        } else {
+            return { 
+                success: false, 
+                message: `Layer "${oldName}" not found in any node` 
+            };
+        }
+    }
+
+    // Get layer usage statistics
+    getLayerUsage(layerName) {
+        if (!layerName) return { count: 0, nodes: [] };
+
+        const layerNameTrimmed = layerName.trim();
+        const nodesWithLayer = this.nodes.filter(node => 
+            node.layers && Array.isArray(node.layers) && 
+            node.layers.some(layer => layer.trim() === layerNameTrimmed)
+        );
+
+        return {
+            count: nodesWithLayer.length,
+            nodes: nodesWithLayer.map(node => ({
+                id: node.id,
+                label: node.label,
+                x: node.x,
+                y: node.y
+            }))
+        };
+    }
+
     setActiveLayers(layers) {
         this.activeLayers = new Set(layers);
         this.layerFilterEnabled = this.activeLayers.size > 0;

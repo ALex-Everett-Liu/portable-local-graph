@@ -194,6 +194,15 @@ body.local-graph-resizing .resize-handle {
     display: none;
 }
 
+/* Layer management dialogs with proper stacking */
+#layer-management-dialog {
+    z-index: 10000;
+}
+
+#layer-rename-dialog {
+    z-index: 10001;
+}
+
 .dialog-content {
     padding: 24px;
 }
