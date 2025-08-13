@@ -24,8 +24,13 @@ class Graph {
         this.layerFilterEnabled = false;
         this.layerFilterMode = 'include'; // 'include' or 'exclude'
         
+        // Animation for highlighting
+        this.animationId = null;
+        this.hasHighlightedNodes = false;
+        
         this.setupCanvas();
         this.setupEventListeners();
+        this.startAnimationLoop();
     }
 
     setupCanvas() {
@@ -261,25 +266,69 @@ class Graph {
                 }
             }
             
-            this.ctx.beginPath();
-            this.ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
-            
             if (node === this.selectedNode) {
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
                 this.ctx.fillStyle = '#87CEFA';
                 this.ctx.strokeStyle = '#B0C4DE';
                 this.ctx.lineWidth = 3 / this.scale;
-            } else if (node.highlighted) { // Highlighted: original color with yellow border
+                this.ctx.fill();
+                this.ctx.stroke();
+            } else if (node.highlighted) {
+                // Enhanced highlighting with halo and pulsing effect
+                const time = Date.now() * 0.005;
+                const pulseScale = 1 + 0.2 * Math.sin(time);
+                const enlargedRadius = node.radius * pulseScale;
+                
+                // Create multi-layer halo effect
+                const haloRadius = enlargedRadius * 1.5;
+                const gradient = this.ctx.createRadialGradient(
+                    node.x, node.y, enlargedRadius,
+                    node.x, node.y, haloRadius
+                );
+                gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+                gradient.addColorStop(0.4, 'rgba(255, 215, 0, 0.4)');
+                gradient.addColorStop(0.7, 'rgba(255, 215, 0, 0.2)');
+                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                
+                // Draw outer glow/halo
+                this.ctx.fillStyle = gradient;
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, haloRadius, 0, 2 * Math.PI);
+                this.ctx.fill();
+                
+                // Draw bright ring around the halo
+                this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+                this.ctx.lineWidth = 2 / this.scale;
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, haloRadius * 0.8, 0, 2 * Math.PI);
+                this.ctx.stroke();
+                
+                // Main node with bright border
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, enlargedRadius, 0, 2 * Math.PI);
                 this.ctx.fillStyle = node.color;
-                this.ctx.strokeStyle = '#ffc107';
+                this.ctx.fill();
+                
+                // Bright gold border
+                this.ctx.strokeStyle = '#FFD700';
                 this.ctx.lineWidth = 4 / this.scale;
-            } else { // Default: original color with gray border
+                this.ctx.stroke();
+                
+                // Inner white highlight ring
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                this.ctx.lineWidth = 1.5 / this.scale;
+                this.ctx.stroke();
+            } else {
+                // Default: original color with gray border
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
                 this.ctx.fillStyle = node.color;
                 this.ctx.strokeStyle = '#C0C0C0';
                 this.ctx.lineWidth = 2 / this.scale;
+                this.ctx.fill();
+                this.ctx.stroke();
             }
-            
-            this.ctx.fill();
-            this.ctx.stroke();
 
             // Truncate long labels
             const maxLabelLength = 20;
@@ -369,7 +418,7 @@ class Graph {
                     this.ctx.strokeStyle = '#F4A460';
                     this.ctx.lineWidth = (lineWidth + 1) / this.scale;
                 } else {
-                    this.ctx.strokeStyle = '#FFEBCD';
+                    this.ctx.strokeStyle = '#EFF0E9';
                     this.ctx.lineWidth = lineWidth / this.scale;
                 }
                 
@@ -565,6 +614,24 @@ class Graph {
         this.offset = { x: 0, y: 0 };
         this.onSelectionChange();
         this.render();
+    }
+
+    startAnimationLoop() {
+        const animate = () => {
+            this.hasHighlightedNodes = this.nodes.some(node => node.highlighted);
+            if (this.hasHighlightedNodes) {
+                this.render();
+            }
+            this.animationId = requestAnimationFrame(animate);
+        };
+        this.animationId = requestAnimationFrame(animate);
+    }
+
+    stopAnimationLoop() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
     }
 
     // Distance-based filtering methods

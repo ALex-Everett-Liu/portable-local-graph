@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.0] - 2025-08-14
+
+### Added
+- **Enhanced Node Highlighting**: Dramatic visual effects for search results and selected nodes
+- **Multi-layer Golden Halo Effect**: Radiating golden glow around highlighted nodes for maximum visibility
+- **Pulsing Animation**: 20% scale pulsing effect using sine waves for continuous attention
+- **Real-time Animation**: Smooth 60fps rendering with requestAnimationFrame optimization
+- **Smart Animation Management**: Animation only runs when highlighted nodes exist to save performance
+- **Visual Depth**: Multi-layer gradients with inner/outer glow rings and bright gold borders
+- **Enhanced Visibility**: Dramatically improved visual prominence for search results and selections
+
+### Technical Details
+- **Canvas-based Rendering**: Advanced radial gradients and multi-layer effects using HTML5 Canvas
+- **Performance Optimization**: Efficient animation loop that only renders when needed
+- **Dynamic Scaling**: Pulsing effect scales with zoom level and canvas transformations
+- **Color Harmony**: Golden (#FFD700) highlighting with white inner highlights for contrast
+- **Animation System**: `requestAnimationFrame` loop with automatic start/stop based on highlight state
+- **Visual Hierarchy**: Multiple layers including halo, rings, and borders for depth perception
+
+### User Experience
+- **Impossible to Miss**: Enhanced highlighting makes search results and selections immediately visible
+- **Professional Polish**: Smooth animations and sophisticated visual effects
+- **Context Preservation**: All existing functionality maintained with dramatic visual upgrade
+- **Performance Conscious**: Zero overhead when no nodes are highlighted
+- **Visual Feedback**: Instant recognition of search results and active selections
+
 ## [0.3.12] - 2025-08-13
 
 ### Added

@@ -259,6 +259,11 @@ Navigate large graphs efficiently with powerful search capabilities:
 - **Drag**: Move selected nodes
 - **Delete key**: Remove selected items
 
+#### Enhanced Visual Feedback
+- **Search Results**: Dramatic golden halo with pulsing animation for matched nodes
+- **Selected Nodes**: Bright highlighting with smooth animations
+- **Performance Optimized**: Effects only render when needed to maintain smooth performance
+
 ### Keyboard Shortcuts
 - **Ctrl+N**: New graph
 - **Ctrl+O**: Open graph database selection dialog
