@@ -323,14 +323,14 @@ class HotkeyMode {
     addButtonHints() {
         const buttonMappings = {
             'new-graph-btn': 'G',
-            'save-graph-btn': 'S',
-            'load-graph-btn': 'O',
-            'node-mode-btn': 'N',
-            'edge-mode-btn': 'E',
-            'select-mode-btn': 'S',
-            'search-btn': 'F',
-            'calculate-centralities-btn': 'C',
-            'layer-manager-btn': 'L'
+            'save-btn': 'S',
+            'load-btn': 'O',
+            'node-mode': 'N',
+            'edge-mode': 'E',
+            'select-mode': 'S',
+            'clear-search-btn': 'F',
+            'calculate-centrality-btn': 'C',
+            'manage-layers-btn': 'L'
         };
 
         Object.entries(buttonMappings).forEach(([id, hotkey]) => {
