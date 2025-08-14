@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotkey Mode Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .key-combo { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .success { color: green; }
+        .info { color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Hotkey Mode & Command Palette Test</h1>
+    
+    <div class="test-section">
+        <h3>Command Palette</h3>
+        <p class="info">Press <span class="key-combo">Ctrl+P</span> to open command palette</p>
+        <ul>
+            <li>Search for commands by typing</li>
+            <li>Use arrow keys to navigate</li>
+            <li>Press Enter to execute</li>
+            <li>Press Escape to close</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>Hotkey Mode</h3>
+        <p class="info">Press <span class="key-combo">Alt</span> to activate hotkey mode</p>
+        <ul>
+            <li><span class="key-combo">N</span> - Node Mode</li>
+            <li><span class="key-combo">E</span> - Edge Mode</li>
+            <li><span class="key-combo">S</span> - Select Mode</li>
+            <li><span class="key-combo">F</span> - Search Nodes</li>
+            <li><span class="key-combo">C</span> - Calculate Centralities</li>
+            <li><span class="key-combo">L</span> - Manage Layers</li>
+            <li><span class="key-combo">G</span> - New Graph</li>
+            <li><span class="key-combo">O</span> - Open Graph</li>
+            <li><span class="key-combo">Z</span> - Undo</li>
+            <li><span class="key-combo">R</span> - Redo</li>
+            <li><span class="key-combo">D</span> - Delete Selected</li>
+            <li><span class="key-combo">X</span> - Clear Selection</li>
+            <li><span class="key-combo">I</span> - Zoom In</li>
+            <li><span class="key-combo">U</span> - Zoom Out</li>
+            <li><span class="key-combo">0</span> - Reset Zoom</li>
+            <li><span class="key-combo">P</span> - Command Palette</li>
+            <li><span class="key-combo">?</span> - Show Help</li>
+            <li><span class="key-combo">ESC</span> - Exit Hotkey Mode</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>Global Shortcuts</h3>
+        <ul>
+            <li><span class="key-combo">Ctrl+N</span> - New Graph</li>
+            <li><span class="key-combo">Ctrl+S</span> - Save Graph</li>
+            <li><span class="key-combo">Ctrl+Shift+S</span> - Save Graph As</li>
+            <li><span class="key-combo">Ctrl+O</span> - Open Graph</li>
+            <li><span class="key-combo">Ctrl+Z</span> - Undo</li>
+            <li><span class="key-combo">Ctrl+Shift+Z</span> - Redo</li>
+            <li><span class="key-combo">Ctrl++</span> - Zoom In</li>
+            <li><span class="key-combo">Ctrl+-</span> - Zoom Out</li>
+            <li><span class="key-combo">Ctrl+0</span> - Reset Zoom</li>
+            <li><span class="key-combo">Delete</span> - Delete Selected</li>
+            <li><span class="key-combo">Escape</span> - Clear Selection/Exit Mode</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>Status</h3>
+        <div id="status">Ready to test hotkeys and command palette...</div>
+    </div>
+    
+    <script>
+        // Simple status updates for testing
+        document.addEventListener('keydown', (e) => {
+            const status = document.getElementById('status');
+            
+            if (e.ctrlKey && e.key === 'p') {
+                status.innerHTML = '<span class="success">Command palette opened via Ctrl+P</span>';
+            } else if (e.key === 'Alt' && !e.ctrlKey && !e.shiftKey) {
+                status.innerHTML = '<span class="success">Hotkey mode activated via Alt</span>';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.4.3] - 2025-08-15
+
+### Added
+- **Command Palette**: Press Ctrl+P to open intelligent command palette with fuzzy search
+- **Hotkey Mode**: Press Alt to toggle dedicated hotkey mode with single-key shortcuts
+- **Comprehensive Hotkey System**: All major operations accessible via keyboard shortcuts
+- **Visual Hotkey Indicators**: Help panel shows available shortcuts when hotkey mode is active
+- **Smart Keyboard Navigation**: Arrow keys, Enter, and Escape for efficient command execution
+
+### Command Palette Features
+- **Fuzzy Search**: Search commands by name, description, or keywords
+- **Keyboard Navigation**: Arrow keys to navigate, Enter to execute, Escape to close
+- **Shortcut Display**: Shows associated keyboard shortcuts for each command
+- **Instant Access**: 20+ commands including save, load, mode switching, and analysis
+
+### Hotkey Mode Features
+- **Alt Toggle**: Press Alt to activate/deactivate hotkey mode
+- **Single-key Shortcuts**: N=Node, E=Edge, S=Select, F=Search, C=Centralities, L=Layers
+- **Visual Feedback**: Blue indicator shows when hotkey mode is active
+- **Auto-deactivation**: Hotkey mode automatically exits after executing commands
+- **Help System**: Press ? in hotkey mode to see all available shortcuts
+
+### Available Shortcuts
+- **Global**: Ctrl+P (Command Palette), Ctrl+N (New), Ctrl+S (Save), Ctrl+O (Open)
+- **Hotkey Mode**: N, E, S, F, C, L, G, O, Z, R, D, X, I, U, 0, P, ?
+- **Navigation**: Ctrl++/Ctrl+- (Zoom), Ctrl+0 (Reset), Delete (Delete), Escape (Clear)
+
 ## [0.4.2] - 2025-08-14
 
 ### Added

@@ -12,6 +12,10 @@ function initializeApplication() {
     setupSearchComponents();
     setupSidebarResize();
     
+    // Initialize new modules
+    initializeCommandPalette();
+    initializeHotkeyMode();
+    
     // Load initial data
     updateGraphInfo();
     loadQuickAccess();

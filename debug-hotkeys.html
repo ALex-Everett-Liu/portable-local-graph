@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotkey Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Hotkey Debug Test Page</h1>
+    
+    <div class="log" id="debug-log">
+        Debug log initialized...
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <button onclick="simulateHotkeyMode()" class="tool-btn">Test Hotkey Mode</button>
+        <button onclick="clearLog()" class="tool-btn">Clear Log</button>
+    </div>
+    
+    <script src="js/hotkey-mode.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = 'Log cleared...\n';
+        }
+        
+        function simulateHotkeyMode() {
+            if (!window.hotkeyMode) {
+                log('Initializing hotkey mode...', 'info');
+                initializeHotkeyMode();
+            }
+            
+            log('Hotkey mode object:', 'info');
+            log(`- isActive: ${hotkeyMode.isActive}`, 'info');
+            
+            hotkeyMode.activate();
+            log('Hotkey mode activated manually', 'success');
+        }
+        
+        // Add debug listeners
+        document.addEventListener('keydown', (e) => {
+            log(`Keydown: ${e.key} (Alt: ${e.altKey}, Ctrl: ${e.ctrlKey})`, 'info');
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            log(`Keyup: ${e.key} (Alt: ${e.altKey}, Ctrl: ${e.ctrlKey})`, 'info');
+        });
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            initializeHotkeyMode();
+            log('Hotkey mode initialized', 'success');
+        });
+    </script>
+</body>
+</html>
