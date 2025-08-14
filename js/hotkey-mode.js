@@ -295,7 +295,8 @@ class HotkeyMode {
             <div>N - Node Mode</div>
             <div>E - Edge Mode</div>
             <div>S - Select Mode</div>
-            <div>F - Search Nodes</div>
+            <div>F - Focus Search</div>
+            <div>CL - Clear Search</div>
             <div>C - Calculate Centralities</div>
             <div>L - Manage Layers</div>
             <div>G - New Graph</div>
@@ -328,7 +329,8 @@ class HotkeyMode {
             'node-mode': 'N',
             'edge-mode': 'E',
             'select-mode': 'S',
-            'clear-search-btn': 'F',
+            'clear-search-btn': 'CL',
+            'node-search': 'F',
             'calculate-centrality-btn': 'C',
             'manage-layers-btn': 'L'
         };
