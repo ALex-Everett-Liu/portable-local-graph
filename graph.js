@@ -803,6 +803,69 @@ class Graph {
         }));
     }
 
+    getNodeConnections(nodeId) {
+        const incoming = [];
+        const outgoing = [];
+        const bidirectional = [];
+        
+        this.edges.forEach(edge => {
+            if (edge.from === nodeId) {
+                const targetNode = this.nodes.find(n => n.id === edge.to);
+                if (targetNode) {
+                    outgoing.push({
+                        edge: edge,
+                        node: targetNode,
+                        direction: 'outgoing',
+                        type: 'from'
+                    });
+                }
+            } else if (edge.to === nodeId) {
+                const sourceNode = this.nodes.find(n => n.id === edge.from);
+                if (sourceNode) {
+                    incoming.push({
+                        edge: edge,
+                        node: sourceNode,
+                        direction: 'incoming',
+                        type: 'to'
+                    });
+                }
+            }
+        });
+        
+        // Check for bidirectional edges (both directions exist)
+        const bidirectionalPairs = new Set();
+        outgoing.forEach(outEdge => {
+            const matchingIncoming = incoming.find(inEdge => 
+                inEdge.node.id === outEdge.node.id
+            );
+            if (matchingIncoming && !bidirectionalPairs.has(outEdge.node.id)) {
+                bidirectional.push({
+                    edge: outEdge.edge,
+                    node: outEdge.node,
+                    direction: 'bidirectional',
+                    type: 'both',
+                    incomingEdge: matchingIncoming.edge
+                });
+                bidirectionalPairs.add(outEdge.node.id);
+            }
+        });
+        
+        // Filter out bidirectional from incoming/outgoing
+        const filteredOutgoing = outgoing.filter(outEdge => 
+            !bidirectionalPairs.has(outEdge.node.id)
+        );
+        const filteredIncoming = incoming.filter(inEdge => 
+            !bidirectionalPairs.has(inEdge.node.id)
+        );
+        
+        return {
+            incoming: filteredIncoming,
+            outgoing: filteredOutgoing,
+            bidirectional: bidirectional,
+            all: [...filteredIncoming, ...filteredOutgoing, ...bidirectional]
+        };
+    }
+
     // Layer filtering methods
     getAllLayers() {
         const layers = new Set();

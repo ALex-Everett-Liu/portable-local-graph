@@ -21,6 +21,7 @@ A simple, interactive desktop application for manually drawing graphs using Node
 - **Node Size Control**: Adjustable node radius from 1-100 pixels with slider control
 - **Local Graph Filtering**: Distance-based filtering to explore subgraphs within specified constraints
 - **View Management**: Save and quickly access frequently used filter configurations
+- **Node Connections Overview**: Comprehensive window displaying all connections for any selected node with categorized display and interactive highlighting
 
 ### Data Management
 - **SQLite Database**: Primary storage with real-time persistence
@@ -242,11 +243,38 @@ Navigate large graphs efficiently with powerful search capabilities:
    - Enter to select and center view
    - Escape to clear
 
+### Node Connections Overview
+
+Explore the complete network around any selected node with the comprehensive Node Connections Overview feature:
+
+#### Overview Features
+- **Complete Connection Display**: Shows all incoming, outgoing, and bidirectional connections for any selected node
+- **Categorized Organization**: Connections are grouped into three clear sections:
+  - **Incoming**: Edges pointing to the selected node (red arrows)
+  - **Outgoing**: Edges pointing from the selected node (blue arrows)
+  - **Bidirectional**: Mutual connections (edges in both directions, green arrows)
+- **Interactive Highlighting**: Click any connection to highlight the connected node and edge on the canvas
+- **Connection Details**: Displays node labels, Chinese labels, edge weights, and categories for each connection
+- **Visual Direction Indicators**: Color-coded arrows clearly show relationship direction
+- **Bulk Operations**: "Highlight All Connections" to visualize the entire network around a node
+- **Focus Navigation**: "Focus on Node" button to center the view on the selected node
+
+#### Accessing the Overview
+1. **Right-click any node** → **Edit** → **Connections** button
+2. **Standalone access**: Available from any context where nodes are selected
+3. **Seamless integration**: Opens in dedicated modal dialog separate from edit dialog
+
+#### Usage Benefits
+- **Space optimization**: Dedicated window provides ample space for complex networks
+- **Visual clarity**: Organized sections prevent information overload
+- **Context preservation**: Original graph state maintained while exploring connections
+- **Professional interface**: Clean styling with smooth transitions and intuitive controls
+
 ### Working with Modes
 
 #### Node Mode
 - **Click**: Add new node at cursor position
-- **Right-click node**: Edit label and color
+- **Right-click node**: Edit label and color, or view connections via "Connections" button
 - **Drag**: Move nodes around (in Select mode)
 
 #### Edge Mode

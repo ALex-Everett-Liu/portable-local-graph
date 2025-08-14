@@ -36,6 +36,13 @@ function setupEventListeners() {
     document.getElementById('node-ok').addEventListener('click', handleNodeOK);
     document.getElementById('node-cancel').addEventListener('click', handleNodeCancel);
     document.getElementById('node-delete').addEventListener('click', handleNodeDelete);
+    document.getElementById('node-connections-btn').addEventListener('click', () => {
+        const node = window.currentEditingNode;
+        if (node) {
+            document.getElementById('node-dialog').classList.add('hidden');
+            showNodeConnections(node.id);
+        }
+    });
     
     document.getElementById('edge-search-ok').addEventListener('click', handleEdgeSearchOK);
     document.getElementById('edge-search-cancel').addEventListener('click', closeEdgeSearchDialog);

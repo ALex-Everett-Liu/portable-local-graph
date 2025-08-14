@@ -489,3 +489,117 @@ body.local-graph-resizing .resize-handle {
 ::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* Node Connections Overview Styles */
+.connections-section {
+    margin-bottom: 20px;
+}
+
+.connections-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 4px;
+}
+
+.connection-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+
+.connection-item:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
+}
+
+.connection-node {
+    flex: 1;
+    font-weight: 500;
+}
+
+.connection-chinese {
+    font-size: 12px;
+    color: #666;
+    margin-left: 8px;
+}
+
+.connection-edge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #666;
+}
+
+.connection-weight {
+    background: #007bff;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.connection-category {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+.connection-direction {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+}
+
+.direction-incoming {
+    color: #dc3545;
+}
+
+.direction-outgoing {
+    color: #007bff;
+}
+
+.direction-bidirectional {
+    color: #28a745;
+}
+
+.connection-count {
+    text-align: center;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #495057;
+}
+
+.connection-count strong {
+    color: #007bff;
+}
+
+.empty-connections {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Ensure node connections dialog has proper z-index */
+#node-connections-dialog {
+    z-index: 10002;
+}
+
+/* Connection highlight styles */
+.connection-highlight {
+    background: #fff3cd !important;
+    border-left: 4px solid #ffc107;
+}

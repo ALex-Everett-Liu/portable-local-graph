@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.4.2] - 2025-08-14
+
+### Added
+- **Node Connections Overview**: Comprehensive window displaying all connections for any selected node
+- **Connection Categorization**: Organized display of incoming, outgoing, and bidirectional connections
+- **Interactive Connection Highlighting**: Click any connection to highlight connected nodes and edges
+- **Visual Direction Indicators**: Color-coded arrows showing relationship direction (red=incoming, blue=outgoing, green=bidirectional)
+- **Connection Details**: Display node labels, Chinese labels, edge weights, and categories for each connection
+- **Bulk Highlighting**: "Highlight All Connections" button to visualize entire network around selected node
+- **Focus Navigation**: "Focus on Node" button to center view on the selected node
+- **Seamless Integration**: Added "Connections" button to node edit dialog for instant access
+
+### Technical Details
+- **getNodeConnections()**: New Graph method that accurately categorizes all edges connected to a node
+- **Bidirectional Detection**: Smart identification of mutual connections (edges in both directions)
+- **Visual Hierarchy**: Connection count display and organized sections for clear navigation
+- **Responsive Design**: Dedicated modal dialog with proper z-index management
+- **State Management**: Automatic highlighting cleanup when dialog is closed
+- **Cross-module Integration**: Global `showNodeConnections()` function accessible from any context
+
+### User Experience
+- **Dedicated Interface**: Separate spacious window instead of cramped edit dialog
+- **Instant Access**: Right-click node → Edit → Connections for immediate overview
+- **Visual Feedback**: Hover effects and selection highlighting for enhanced interaction
+- **Context Preservation**: Original graph state maintained while exploring connections
+- **Professional Polish**: Clean styling with smooth transitions and intuitive controls
+
 ## [0.4.1] - 2025-08-14
 
 ### Added

@@ -39,6 +39,10 @@ function showNodeDialog(node) {
     };
     
     dialog.dataset.nodeId = node.id;
+    
+    // Store current node for connections button
+    window.currentEditingNode = node;
+    
     dialog.classList.remove('hidden');
 }
 
