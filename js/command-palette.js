@@ -56,6 +56,21 @@ class CommandPalette {
                 action: () => window.openGraphFile && window.openGraphFile()
             },
             {
+                id: 'save-graph-hotkey',
+                name: 'Save Graph',
+                description: 'Save the current graph',
+                keywords: ['save', 'store', 'persist'],
+                shortcut: 'S',
+                action: () => {
+                    if (typeof require !== 'undefined') {
+                        const { ipcRenderer } = require('electron');
+                        ipcRenderer.send('save-current-graph');
+                    } else {
+                        window.saveGraphToDatabase && window.saveGraphToDatabase();
+                    }
+                }
+            },
+            {
                 id: 'node-mode',
                 name: 'Node Mode',
                 description: 'Switch to node creation mode',
@@ -76,7 +91,7 @@ class CommandPalette {
                 name: 'Select Mode',
                 description: 'Switch to node selection mode',
                 keywords: ['select', 'move', 'drag', 'mode'],
-                shortcut: 'S',
+                shortcut: 'T',
                 action: () => window.setMode && window.setMode('select')
             },
             {
@@ -104,7 +119,7 @@ class CommandPalette {
                 description: 'Open layer management dialog',
                 keywords: ['layer', 'manage', 'filter', 'organize'],
                 shortcut: 'L',
-                action: () => window.toggleLayerManager && window.toggleLayerManager()
+                action: () => window.openLayerDialog && window.openLayerDialog()
             },
             {
                 id: 'undo',
@@ -208,6 +223,21 @@ class CommandPalette {
                 keywords: ['hotkey', 'mode', 'keyboard', 'help'],
                 shortcut: 'Alt',
                 action: () => window.hotkeyMode && window.hotkeyMode.toggle()
+            },
+            {
+                id: 'create-edge-search',
+                name: 'Create Edge via Search',
+                description: 'Create edge between nodes using search',
+                keywords: ['edge', 'create', 'search', 'connect', 'link'],
+                shortcut: 'D',
+                action: () => {
+                    const createEdgeBtn = document.getElementById('create-edge-search-btn');
+                    if (createEdgeBtn) {
+                        createEdgeBtn.click();
+                    } else if (window.showEdgeSearchDialog) {
+                        window.showEdgeSearchDialog();
+                    }
+                }
             }
         ];
     }

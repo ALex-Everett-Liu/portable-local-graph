@@ -79,25 +79,30 @@ function handleKeyDown(e) {
     
     // Single key shortcuts (only when not in hotkey mode)
     if (!window.hotkeyMode || !window.hotkeyMode.isActive) {
+        console.log("Processing single key shortcuts (hotkey mode not active)", e.key.toLowerCase());
         switch (e.key.toLowerCase()) {
             case 'n':
                 if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    console.log("Setting node mode");
                     setMode('node');
                 }
                 break;
             case 'e':
                 if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    console.log("Setting edge mode");
                     setMode('edge');
                 }
                 break;
-            case 's':
+            case 't':
                 if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    console.log("Setting select mode");
                     setMode('select');
                 }
                 break;
             case 'f':
             case 'F':
                 if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input')) {
+                    console.log("Focusing search input");
                     e.preventDefault();
                     const searchInput = document.getElementById('node-search');
                     if (searchInput) searchInput.focus();
@@ -105,6 +110,7 @@ function handleKeyDown(e) {
                 break;
             case 'c':
                 if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    console.log("Calculating centralities");
                     if (graph && graph.calculateCentralities) {
                         graph.calculateCentralities();
                     }
@@ -112,9 +118,15 @@ function handleKeyDown(e) {
                 break;
             case 'l':
                 if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    if (window.toggleLayerManager) {
-                        window.toggleLayerManager();
+                    console.log("Opening layer dialog");
+                    if (window.openLayerDialog) {
+                        window.openLayerDialog();
                     }
+                }
+                break;
+            case 's':
+                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    console.log("S key pressed - should be handled by hotkey mode");
                 }
                 break;
         }

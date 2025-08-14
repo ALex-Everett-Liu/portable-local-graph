@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.4] - 2025-08-15
+
+### Added
+- **Create Edge via Search Hotkey**: New 'D' key in hotkey mode for instant edge creation via search
+- **Enhanced Hotkey Coverage**: All major operations now have dedicated keyboard shortcuts
+- **Button Hotkey Mapping**: Visual hotkey hints added to all toolbar buttons
+
+### Hotkey Mode Enhancements
+- **New Shortcut**: 'D' key for "Create Edge via Search" dialog
+- **Complete Coverage**: Every major button now has a corresponding hotkey
+- **Visual Hints**: Hotkey labels appear on buttons when hotkey mode is active
+- **Updated Documentation**: Help panel now includes 'D' for edge creation
+
+### Available Shortcuts (Updated)
+- **Hotkey Mode**: N, E, T, F, C, L, G, S, O, Z, Y, D, X, Delete, I, U, 0, P, ?
+- **Key Changes**: 
+  - 'T' for Select Mode (changed from 'S')
+  - 'S' for Save Graph (exclusive to save functionality)
+  - 'D' for Create Edge via Search (new)
+
 ## [0.4.3] - 2025-08-15
 
 ### Added
@@ -17,14 +37,14 @@
 
 ### Hotkey Mode Features
 - **Alt Toggle**: Press Alt to activate/deactivate hotkey mode
-- **Single-key Shortcuts**: N=Node, E=Edge, S=Select, F=Search, C=Centralities, L=Layers
+- **Single-key Shortcuts**: N=Node, E=Edge, T=Select, F=Search, C=Centralities, L=Layers
 - **Visual Feedback**: Blue indicator shows when hotkey mode is active
 - **Auto-deactivation**: Hotkey mode automatically exits after executing commands
 - **Help System**: Press ? in hotkey mode to see all available shortcuts
 
 ### Available Shortcuts
 - **Global**: Ctrl+P (Command Palette), Ctrl+N (New), Ctrl+S (Save), Ctrl+O (Open)
-- **Hotkey Mode**: N, E, S, F, C, L, G, O, Z, R, D, X, I, U, 0, P, ?
+- **Hotkey Mode**: N, E, T, F, C, L, G, S, O, Z, Y, D, X, I, U, 0, P, ?
 - **Navigation**: Ctrl++/Ctrl+- (Zoom), Ctrl+0 (Reset), Delete (Delete), Escape (Clear)
 
 ## [0.4.2] - 2025-08-14
