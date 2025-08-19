@@ -177,7 +177,9 @@ export class FilterStateManager {
      * @returns {Object} Reset result
      */
     resetFilters() {
+        console.log('[FilterStateManager.resetFilters] Starting filter reset...');
         const result = this.filter.resetFilters();
+        console.log('[FilterStateManager.resetFilters] GraphFilter result:', result);
         
         this.updateState({
             isFiltered: false,
@@ -203,6 +205,7 @@ export class FilterStateManager {
             state: this.getState()
         });
         
+        console.log('[FilterStateManager.resetFilters] Final result:', result);
         return result;
     }
 

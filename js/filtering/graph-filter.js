@@ -251,6 +251,12 @@ export class GraphFilter {
      * @returns {Object} Reset result
      */
     resetFilters() {
+        console.log('[GraphFilter.resetFilters] Starting...');
+        console.log('[GraphFilter.resetFilters] originalNodes:', this.originalNodes?.length || 0);
+        console.log('[GraphFilter.resetFilters] originalEdges:', this.originalEdges?.length || 0);
+        console.log('[GraphFilter.resetFilters] currentNodes:', this.currentNodes?.length || 0);
+        console.log('[GraphFilter.resetFilters] currentEdges:', this.currentEdges?.length || 0);
+        
         this.currentNodes = [...this.originalNodes];
         this.currentEdges = [...this.originalEdges];
         this.isFiltered = false;
@@ -269,7 +275,7 @@ export class GraphFilter {
             maxDepth: 5
         };
 
-        return {
+        const result = {
             success: true,
             nodes: this.currentNodes,
             edges: this.currentEdges,
@@ -278,6 +284,9 @@ export class GraphFilter {
                 edgeCount: this.currentEdges.length
             }
         };
+        
+        console.log('[GraphFilter.resetFilters] Completed:', result);
+        return result;
     }
 
     /**

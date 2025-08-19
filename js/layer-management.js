@@ -11,31 +11,50 @@ function updateLayerList() {
 
 // Apply layer filter
 function applyLayerFilter() {
+    console.log('[applyLayerFilter] Starting layer filter application...');
+    
     const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
     const selectedLayers = Array.from(checkboxes).map(cb => cb.dataset.layer);
     const mode = document.querySelector('input[name="layer-filter-mode"]:checked').value;
     
+    console.log('[applyLayerFilter] Mode:', mode);
+    console.log('[applyLayerFilter] Selected layers:', selectedLayers);
+    
     graph.setLayerFilterMode(mode);
     
     if (selectedLayers.length > 0) {
+        console.log('[applyLayerFilter] Applying filtered layers...');
         graph.setActiveLayers(selectedLayers);
         const modeText = mode === 'include' ? 'Showing' : 'Excluding';
         showNotification(`${modeText} ${selectedLayers.length} layer(s): ${selectedLayers.join(', ')}`);
     } else {
+        console.log('[applyLayerFilter] Clearing layer filter...');
         graph.clearLayerFilter();
         showNotification('Showing all layers');
     }
     
     updateLayerList();
     updateGraphInfo();
+    console.log('[applyLayerFilter] Completed');
 }
 
 // Reset layer filter
 function resetLayerFilter() {
-    graph.clearLayerFilter();
-    updateLayerList();
-    updateGraphInfo();
-    showNotification('Layer filter reset - showing all nodes');
+    console.log('[resetLayerFilter] Reset button clicked');
+    console.log('[resetLayerFilter] Calling graph.clearLayerFilter()...');
+    
+    try {
+        const result = graph.clearLayerFilter();
+        console.log('[resetLayerFilter] clearLayerFilter returned:', result);
+        
+        updateLayerList();
+        updateGraphInfo();
+        showNotification('Layer filter reset - showing all nodes');
+        
+        console.log('[resetLayerFilter] Reset completed successfully');
+    } catch (error) {
+        console.error('[resetLayerFilter] Error during reset:', error);
+    }
 }
 
 // Show all layers

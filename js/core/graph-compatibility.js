@@ -463,17 +463,37 @@ export class Graph {
     }
 
     resetFilter() {
+        console.log('[resetFilter] Starting distance filter reset...');
         const result = this.filterStateManager.resetFilters();
         
         if (result.success && this.originalNodes && this.originalEdges) {
+            console.log('[resetFilter] Merging original data with new additions...');
+            
+            // Get current filtered data (may contain new nodes/edges)
+            const currentData = this.graphData.exportData();
+            const originalNodeMap = new Map(this.originalNodes.map(n => [n.id, n]));
+            const originalEdgeMap = new Map(this.originalEdges.map(e => [e.id, e]));
+            
+            // Identify new nodes/edges created after filtering
+            const newNodes = currentData.nodes.filter(node => !originalNodeMap.has(node.id));
+            const newEdges = currentData.edges.filter(edge => !originalEdgeMap.has(edge.id));
+            
+            console.log('[resetFilter] New nodes to preserve:', newNodes.length);
+            console.log('[resetFilter] New edges to preserve:', newEdges.length);
+            
+            // Merge: original data + new additions
+            const mergedNodes = [...this.originalNodes, ...newNodes];
+            const mergedEdges = [...this.originalEdges, ...newEdges];
+            
             this.graphData.loadData({
-                nodes: this.originalNodes,
-                edges: this.originalEdges
+                nodes: mergedNodes,
+                edges: mergedEdges
             });
             this.syncData();
             this.originalNodes = null;
             this.originalEdges = null;
             this.render();
+            console.log('[resetFilter] Data merged and restored successfully');
             return true;
         }
         return false;
@@ -485,7 +505,22 @@ export class Graph {
     }
 
     setActiveLayers(layers) {
+        console.log('[setActiveLayers] Setting active layers:', layers);
+        
+        // Check if we need to save original data
+        if (!this.originalNodes || !this.originalEdges) {
+            const data = this.graphData.exportData();
+            this.originalNodes = [...data.nodes];
+            this.originalEdges = [...data.edges];
+            console.log('[setActiveLayers] Saved original data:', {
+                nodes: this.originalNodes.length,
+                edges: this.originalEdges.length
+            });
+        }
+        
         const result = this.filterStateManager.applyLayerFilter(layers, this.graphFilter.layerFilterMode);
+        console.log('[setActiveLayers] applyLayerFilter result:', result);
+        
         if (result.success) {
             this.graphData.loadData({
                 nodes: result.nodes,
@@ -493,6 +528,9 @@ export class Graph {
             });
             this.syncData();
             this.render();
+            console.log('[setActiveLayers] Layer filter applied successfully');
+        } else {
+            console.error('[setActiveLayers] Layer filter failed:', result.error);
         }
     }
 
@@ -523,17 +561,66 @@ export class Graph {
     }
 
     clearLayerFilter() {
-        this.filterStateManager.resetFilters();
-        if (this.originalNodes && this.originalEdges) {
-            this.graphData.loadData({
-                nodes: this.originalNodes,
-                edges: this.originalEdges
-            });
-            this.syncData();
-            this.originalNodes = null;
-            this.originalEdges = null;
+        console.log('[clearLayerFilter] Starting layer filter reset...');
+        console.log('[clearLayerFilter] originalNodes:', this.originalNodes?.length || 0);
+        console.log('[clearLayerFilter] originalEdges:', this.originalEdges?.length || 0);
+        
+        const result = this.filterStateManager.resetFilters();
+        console.log('[clearLayerFilter] resetFilters result:', result);
+        
+        if (result.success) {
+            console.log('[clearLayerFilter] Reset successful');
+            
+            if (this.originalNodes && this.originalEdges) {
+                console.log('[clearLayerFilter] Merging original data with new additions...');
+                
+                // Get current filtered data (may contain new nodes/edges)
+                const currentData = this.graphData.exportData();
+                const originalNodeMap = new Map(this.originalNodes.map(n => [n.id, n]));
+                const originalEdgeMap = new Map(this.originalEdges.map(e => [e.id, e]));
+                
+                // Identify new nodes/edges created after filtering
+                const newNodes = currentData.nodes.filter(node => !originalNodeMap.has(node.id));
+                const newEdges = currentData.edges.filter(edge => !originalEdgeMap.has(edge.id));
+                
+                console.log('[clearLayerFilter] New nodes to preserve:', newNodes.length);
+                console.log('[clearLayerFilter] New edges to preserve:', newEdges.length);
+                
+                // Merge: original data + new additions
+                const mergedNodes = [...this.originalNodes, ...newNodes];
+                const mergedEdges = [...this.originalEdges, ...newEdges];
+                
+                console.log('[clearLayerFilter] Final merged data:', {
+                    originalNodes: this.originalNodes.length,
+                    newNodes: newNodes.length,
+                    totalNodes: mergedNodes.length,
+                    originalEdges: this.originalEdges.length,
+                    newEdges: newEdges.length,
+                    totalEdges: mergedEdges.length
+                });
+                
+                this.graphData.loadData({
+                    nodes: mergedNodes,
+                    edges: mergedEdges
+                });
+                this.syncData();
+                this.originalNodes = null;
+                this.originalEdges = null;
+                console.log('[clearLayerFilter] Data merged and restored successfully');
+            } else {
+                console.log('[clearLayerFilter] No original data to restore');
+            }
+        } else {
+            console.error('[clearLayerFilter] Reset failed:', result.error);
         }
+        
+        console.log('[clearLayerFilter] Current graph state:', {
+            nodes: this.graphData.exportData().nodes.length,
+            edges: this.graphData.exportData().edges.length
+        });
+        
         this.render();
+        return true;
     }
 
     toggleLayer(layer) {
@@ -683,6 +770,81 @@ export class Graph {
     calculateDistances(centerNodeId, maxDistance = 10, maxDepth = 5) {
         const data = this.graphData.exportData();
         return dijkstra(data.nodes, data.edges, centerNodeId);
+    }
+
+    calculateDepths(centerNodeId, maxDepth = 5) {
+        const data = this.graphData.exportData();
+        const depths = new Map();
+        const queue = [centerNodeId];
+        
+        data.nodes.forEach(node => {
+            depths.set(node.id, node.id === centerNodeId ? 0 : Infinity);
+        });
+        
+        while (queue.length > 0) {
+            const currentId = queue.shift();
+            const currentDepth = depths.get(currentId);
+            
+            if (currentDepth >= maxDepth) continue;
+            
+            const connectedEdges = data.edges.filter(edge => 
+                edge.from === currentId || edge.to === currentId
+            );
+            
+            connectedEdges.forEach(edge => {
+                const neighborId = edge.from === currentId ? edge.to : edge.from;
+                if (depths.get(neighborId) === Infinity) {
+                    depths.set(neighborId, currentDepth + 1);
+                    queue.push(neighborId);
+                }
+            });
+        }
+        
+        return depths;
+    }
+
+    analyzeDistancesTable(centerNodeId, maxDistance = 10, maxDepth = 5) {
+        const data = this.graphData.exportData();
+        const centerNode = data.nodes.find(n => n.id === centerNodeId);
+        if (!centerNode) {
+            return { nodes: [], centerNode: null };
+        }
+
+        console.log('[analyzeDistancesTable] Data:', { nodes: data.nodes.length, edges: data.edges.length });
+        console.log('[analyzeDistancesTable] Edges with weights:', data.edges.map(e => ({from: e.from, to: e.to, weight: e.weight})));
+
+        const distances = this.calculateDistances(centerNodeId, maxDistance, maxDepth);
+        console.log('[analyzeDistancesTable] Distances:', Object.fromEntries(distances));
+        
+        // Calculate depths using BFS for layered analysis
+        const depths = this.calculateDepths(centerNodeId, maxDepth);
+        console.log('[analyzeDistancesTable] Depths:', Object.fromEntries(depths));
+        
+        // Create analysis data for all reachable nodes
+        const analysisData = [];
+        distances.forEach((distance, nodeId) => {
+            const node = data.nodes.find(n => n.id === nodeId);
+            if (node) {
+                analysisData.push({
+                    id: node.id,
+                    label: node.label,
+                    chineseLabel: node.chineseLabel || '',
+                    x: node.x,
+                    y: node.y,
+                    distance: distance,
+                    depth: depths.get(nodeId) || 0,
+                    color: node.color,
+                    radius: node.radius
+                });
+            }
+        });
+
+        return {
+            nodes: analysisData,
+            centerNode,
+            distances: Object.fromEntries(distances),
+            depths: Object.fromEntries(depths)
+        };
     }
 
     filterLocalGraph(centerNodeId, maxDistance = 10, maxDepth = 5) {
