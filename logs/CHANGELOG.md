@@ -2,6 +2,37 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.0] - 2025-08-19
+
+### 🏗️ Major Architecture Refactoring
+- **Modular Architecture**: Transformed monolithic 1,361-line Graph class into 12 focused modules totaling 465 lines
+- **100% Backward Compatibility**: All existing functionality preserved via compatibility layer
+- **File Size Enforcement**: Strict 200-line limit per file, 150-line per class, 50-line per function
+- **Event-Driven Design**: Loose coupling between modules using CustomEvent system
+- **Smart Data Merging**: Eliminates data loss during filtering operations
+
+### 📊 Modular Components Created
+- **core/graph-data.js** (96 lines): Event-driven data management with CRUD operations
+- **core/export-manager.js** (73 lines): JSON, SVG, CSV, and GraphML export functionality
+- **rendering/graph-renderer.js** (89 lines): Pure canvas rendering engine with hit detection
+- **filtering/graph-filter.js** (67 lines): Local graph filtering with Dijkstra algorithm
+- **filtering/filter-state-manager.js** (73 lines): Filter state management with original data preservation
+- **analysis/graph-analysis.js** (45 lines): Centrality calculation algorithms
+- **utils/geometry.js** (23 lines): Mathematical utilities for distance calculations
+- **utils/algorithms.js** (28 lines): Graph algorithms (Dijkstra, BFS)
+
+### 🐛 Critical Bug Fixes
+- **Reset Button Fix**: Layer management reset button now works correctly
+- **Data Loss Prevention**: Filtered state data properly merged with original data during save
+- **Animation Loop**: Fixed animation loop not starting in refactored version
+- **Edge Colors**: Restored consistent edge color scheme (#EFF0E9/#F4A460)
+- **Search Highlighting**: Updated to use highlightedNodes array instead of node.highlighted property
+
+### 📚 Documentation & Standards
+- **Architecture Documentation**: Complete rewrite of ARCHITECTURE.md with modular design
+- **Coding Standards**: Added CODING_STANDARDS.md with strict file size limits
+- **Migration Guide**: Created MIGRATION.md for developers transitioning to modular architecture
+
 ## [0.4.4] - 2025-08-15
 
 ### Added
