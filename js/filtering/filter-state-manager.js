@@ -207,6 +207,15 @@ export class FilterStateManager {
     }
 
     /**
+     * Backward compatibility method for reset filter
+     * @returns {boolean} Success status
+     */
+    resetFilter() {
+        const result = this.resetFilters();
+        return result.success;
+    }
+
+    /**
      * Update state and notify listeners
      * @param {Object} newState - New state to merge
      */

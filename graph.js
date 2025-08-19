@@ -1,18 +1,29 @@
 /**
- * Updated Graph.js - Uses the new modular architecture
- * This file replaces the original graph.js with backward compatibility
+ * Graph.js - Legacy compatibility wrapper
+ * This file provides backward compatibility by loading the modular architecture
  */
-import { Graph } from './js/core/graph-compatibility.js';
 
-// Export the new Graph class with full backward compatibility
-export { Graph };
-
-// Global assignment for existing code that expects Graph in global scope
-if (typeof window !== 'undefined') {
-    window.Graph = Graph;
-}
-
-// For CommonJS compatibility
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { Graph };
-}
+// Load the modular Graph class
+(function() {
+    'use strict';
+    
+    // This will be populated by the modular system
+    // The actual implementation is in js/core/graph-compatibility.js
+    
+    // Create placeholder until modules load
+    if (typeof window !== 'undefined') {
+        window.Graph = null; // Will be set by modular system
+    }
+    
+    // For environments that support modules, use the modular version
+    if (typeof module !== 'undefined' && module.exports) {
+        try {
+            // Node.js environment
+            const { Graph } = require('./js/core/graph-compatibility.js');
+            module.exports = { Graph };
+        } catch (e) {
+            // Fallback for environments without module support
+            console.warn('Module system not available, using legacy implementation');
+        }
+    }
+})();

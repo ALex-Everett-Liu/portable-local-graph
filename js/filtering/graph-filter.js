@@ -238,6 +238,15 @@ export class GraphFilter {
     }
 
     /**
+     * Reset all filters (backward compatibility)
+     * @returns {boolean} Success status
+     */
+    resetFilter() {
+        const result = this.resetFilters();
+        return result.success;
+    }
+
+    /**
      * Reset all filters
      * @returns {Object} Reset result
      */

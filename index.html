@@ -369,7 +369,15 @@
         </div>
     </div>
     
-    <script src="graph.js"></script>
+    <!-- Modular Architecture - Load Graph first -->
+    <script type="module">
+        import { Graph } from './js/core/graph-compatibility.js';
+        window.Graph = Graph;
+        console.log('Graph class loaded via module system');
+        
+        // Dispatch event when Graph is ready
+        window.dispatchEvent(new CustomEvent('graph-ready'));
+    </script>
     
     <!-- Modular Application Files -->
     <script src="js/app-state.js"></script>

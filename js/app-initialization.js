@@ -19,6 +19,11 @@ function initializeGraph() {
         return;
     }
     
+    if (typeof Graph === 'undefined') {
+        console.error('Graph class not loaded');
+        return;
+    }
+    
     window.graph = new Graph(canvas, {
         mode: appState.mode,
         onModeChange: (mode) => setMode(mode),

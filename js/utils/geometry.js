@@ -12,6 +12,10 @@
  * @param {number} y2 - Line segment end y
  * @returns {number} Distance from point to line segment
  */
+export function calculateDistance(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+
 export function distanceToLineSegment(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1;
     const dy = y2 - y1;

@@ -43,6 +43,9 @@ export class GraphRenderer {
      * @param {Object} filterState - Current filter state {layerFilterEnabled, activeLayers, layerFilterMode}
      */
     render(nodes, edges, viewState, selectionState = {}, filterState = {}) {
+        if (!viewState) {
+            viewState = { scale: 1, offset: { x: 0, y: 0 } };
+        }
         const { scale, offset } = viewState;
         const { selectedNode, selectedEdge, highlightedNodes = [] } = selectionState;
         

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modular Architecture</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        canvas { border: 1px solid #ccc; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Modular Architecture Test</h1>
+    <div id="test-results"></div>
+    <canvas id="test-canvas" width="400" height="300"></canvas>
+
+    <script type="module">
+        import { Graph } from './js/core/graph-compatibility.js';
+        
+        const results = document.getElementById('test-results');
+        
+        function test(name, fn) {
+            try {
+                const result = fn();
+                results.innerHTML += `<div class="test-result success">✓ ${name}: ${result}</div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="test-result error">✗ ${name}: ${error.message}</div>`;
+            }
+        }
+
+        // Test 1: Graph class exists
+        test('Graph class is available', () => {
+            if (typeof Graph === 'undefined') throw new Error('Graph class not defined');
+            return 'Graph class loaded successfully';
+        });
+
+        // Test 2: Can create Graph instance
+        test('Can create Graph instance', () => {
+            const canvas = document.getElementById('test-canvas');
+            const graph = new Graph(canvas);
+            return 'Graph instance created';
+        });
+
+        // Test 3: Add node function exists
+        test('addNode function exists', () => {
+            const canvas = document.getElementById('test-canvas');
+            const graph = new Graph(canvas);
+            if (typeof graph.addNode !== 'function') throw new Error('addNode not found');
+            return 'addNode function available';
+        });
+
+        // Test 4: exportData function exists
+        test('exportData function exists', () => {
+            const canvas = document.getElementById('test-canvas');
+            const graph = new Graph(canvas);
+            if (typeof graph.exportData !== 'function') throw new Error('exportData not found');
+            return 'exportData function available';
+        });
+
+        // Test 5: Test actual functionality
+        test('Test basic operations', () => {
+            const canvas = document.getElementById('test-canvas');
+            const graph = new Graph(canvas);
+            
+            const node = graph.addNode(100, 100, 'Test Node');
+            if (!node || !node.id) throw new Error('Failed to add node');
+            
+            const data = graph.exportData();
+            if (!data.nodes || data.nodes.length !== 1) throw new Error('Export failed');
+            
+            return `Added node ${node.id}, exported ${data.nodes.length} nodes`;
+        });
+
+        console.log('All tests completed!');
+    </script>
+</body>
+</html>

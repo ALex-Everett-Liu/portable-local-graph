@@ -243,16 +243,19 @@ export class Graph {
 
     // Rendering
     render() {
+        const data = this.graphData.exportData();
         if (this.renderer) {
-            this.renderer.render({
-                scale: this.scale,
-                offset: this.offset,
-                selectedNode: this.selectedNode,
-                selectedEdge: this.selectedEdge,
-                layerFilterEnabled: this.graphFilter.layerFilterEnabled,
-                activeLayers: this.graphFilter.activeLayers,
-                layerFilterMode: this.graphFilter.layerFilterMode
-            });
+            this.renderer.render(
+                data.nodes,
+                data.edges,
+                { scale: this.scale, offset: this.offset },
+                { selectedNode: this.selectedNode, selectedEdge: this.selectedEdge },
+                {
+                    layerFilterEnabled: this.graphFilter.layerFilterEnabled,
+                    activeLayers: this.graphFilter.activeLayers,
+                    layerFilterMode: this.graphFilter.layerFilterMode
+                }
+            );
         }
     }
 
@@ -610,6 +613,17 @@ export class Graph {
             layers: node.layers || []
         }));
     }
+
+    // Backward compatibility properties
+    get nodes() {
+        return this.graphData.exportData().nodes;
+    }
+
+    get edges() {
+        return this.graphData.exportData().edges;
+    }
+
+    // Additional backward compatibility - no need to override existing methods
 
     getNodeConnections(nodeId) {
         const data = this.graphData.exportData();
