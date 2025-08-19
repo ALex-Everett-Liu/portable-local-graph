@@ -37,6 +37,7 @@ function setupLayerDialogEvents() {
     const applyBtn = document.getElementById('apply-layers-btn');
     const cancelBtn = document.getElementById('cancel-layers-btn');
     const resetBtn = document.getElementById('reset-layers-btn');
+    const saveViewBtn = document.getElementById('save-layer-view-btn');
     const selectAllBtn = document.getElementById('select-all-layers-btn');
     const selectNoneBtn = document.getElementById('select-none-layers-btn');
     const invertBtn = document.getElementById('invert-selection-btn');
@@ -45,6 +46,7 @@ function setupLayerDialogEvents() {
     if (applyBtn) applyBtn.addEventListener('click', applyLayerDialogSelection);
     if (cancelBtn) cancelBtn.addEventListener('click', closeLayerDialog);
     if (resetBtn) resetBtn.addEventListener('click', resetLayerDialog);
+    if (saveViewBtn) saveViewBtn.addEventListener('click', saveLayerView);
     if (selectAllBtn) selectAllBtn.addEventListener('click', selectAllLayers);
     if (selectNoneBtn) selectNoneBtn.addEventListener('click', selectNoneLayers);
     if (invertBtn) invertBtn.addEventListener('click', invertLayerSelection);
@@ -105,6 +107,114 @@ function openLayerDialog() {
 
 function closeLayerDialog() {
     document.getElementById('layer-management-dialog').classList.add('hidden');
+}
+
+// Save layer view configuration
+function saveLayerView() {
+    const selectedLayers = Array.from(layerDialogState.selectedLayers);
+    const mode = layerDialogState.filterMode;
+    
+    if (selectedLayers.length === 0) {
+        showNotification('Please select at least one layer before saving', 'error');
+        return;
+    }
+    
+    const config = {
+        id: 'layer-view-' + Date.now(),
+        name: `${selectedLayers.length} layer(s) (${mode})`,
+        selectedLayers: [...selectedLayers],
+        filterMode: mode,
+        timestamp: new Date().toISOString(),
+        description: `${selectedLayers.join(', ')} - ${mode} mode`
+    };
+    
+    // Load existing layer views or initialize array
+    let layerViews = [];
+    try {
+        const saved = localStorage.getItem('graphLayerViews');
+        if (saved) {
+            layerViews = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.error('Error loading layer views:', error);
+    }
+    
+    layerViews.push(config);
+    
+    // Keep only the 10 most recent configurations
+    if (layerViews.length > 10) {
+        layerViews = layerViews.slice(-10);
+    }
+    
+    // Save to localStorage
+    try {
+        localStorage.setItem('graphLayerViews', JSON.stringify(layerViews));
+        showNotification('Layer view saved successfully');
+        
+        // Optionally, also add to quick access
+        if (appState && appState.quickAccess) {
+            appState.quickAccess.push({
+                id: config.id,
+                name: config.name,
+                type: 'layer-view',
+                layers: config.selectedLayers,
+                mode: config.filterMode,
+                timestamp: config.timestamp
+            });
+            
+            // Keep only 10 in quick access too
+            if (appState.quickAccess.length > 10) {
+                appState.quickAccess = appState.quickAccess.slice(-10);
+            }
+            
+            // Save quick access if function exists
+            if (typeof saveQuickAccess === 'function') {
+                saveQuickAccess();
+            }
+            if (typeof renderQuickAccess === 'function') {
+                renderQuickAccess();
+            }
+        }
+    } catch (error) {
+        console.error('Error saving layer view:', error);
+        showNotification('Error saving layer view', 'error');
+    }
+}
+
+// Load layer view configuration
+function loadLayerView(viewId) {
+    let layerViews = [];
+    try {
+        const saved = localStorage.getItem('graphLayerViews');
+        if (saved) {
+            layerViews = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.error('Error loading layer views:', error);
+        return;
+    }
+    
+    const view = layerViews.find(v => v.id === viewId);
+    if (!view) {
+        showNotification('Layer view not found', 'error');
+        return;
+    }
+    
+    // Apply the saved configuration directly to the graph
+    graph.setLayerFilterMode(view.filterMode);
+    graph.setActiveLayers(view.selectedLayers);
+    
+    // Update sidebar radio buttons
+    const sidebarRadio = document.querySelector(`input[name="layer-filter-mode"][value="${view.filterMode}"]`);
+    if (sidebarRadio) sidebarRadio.checked = true;
+    
+    // Update UI elements
+    if (typeof updateLayerSummary === 'function') updateLayerSummary();
+    if (typeof updateGraphInfo === 'function') updateGraphInfo();
+    
+    // Show notification with actual effect
+    const modeText = view.filterMode === 'include' ? 'Showing' : 'Excluding';
+    showNotification(`${modeText} ${view.selectedLayers.length} layer(s): ${view.selectedLayers.join(', ')}`);
 }
 
 function renderLayerGrid() {
@@ -491,6 +601,8 @@ if (typeof module !== 'undefined' && module.exports) {
         openLayerRenameDialog,
         closeLayerRenameDialog,
         applyLayerRename,
-        handleLayerRenameKeydown
+        handleLayerRenameKeydown,
+        saveLayerView,
+        loadLayerView
     });
 }

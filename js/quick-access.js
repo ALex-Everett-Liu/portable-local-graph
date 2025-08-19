@@ -70,11 +70,27 @@ function renderQuickAccess() {
     appState.quickAccess.forEach(config => {
         const item = document.createElement('div');
         item.className = 'quick-access-item';
+        
+        let onclickHandler = '';
+        let typeIndicator = '';
+        
+        if (config.type === 'layer-view') {
+            onclickHandler = `loadLayerView('${config.id}')`;
+            typeIndicator = '📊';
+        } else {
+            onclickHandler = `loadViewConfig('${config.id}')`;
+            typeIndicator = '🎯';
+        }
+        
         item.innerHTML = `
-            <div style="flex: 1; cursor: pointer;" onclick="loadViewConfig('${config.id}')">
-                ${config.name}
+            <div style="flex: 1; cursor: pointer; display: flex; align-items: center;" onclick="${onclickHandler}">
+                <span style="margin-right: 8px;">${typeIndicator}</span>
+                <div>
+                    <div style="font-weight: bold; font-size: 12px;">${config.name}</div>
+                    <div style="font-size: 10px; color: #666;">${config.type === 'layer-view' ? 'Layer View' : 'Filter View'}</div>
+                </div>
             </div>
-            <button onclick="deleteViewConfig('${config.id}')" style="background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">×</button>
+            <button onclick="deleteViewConfig('${config.id}')" style="background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; width: 20px; height: 20px;">×</button>
         `;
         container.appendChild(item);
     });
@@ -88,22 +104,40 @@ function loadViewConfig(configId) {
         return;
     }
     
-    // Update UI controls
-    document.getElementById('center-node-select').value = config.centerNodeId;
-    document.getElementById('max-distance').value = config.maxDistance;
-    document.getElementById('max-depth').value = config.maxDepth;
-    
-    // Update app state
-    appState.filterParams.centerNodeId = config.centerNodeId;
-    appState.filterParams.maxDistance = config.maxDistance;
-    appState.filterParams.maxDepth = config.maxDepth;
-    
-    // Update displays
-    updateDistanceDisplay();
-    updateDepthDisplay();
-    
-    // Apply the filter
-    applyFilter();
+    if (config.type === 'layer-view') {
+        // Load layer view
+        const modeText = config.mode === 'include' ? 'Showing' : 'Excluding';
+        graph.setLayerFilterMode(config.mode);
+        graph.setActiveLayers(config.layers);
+        
+        // Update sidebar radio buttons
+        const sidebarRadio = document.querySelector(`input[name="layer-filter-mode"][value="${config.mode}"]`);
+        if (sidebarRadio) sidebarRadio.checked = true;
+        
+        // Update UI elements
+        if (typeof updateLayerSummary === 'function') updateLayerSummary();
+        if (typeof updateGraphInfo === 'function') updateGraphInfo();
+        
+        showNotification(`${modeText} ${config.layers.length} layer(s): ${config.layers.join(', ')}`);
+    } else {
+        // Load filter view
+        // Update UI controls
+        document.getElementById('center-node-select').value = config.centerNodeId;
+        document.getElementById('max-distance').value = config.maxDistance;
+        document.getElementById('max-depth').value = config.maxDepth;
+        
+        // Update app state
+        appState.filterParams.centerNodeId = config.centerNodeId;
+        appState.filterParams.maxDistance = config.maxDistance;
+        appState.filterParams.maxDepth = config.maxDepth;
+        
+        // Update displays
+        updateDistanceDisplay();
+        updateDepthDisplay();
+        
+        // Apply the filter
+        applyFilter();
+    }
 }
 
 // Delete view configuration

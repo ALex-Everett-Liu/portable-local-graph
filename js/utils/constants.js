@@ -55,7 +55,7 @@ export const GRAPH_CONSTANTS = {
 
 export const WEIGHT_MAPPING = {
     MIN_LOG_WEIGHT: 1.5,
-    MAX_LOG_WEIGHT: 3.5,
+    MAX_LOG_WEIGHT: 5.0,  // Changed from 3.5 to 5.0 to match original
     LOG_OFFSET: 2.3,
     LOG_BASE: Math.log,
     INVERT_MAPPING: true

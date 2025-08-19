@@ -2,6 +2,27 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.2] - 2025-08-20
+
+### 🎯 Layer Management Enhancement
+- **Save View Functionality**: Added "Save View" button to Layer Management dialog
+- **Layer View Persistence**: Save and load layer filter configurations with descriptive names
+- **Quick Access Integration**: Layer views integrated into unified Quick Access panel
+- **Visual Indicators**: Layer views marked with 📊 icon, filter views with 🎯 icon
+- **Unified Management**: Both layer and filter views managed in single Quick Access panel
+
+### 📊 Layer View Features
+- **One-Click Loading**: Instantly apply saved layer configurations
+- **Include/Exclude Mode**: Preserve filtering mode (include/exclude) in saved views
+- **Descriptive Naming**: Auto-generated names with layer count and mode
+- **Local Storage**: Persistent storage using localStorage for reliability
+- **10 View Limit**: Keep 10 most recent views to maintain performance
+
+### 🐛 Bug Fixes
+- **Layer View Application**: Fixed issue where saved layer views didn't apply to graph
+- **Quick Access Display**: Enhanced visual feedback for different view types
+- **Notification Clarity**: Improved messages showing actual applied changes
+
 ## [0.5.1] - 2025-08-19
 
 ### 🔍 Centrality Analysis Enhancement
