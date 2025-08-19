@@ -142,10 +142,8 @@ export class GraphRenderer {
         this.ctx.lineTo(to.x, to.y);
         this.ctx.stroke();
         
-        // Draw arrow or weight label if needed
-        if (edge.weight !== 1) {
-            this.renderEdgeLabel(from, to, edge, scale);
-        }
+        // Always draw weight label
+        this.renderEdgeLabel(from, to, edge, scale);
     }
 
     /**

@@ -2,6 +2,25 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.1] - 2025-08-19
+
+### 🔍 Centrality Analysis Enhancement
+- **Per-Component Centrality Calculation**: Fixed boundary issues in disconnected graphs
+- **Isolated Node Handling**: Proper handling of singleton components (closeness=0, eigenvector=0)
+- **Component-wise Normalization**: Centrality values normalized within each connected component
+- **Backward Compatibility**: Fully compatible with connected graphs (identical results)
+
+### 🐛 Bug Fixes
+- **Closeness Centrality**: Fixed incorrect `closeness=1` for isolated nodes
+- **Eigenvector Centrality**: Fixed component boundary issues in disconnected graphs
+- **Betweenness Centrality**: Now correctly handles multiple disconnected components
+- **PageRank**: Proper component-wise normalization for disconnected subgraphs
+
+### 📊 Algorithm Improvements
+- **Connected Component Detection**: Automatic detection and handling of graph components
+- **Local Normalization**: Each component calculated independently for fair comparison
+- **Boundary Case Handling**: Robust handling of graph partitions and isolated nodes
+
 ## [0.5.0] - 2025-08-19
 
 ### 🏗️ Major Architecture Refactoring
