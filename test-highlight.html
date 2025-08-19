@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Highlight Test</title>
+    <style>
+        #graph-canvas {
+            border: 1px solid #ccc;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="graph-canvas" width="800" height="600"></canvas>
+    <button onclick="testHighlight()">Test Highlight</button>
+    <button onclick="clearHighlight()">Clear Highlight</button>
+    
+    <script type="module">
+        import { Graph } from './js/core/graph-compatibility.js';
+        
+        window.canvas = document.getElementById('graph-canvas');
+        window.graph = new Graph(window.canvas);
+        
+        // Add some test nodes
+        const node1 = graph.addNode(100, 100, "Node 1");
+        const node2 = graph.addNode(300, 100, "Node 2");
+        const node3 = graph.addNode(200, 200, "Node 3");
+        
+        graph.addEdge(node1.id, node2.id);
+        graph.addEdge(node2.id, node3.id);
+        
+        window.testHighlight = () => {
+            graph.setHighlightedNodes([node1.id, node3.id]);
+            graph.render();
+        };
+        
+        window.clearHighlight = () => {
+            graph.clearHighlightedNodes();
+            graph.render();
+        };
+    </script>
+</body>
+</html>

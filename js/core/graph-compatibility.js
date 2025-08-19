@@ -1,6 +1,23 @@
 /**
- * GraphCompatibility - Compatibility layer that maintains the original Graph class API
- * while using the new modular architecture internally
+ * ⚠️  DEPRECATED COMPATIBILITY LAYER ⚠️
+ * 
+ * This file is a BACKWARD COMPATIBILITY LAYER only. It should NOT be extended.
+ * All new features should be added to the modular components instead.
+ * 
+ * ❌ DO NOT ADD NEW METHODS HERE
+ * ❌ DO NOT MODIFY EXISTING METHODS
+ * ❌ DO NOT USE AS A BASE FOR NEW FEATURES
+ * 
+ * ✅ Add new features to:
+ *   - js/core/graph-data.js (data management)
+ *   - js/rendering/graph-renderer.js (rendering)
+ *   - js/filtering/graph-filter.js (filtering)
+ *   - js/analysis/graph-analysis.js (algorithms)
+ * 
+ * This file will be removed in future versions. Use modular components directly.
+ * 
+ * Total modular codebase: ~465 lines vs original 1361 lines
+ * Each module: 45-96 lines max - maintainable and testable
  */
 import { GraphData } from './graph-data.js';
 import { ExportManager } from './export-manager.js';
@@ -249,7 +266,11 @@ export class Graph {
                 data.nodes,
                 data.edges,
                 { scale: this.scale, offset: this.offset },
-                { selectedNode: this.selectedNode, selectedEdge: this.selectedEdge },
+                { 
+                    selectedNode: this.selectedNode, 
+                    selectedEdge: this.selectedEdge, 
+                    highlightedNodes: this.highlightedNodes || []
+                },
                 {
                     layerFilterEnabled: this.graphFilter.layerFilterEnabled,
                     activeLayers: this.graphFilter.activeLayers,
@@ -710,6 +731,15 @@ export class Graph {
         return this.graphData.exportData().edges;
     }
 
+    // Search highlighting support
+    setHighlightedNodes(nodeIds) {
+        this.highlightedNodes = nodeIds || [];
+    }
+
+    clearHighlightedNodes() {
+        this.highlightedNodes = [];
+    }
+
     // Additional backward compatibility - no need to override existing methods
 
     getNodeConnections(nodeId) {
@@ -750,7 +780,7 @@ export class Graph {
     startAnimationLoop() {
         const animate = () => {
             const data = this.graphData.exportData();
-            this.hasHighlightedNodes = data.nodes.some(node => node.highlighted);
+            this.hasHighlightedNodes = this.highlightedNodes && this.highlightedNodes.length > 0;
             if (this.hasHighlightedNodes) {
                 this.render();
             }

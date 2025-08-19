@@ -17,7 +17,8 @@
       "Bash(dir:*)",
       "Bash(start:*)",
       "Bash(sed:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git log:*)"
     ],
     "deny": []
   }

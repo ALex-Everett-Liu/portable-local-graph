@@ -131,7 +131,7 @@ export class GraphRenderer {
      * @param {boolean} isSelected - Whether edge is selected
      */
     renderEdge(from, to, edge, scale, isSelected) {
-        this.ctx.strokeStyle = isSelected ? '#87CEFA' : '#999';
+        this.ctx.strokeStyle = isSelected ? '#F4A460' : '#EFF0E9';
         this.ctx.lineWidth = getScaledLineWidth(
             isSelected ? 3 : getEdgeLineWidth(edge.weight), 
             scale
@@ -159,11 +159,11 @@ export class GraphRenderer {
         const midX = (from.x + to.x) / 2;
         const midY = (from.y + to.y) / 2;
         
-        this.ctx.fillStyle = '#666';
-        this.ctx.font = getFontString(GRAPH_CONSTANTS.DEFAULT_FONT_SIZE, scale);
+        this.ctx.fillStyle = '#000000';
+        this.ctx.font = getFontString(12, scale);
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(edge.weight.toString(), midX, midY);
+        this.ctx.fillText(edge.weight.toString(), midX, midY - 10 / scale);
     }
 
     /**

@@ -31,7 +31,13 @@ function initializeGraph() {
         onSelectionChange: updateGraphInfo
     });
     
-    console.log('Graph initialized successfully');
+        console.log('Graph initialized successfully');
+    
+    // Start animation loop for highlighted nodes
+    if (graph && typeof graph.startAnimationLoop === 'function') {
+        graph.startAnimationLoop();
+        console.log('Animation loop started');
+    }
 }
 
 // Export globals for module system

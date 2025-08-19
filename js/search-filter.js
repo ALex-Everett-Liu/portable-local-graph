@@ -178,22 +178,26 @@ function highlightSearchResults(results) {
     // Clear previous highlighting
     clearNodeHighlighting();
     
-    // Add highlighting class to found nodes
-    results.forEach(node => {
-        const nodeIndex = graph.nodes.findIndex(n => n.id === node.id);
-        if (nodeIndex !== -1) {
-            graph.nodes[nodeIndex].highlighted = true;
-        }
-    });
+    // Add highlighting to found nodes using highlightedNodes array
+    const highlightedNodeIds = results.map(node => node.id);
+    if (graph.setHighlightedNodes) {
+        graph.setHighlightedNodes(highlightedNodeIds);
+    } else {
+        // Fallback for backward compatibility
+        graph.highlightedNodes = highlightedNodeIds;
+    }
     
     graph.render();
 }
 
 // Clear node highlighting
 function clearNodeHighlighting() {
-    graph.nodes.forEach(node => {
-        delete node.highlighted;
-    });
+    if (graph.clearHighlightedNodes) {
+        graph.clearHighlightedNodes();
+    } else {
+        // Fallback for backward compatibility
+        graph.highlightedNodes = [];
+    }
     graph.render();
 }
 

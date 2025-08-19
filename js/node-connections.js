@@ -158,9 +158,10 @@ function addConnectionItemHandlers() {
 // Highlight a specific connection
 function highlightConnection(nodeId, edgeId) {
     // Highlight the connected node
-    const node = graph.nodes.find(n => n.id === nodeId);
-    if (node) {
-        node.highlighted = true;
+    if (graph.setHighlightedNodes) {
+        graph.setHighlightedNodes([nodeId]);
+    } else {
+        graph.highlightedNodes = [nodeId];
     }
     
     // Highlight the edge (select it)
@@ -170,15 +171,17 @@ function highlightConnection(nodeId, edgeId) {
     }
     
     // Update selection info
-    graph.onSelectionChange();
+    if (graph.onSelectionChange) graph.onSelectionChange();
     graph.render();
 }
 
 // Clear all highlights
 function clearHighlights() {
-    graph.nodes.forEach(node => {
-        node.highlighted = false;
-    });
+    if (graph.clearHighlightedNodes) {
+        graph.clearHighlightedNodes();
+    } else {
+        graph.highlightedNodes = [];
+    }
     graph.selectedEdge = null;
 }
 
@@ -201,13 +204,15 @@ function highlightAllConnections() {
     // Clear previous highlights
     clearHighlights();
     
-    // Highlight all connected nodes
-    connections.all.forEach(conn => {
-        conn.node.highlighted = true;
-    });
+    // Get all node IDs to highlight
+    const nodeIdsToHighlight = connections.all.map(conn => conn.node.id);
+    nodeIdsToHighlight.push(currentConnectionsNode.id);
     
-    // Always highlight the source node too
-    currentConnectionsNode.highlighted = true;
+    if (graph.setHighlightedNodes) {
+        graph.setHighlightedNodes(nodeIdsToHighlight);
+    } else {
+        graph.highlightedNodes = nodeIdsToHighlight;
+    }
     
     graph.render();
     
