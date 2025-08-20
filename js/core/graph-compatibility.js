@@ -205,7 +205,7 @@ export class Graph {
         return data.nodes.find(node => {
             const dx = x - node.x;
             const dy = y - node.y;
-            return Math.sqrt(dx * dx + dy * dy) <= node.radius;
+            return Math.sqrt(dx * dx + dy * dy) <= (node.radius + 3);
         });
     }
 
@@ -217,7 +217,7 @@ export class Graph {
             
             if (from && to) {
                 const distance = distanceToLineSegment(x, y, from.x, from.y, to.x, to.y);
-                if (distance <= 5) {
+                if (distance <= 8) {
                     return edge;
                 }
             }
