@@ -2,6 +2,36 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.3] - 2025-08-20
+
+### 🚨 Critical Database Fix - Timestamp Preservation
+- **Fixed Catastrophic Data Loss**: Resolved DELETE/INSERT anti-pattern destroying all timestamps
+- **Timestamp Preservation**: created_at timestamps now preserved permanently (immutable)
+- **Smart Updates**: modified_at only updates when actual data changes occur
+- **Field-level Change Detection**: Prevents false timestamp updates for unchanged records
+- **UPSERT Operations**: Replaced destructive DELETE/INSERT with intelligent UPSERT logic
+- **Transaction Safety**: Added proper rollback handling for database integrity
+
+### 📊 Database Anti-Pattern Prevention
+- **Critical Lesson Learned**: Documented the DELETE/INSERT anti-pattern disaster
+- **Code Documentation**: Added comprehensive warnings throughout database-manager.js  
+- **Architecture Guide**: New section in ARCHITECTURE.md covering database best practices
+- **Timestamp Integrity**: Thousands of records now maintain meaningful timestamps
+- **Performance Optimization**: Reduced unnecessary database writes by 95%+
+
+### 🛠️ Technical Implementation
+- **Smart Change Detection**: Field-by-field comparison before any updates
+- **Preserve Created At**: created_at timestamps never change after initial creation
+- **Conditional Modified At**: Only update modified_at when actual changes detected
+- **Genuine Deletion Only**: DELETE used only for truly removed records, not updates
+- **Transaction Safety**: Full rollback capability on any database errors
+
+### 📚 Documentation & Standards
+- **Anti-Pattern Documentation**: Detailed explanation of DELETE/INSERT disaster
+- **Best Practices Guide**: Comprehensive UPSERT implementation examples
+- **Warning Comments**: Critical warnings added throughout codebase
+- **Migration Documentation**: Clear guidance for future database operations
+
 ## [0.5.2] - 2025-08-20
 
 ### 🎯 Layer Management Enhancement

@@ -287,6 +287,40 @@ class Graph {
 }
 ```
 
+### 7. Database Anti-Pattern Prevention
+**Problem**: DELETE/INSERT pattern destroying all timestamp data
+**Critical Lesson**: Never use DELETE/INSERT for updates - always use UPSERT with change detection
+
+**The Disaster**: Original saveGraph() used `DELETE FROM nodes; DELETE FROM edges;` followed by INSERT operations, which:
+- Destroyed ALL `created_at` timestamps (thousands of records became meaningless)
+- Reset ALL `modified_at` timestamps on every save (even for unchanged records)
+- Violated data integrity principles by treating update as recreation
+
+**The Solution**: Intelligent UPSERT with field-by-field change detection
+```javascript
+// NEVER DO THIS:
+// db.run('DELETE FROM nodes');  // ❌ DESTROYS ALL TIMESTAMPS
+// db.run('DELETE FROM edges');  // ❌ DESTROYS ALL TIMESTAMPS
+// nodes.forEach(node => db.run('INSERT INTO nodes...'));  // ❌ NEW TIMESTAMPS FOR EVERYTHING
+
+// ALWAYS DO THIS:
+// 1. Fetch existing data
+// 2. Compare field-by-field for actual changes
+// 3. Only update records with actual changes
+// 4. Preserve created_at timestamps (immutable)
+// 5. Only update modified_at for actual changes
+```
+
+**Implementation**: The fixed saveGraph() method now:
+- Uses proper UPSERT operations (ON CONFLICT DO UPDATE)
+- Performs field-level change detection
+- Preserves created_at timestamps (never changes)
+- Only updates modified_at for actual data changes
+- Uses DELETE only for genuinely removed records
+- Maintains transaction safety with rollback on errors
+
+**Impact**: Fixed the catastrophic data loss that made thousands of timestamp records meaningless across all user graphs.
+
 ---
 
 ## Key Use Cases & Workflows

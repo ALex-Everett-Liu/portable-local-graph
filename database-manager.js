@@ -3,11 +3,47 @@ const path = require('path');
 const fs = require('fs').promises;
 const { v7: uuidv7 } = require('uuid');
 
+/**
+ * ⚠️ CRITICAL LESSON LEARNED ⚠️
+ * 
+ * NEVER use DELETE/INSERT for database updates!
+ * 
+ * Original implementation used:
+ *   DELETE FROM nodes;
+ *   DELETE FROM edges;
+ *   INSERT INTO nodes... (re-insert everything)
+ * 
+ * This caused catastrophic data loss:
+ * - DESTROYED all created_at timestamps for thousands of records
+ * - Reset modified_at timestamps on every save, even for unchanged records
+ * - Made timestamp data meaningless and useless
+ * 
+ * FIXED with intelligent UPSERT operations and field-level change detection
+ * - fetch existing data → compare changes → only update actual changes
+ * - preserve created_at timestamps (immutable)
+ * - only update modified_at for actual data changes
+ * - use DELETE only for genuinely removed records
+ */
+
 // UUID conversion utilities for binary storage
 function uuidToBuffer(uuid) {
     if (!uuid) return null;
-    const hex = uuid.replace(/-/g, '');
-    return Buffer.from(hex, 'hex');
+    
+    try {
+        // If it's a valid UUID (with hyphens and proper length), convert it
+        if (uuid.includes('-') && uuid.length === 36) {
+            const hex = uuid.replace(/-/g, '');
+            return Buffer.from(hex, 'hex');
+        }
+    } catch (e) {
+        // Fall through to string handling
+    }
+    
+    // For string IDs, create a deterministic 16-byte buffer
+    const crypto = require('crypto');
+    const hash = crypto.createHash('md5');
+    hash.update(String(uuid));
+    return hash.digest(); // 16 bytes
 }
 
 function bufferToUuid(buffer) {
@@ -164,84 +200,201 @@ class DatabaseManager {
     }
 
 async saveGraph(data) {
+    const { nodes = [], edges = [], scale = 1, offset = { x: 0, y: 0 }, metadata = {} } = data;
+    
+    try {
+        // ⚠️ CRITICAL LESSON LEARNED ⚠️
+        // NEVER use DELETE/INSERT for updates!
+        // Original implementation: DELETE FROM nodes; DELETE FROM edges; then INSERT
+        // This DESTROYED all created_at timestamps and reset modified_at for unchanged records
+        // Fixed with intelligent UPSERT and field-level change detection
+        
+        // Get existing data first
+        const existingNodes = await new Promise((resolve, reject) => {
+            this.db.all('SELECT * FROM nodes', (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+
+        const existingEdges = await new Promise((resolve, reject) => {
+            this.db.all('SELECT * FROM edges', (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+
+        const existingNodeMap = new Map();
+        existingNodes.forEach(node => {
+            existingNodeMap.set(bufferToUuid(node.id), node);
+        });
+
+        const existingEdgeMap = new Map();
+        existingEdges.forEach(edge => {
+            existingEdgeMap.set(bufferToUuid(edge.id), edge);
+        });
+
         return new Promise((resolve, reject) => {
-            const { nodes = [], edges = [], scale = 1, offset = { x: 0, y: 0 }, metadata = {} } = data;
-            
             this.db.serialize(() => {
                 this.db.run('BEGIN TRANSACTION');
 
-                // Insert or update graph metadata
-                const graphStmt = this.db.prepare(`
-                    INSERT OR REPLACE INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, modified_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                `);
-                
-                graphStmt.run(
-                    Buffer.from('00000000-0000-0000-0000-000000000000', 'hex'), // Single graph ID
-                    metadata.name || 'Graph',
-                    metadata.description || '',
-                    scale,
-                    offset.x,
-                    offset.y,
-                    JSON.stringify(metadata)
-                );
-                graphStmt.finalize();
+                try {
+                    // Insert or update graph metadata using proper UPSERT
+                    // This preserves existing timestamps and only updates when actual changes occur
+                    this.db.run(`
+                        INSERT INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, created_at, modified_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            description=excluded.description,
+                            scale=excluded.scale,
+                            offset_x=excluded.offset_x,
+                            offset_y=excluded.offset_y,
+                            metadata=excluded.metadata,
+                            modified_at=CURRENT_TIMESTAMP
+                    `, [
+                        Buffer.from('00000000-0000-0000-0000-000000000000', 'hex'),
+                        metadata.name || 'Graph',
+                        metadata.description || '',
+                        scale,
+                        offset.x,
+                        offset.y,
+                        JSON.stringify(metadata)
+                    ]);
 
-                // Clear existing data
-                this.db.run('DELETE FROM nodes');
-                this.db.run('DELETE FROM edges');
+                    const processedNodeIds = new Set();
+                    const processedEdgeIds = new Set();
 
-                // Insert nodes
-                const nodeStmt = this.db.prepare(`
-                    INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `);
-                
-                nodes.forEach(node => {
-                    const nodeId = node.id && node.id.length > 10 ? uuidToBuffer(node.id) : uuidToBuffer(uuidv7());
-                    nodeStmt.run(
-                        nodeId,
-                        node.x,
-                        node.y,
-                        node.label || '',
-                        node.chineseLabel || '',
-                        node.color || '#3b82f6',
-                        node.radius || 20,
-                        node.category || null,
-                        (node.layers || []).join(',')
-                    );
-                });
-                nodeStmt.finalize();
+                    // Process nodes with UPSERT
+                    for (const node of nodes) {
+                        const nodeId = node.id ? uuidToBuffer(node.id) : uuidToBuffer(uuidv7());
+                        const idStr = bufferToUuid(nodeId);
+                        const existing = existingNodeMap.get(idStr);
+                        const newNode = {
+                            x: node.x,
+                            y: node.y,
+                            label: node.label || '',
+                            chinese_label: node.chineseLabel || '',
+                            color: node.color || '#3b82f6',
+                            radius: node.radius || 20,
+                            category: node.category || null,
+                            layers: (node.layers || []).join(',')
+                        };
 
-                // Insert edges
-                const edgeStmt = this.db.prepare(`
-                    INSERT INTO edges (id, from_node_id, to_node_id, weight, category)
-                    VALUES (?, ?, ?, ?, ?)
-                `);
-                
-                edges.forEach(edge => {
-                    const edgeId = edge.id && edge.id.length > 10 ? uuidToBuffer(edge.id) : uuidToBuffer(uuidv7());
-                    edgeStmt.run(
-                        edgeId,
-                        uuidToBuffer(String(edge.from)),
-                        uuidToBuffer(String(edge.to)),
-                        edge.weight || 1,
-                        edge.category || null
-                    );
-                });
-                edgeStmt.finalize();
+                        processedNodeIds.add(idStr);
 
-                this.db.run('COMMIT', (err) => {
-                    if (err) {
-                        this.db.run('ROLLBACK');
-                        reject(err);
-                    } else {
-                        resolve();
+                        if (!existing) {
+                            // New node - insert with created_at
+                            this.db.run(`
+                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                            `, [nodeId, newNode.x, newNode.y, newNode.label, newNode.chinese_label, newNode.color, newNode.radius, newNode.category, newNode.layers]);
+                        } else {
+                            // CRITICAL: Field-level change detection prevents false updates
+                            // This preserves created_at and only updates modified_at for actual changes
+                            const hasChanged = 
+                                existing.x !== newNode.x ||
+                                existing.y !== newNode.y ||
+                                existing.label !== newNode.label ||
+                                existing.chinese_label !== newNode.chinese_label ||
+                                existing.color !== newNode.color ||
+                                existing.radius !== newNode.radius ||
+                                existing.category !== newNode.category ||
+                                existing.layers !== newNode.layers;
+
+                            if (hasChanged) {
+                                // Update with new modified_at - only when actual changes detected
+                                this.db.run(`
+                                    UPDATE nodes SET
+                                        x=?, y=?, label=?, chinese_label=?, color=?, radius=?, category=?, layers=?,
+                                        modified_at=CURRENT_TIMESTAMP
+                                    WHERE id=?
+                                `, [newNode.x, newNode.y, newNode.label, newNode.chinese_label, newNode.color, newNode.radius, newNode.category, newNode.layers, nodeId]);
+                            }
+                            // If no change, do nothing - preserve existing modified_at
+                            // This prevents the timestamp destruction that occurred with DELETE/INSERT
+                        }
                     }
-                });
+
+                    // Process edges with UPSERT
+                    for (const edge of edges) {
+                        const edgeId = edge.id ? uuidToBuffer(edge.id) : uuidToBuffer(uuidv7());
+                        const idStr = bufferToUuid(edgeId);
+                        const existing = existingEdgeMap.get(idStr);
+
+                        const newEdge = {
+                            from_node_id: uuidToBuffer(String(edge.from)),
+                            to_node_id: uuidToBuffer(String(edge.to)),
+                            weight: edge.weight || 1,
+                            category: edge.category || null
+                        };
+
+                        processedEdgeIds.add(idStr);
+
+                        if (!existing) {
+                            // New edge - insert with created_at
+                            this.db.run(`
+                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                            `, [edgeId, newEdge.from_node_id, newEdge.to_node_id, newEdge.weight, newEdge.category]);
+                        } else {
+                            // CRITICAL: Field-level change detection for edges - same principle as nodes
+                            const hasChanged = 
+                                !existing.from_node_id.equals(newEdge.from_node_id) ||
+                                !existing.to_node_id.equals(newEdge.to_node_id) ||
+                                existing.weight !== newEdge.weight ||
+                                existing.category !== newEdge.category;
+
+                            if (hasChanged) {
+                                // Update with new modified_at - only when actual changes detected
+                                this.db.run(`
+                                    UPDATE edges SET
+                                        from_node_id=?, to_node_id=?, weight=?, category=?,
+                                        modified_at=CURRENT_TIMESTAMP
+                                    WHERE id=?
+                                `, [newEdge.from_node_id, newEdge.to_node_id, newEdge.weight, newEdge.category, edgeId]);
+                            }
+                            // If no change, do nothing - preserve existing modified_at
+                            // This prevents the timestamp destruction that occurred with DELETE/INSERT
+                        }
+                    }
+
+                    // Remove deleted nodes and edges
+                    // DELETE is only used for genuinely removed records, not for updates
+                    // This prevents the data destruction that occurred with the old DELETE/INSERT pattern
+                    for (const existingNode of existingNodes) {
+                        const id = bufferToUuid(existingNode.id);
+                        if (!processedNodeIds.has(id)) {
+                            this.db.run('DELETE FROM nodes WHERE id = ?', [existingNode.id]);
+                        }
+                    }
+
+                    for (const existingEdge of existingEdges) {
+                        const id = bufferToUuid(existingEdge.id);
+                        if (!processedEdgeIds.has(id)) {
+                            this.db.run('DELETE FROM edges WHERE id = ?', [existingEdge.id]);
+                        }
+                    }
+
+                    this.db.run('COMMIT', (err) => {
+                        if (err) {
+                            this.db.run('ROLLBACK');
+                            reject(err);
+                        } else {
+                            resolve();
+                        }
+                    });
+
+                } catch (error) {
+                    this.db.run('ROLLBACK');
+                    reject(error);
+                }
             });
         });
+    } catch (error) {
+        throw error;
     }
+}
 
     async loadGraph() {
         console.log('[DatabaseManager.loadGraph] Starting to load graph from:', this.dbPath);
