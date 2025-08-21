@@ -8,7 +8,18 @@ async function saveGraphToFile() {
         console.log('Electron mode, using save-graph-file IPC');
         try {
             const { ipcRenderer } = require('electron');
-            const result = await ipcRenderer.invoke('save-graph-file', graph.exportData());
+            const data = graph.exportData();
+            // Include current database path for accurate copying
+            if (dbManager) {
+                data.currentDbPath = dbManager.dbPath;
+            }
+            console.log('[saveGraphToFile] Calling save-graph-file with data:', { 
+                hasCurrentPath: !!data.currentDbPath,
+                currentPath: data.currentDbPath,
+                nodesCount: data.nodes?.length,
+                edgesCount: data.edges?.length
+            });
+            const result = await ipcRenderer.invoke('save-graph-file', data);
             if (result.success) {
                 showNotification(`Graph saved to ${result.fileName}`);
             } else if (!result.cancelled) {
@@ -18,11 +29,10 @@ async function saveGraphToFile() {
             console.error('Error in saveGraphToFile:', error);
         }
     } else {
-        // Web mode - use database for Save As (create new graph)
-        console.log('Web mode, creating new graph in database');
+        // Web mode - use Save As to new database file
+        console.log('Web mode, using saveAsNewFile');
         try {
-            await saveGraphToDatabase();
-            showNotification('Graph saved to database!');
+            await saveAsNewFile();
         } catch (error) {
             console.error('Error in saveGraphToFile web mode:', error);
         }
@@ -48,6 +58,53 @@ async function saveGraphToDatabase() {
     } catch (error) {
         console.error('Error saving to database:', error);
         showNotification('Error saving graph: ' + error.message, 'error');
+    }
+}
+
+// Save as new database file (web mode)
+async function saveAsNewFile() {
+    if (!dbManager) return;
+    
+    try {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.db';
+        input.webkitdirectory = false;
+        
+        // Create a new filename prompt
+        const fileName = prompt('Enter new database filename:', 'graph-' + Date.now() + '.db');
+        if (!fileName) return;
+        
+        if (!fileName.endsWith('.db')) {
+            alert('Please use .db extension');
+            return;
+        }
+        
+        const newPath = path.join(path.dirname(dbManager.dbPath), fileName);
+        
+        // CRITICAL FIX: Copy current database instead of recreating
+        try {
+            // Use fs.copyFileSync in web mode via appropriate method
+            const fs = require('fs');
+            if (fs.existsSync(dbManager.dbPath)) {
+                fs.copyFileSync(dbManager.dbPath, newPath);
+                console.log('Database copied successfully, preserving timestamps');
+                
+                // Switch to new database
+                await dbManager.openFile(newPath);
+                showNotification('Graph saved as new file: ' + fileName);
+            } else {
+                // Fallback
+                console.warn('Source database not found, creating new one');
+                await saveGraphToDatabase();
+            }
+        } catch (copyError) {
+            console.error('Copy failed, falling back to save:', copyError);
+            await saveGraphToDatabase();
+        }
+    } catch (error) {
+        console.error('Error in saveAsNewFile:', error);
+        showNotification('Error saving as new file: ' + error.message, 'error');
     }
 }
 
@@ -192,6 +249,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         saveGraphToFile,
         saveGraphToDatabase,
+        saveAsNewFile,
         openGraphFile,
         fallbackToJSONLoad,
         openFromDatabase,
@@ -202,6 +260,7 @@ if (typeof module !== 'undefined' && module.exports) {
     Object.assign(window, {
         saveGraphToFile,
         saveGraphToDatabase,
+        saveAsNewFile,
         openGraphFile,
         fallbackToJSONLoad,
         openFromDatabase,

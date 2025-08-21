@@ -143,119 +143,43 @@ Impact Scope: Save operations
 
 ### Timestamp Handling Analysis
 
-#### Comparative Analysis with Example Codebase
 
-**Example Codebase Timestamp Implementation**
-
-**File: `example-project/database/models.py:45-67`**
-```python
-# Line 45-67: Automatic timestamp management
-class TimestampMixin:
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
-    @declared_attr
-    def __table_args__(cls):
-        return (Index(f'idx_{cls.__tablename__}_updated_at', 'updated_at'),)
-```
-
-**File: `example-project/database/repository.py:89-112`**
-```python
-# Line 89-112: Smart update detection
-async def update_with_timestamp_check(self, entity_id: str, update_data: Dict[str, Any]) -> bool:
-    """
-    Only updates timestamp if actual data changes occurred
-    Returns True if update was performed, False if no changes detected
-    """
-    existing = await self.get_by_id(entity_id)
-    if not existing:
-        return False
-    
-    # Deep comparison excluding timestamp fields
-    changed_fields = {}
-    for key, new_value in update_data.items():
-        if key in ['created_at', 'updated_at', 'id']:
-            continue
-            
-        old_value = getattr(existing, key)
-        if isinstance(old_value, dict) and isinstance(new_value, dict):
-            if json.dumps(old_value, sort_keys=True) != json.dumps(new_value, sort_keys=True):
-                changed_fields[key] = new_value
-        elif old_value != new_value:
-            changed_fields[key] = new_value
-    
-    if not changed_fields:
-        return False
-    
-    # Only update changed fields and timestamp
-    changed_fields['updated_at'] = datetime.utcnow()
-    await self.db.execute(
-        update(self.model).where(self.model.id == entity_id).values(**changed_fields)
-    )
-    return True
-```
-
-**File: `example-project/database/migrations/20240821_add_audit_triggers.sql:15-34`**
-```sql
--- Line 15-34: Database-level timestamp protection
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Only update if actual data changed
-    IF NEW IS DISTINCT FROM OLD THEN
-        NEW.updated_at = NOW();
-    END IF;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_nodes_updated_at BEFORE UPDATE ON nodes
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
-
-#### Current Implementation Issues
+#### Current Timestamp Issues
 The following analysis identifies specific timestamp handling problems with exact line numbers:
 
 **File: `database-manager.js`**
 
-**Lines 202-204**: Current saveGraph method signature
-```javascript
-async saveGraph(data) {
-    const { nodes = [], edges = [], scale = 1, offset = { x: 0, y: 0 }, metadata = {} } = data;
+**Lines 96-97**: Timestamp field definitions
+```sql
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ```
-**Issue**: No graph ID parameter, limiting multi-graph support
+**Issue**: Using DATETIME instead of INTEGER Unix timestamps like in database-example.js:52-53
 
-**Lines 262-324**: Node UPSERT implementation
-```javascript
-// Lines 302-313: Modified_at update logic
+**Lines 302-313**: Node modified_at update logic
+```sql
 modified_at = CASE 
     WHEN nodes.x != excluded.x OR
          nodes.y != excluded.y OR
          nodes.label != excluded.label OR
-         nodes.chinese_label != excluded.chinese_label OR
-         nodes.color != excluded.color OR
-         nodes.radius != excluded.radius OR
-         nodes.category != excluded.category OR
-         nodes.layers != excluded.layers
+         ...
     THEN CURRENT_TIMESTAMP 
     ELSE nodes.modified_at 
 END
 ```
-**Issue**: Missing comprehensive field comparison for layers JSON data
+**Issue**: Overly complex SQL for timestamp updates
 
-**Lines 331-358**: Edge UPSERT implementation
-```javascript
-// Lines 351-358: Edge modified_at update logic
+**Lines 351-358**: Edge modified_at update logic  
+```sql
 modified_at = CASE 
     WHEN edges.from_node_id != excluded.from_node_id OR
          edges.to_node_id != excluded.to_node_id OR
-         edges.weight != excluded.weight OR
-         edges.category != excluded.category
+         ...
     THEN CURRENT_TIMESTAMP 
     ELSE edges.modified_at 
 END
 ```
-**Issue**: No handling for potential JSON metadata changes
+**Issue**: Redundant field-by-field comparison
 
 #### Recommended Timestamp Improvements
 

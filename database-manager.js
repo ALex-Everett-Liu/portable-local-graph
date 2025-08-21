@@ -93,8 +93,8 @@ class DatabaseManager {
                 scale REAL DEFAULT 1.0,
                 offset_x REAL DEFAULT 0,
                 offset_y REAL DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+                modified_at DATETIME DEFAULT (datetime('now', 'localtime')),
                 metadata TEXT
             )
         `;
@@ -122,8 +122,8 @@ class DatabaseManager {
                 to_node_id BLOB NOT NULL,
                 weight REAL DEFAULT 1,
                 category TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+                modified_at DATETIME DEFAULT (datetime('now', 'localtime')),
                 FOREIGN KEY (from_node_id) REFERENCES nodes(id),
                 FOREIGN KEY (to_node_id) REFERENCES nodes(id)
             )
@@ -210,10 +210,19 @@ async saveGraph(data) {
                 try {
                     const graphId = Buffer.from('00000000-0000-0000-0000-000000000000', 'hex');
                     
-                    // UPSERT graph metadata with change detection
+                    // For new databases (Save As), check if we need to preserve timestamps
+                    let shouldPreserveTimestamps = false;
+                    try {
+                        const row = this.db.getSync('SELECT COUNT(*) as count FROM nodes');
+                        shouldPreserveTimestamps = (row.count > 0);
+                    } catch {
+                        shouldPreserveTimestamps = false;
+                    }
+                    
+                    // Always use the same UPSERT logic
                     this.db.run(`
                         INSERT INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, created_at, modified_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'), datetime('now', '+8 hours'))
                         ON CONFLICT(id) DO UPDATE SET
                             name = CASE 
                                 WHEN graphs.name != excluded.name THEN excluded.name 
@@ -246,7 +255,7 @@ async saveGraph(data) {
                                      graphs.offset_x != excluded.offset_x OR
                                      graphs.offset_y != excluded.offset_y OR
                                      graphs.metadata != excluded.metadata
-                                THEN CURRENT_TIMESTAMP 
+                                THEN datetime('now', '+8 hours') 
                                 ELSE graphs.modified_at 
                             END
                     `, [
@@ -259,113 +268,122 @@ async saveGraph(data) {
                         JSON.stringify(metadata)
                     ]);
 
-                    // Process nodes with UPSERT and change detection
+                    // Process nodes with UPSERT - always use same logic
                     for (const node of nodes) {
                         const nodeId = node.id ? uuidToBuffer(node.id) : uuidToBuffer(uuidv7());
                         
-                        this.db.run(`
-                            INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                            ON CONFLICT(id) DO UPDATE SET
-                                x = CASE 
-                                    WHEN nodes.x != excluded.x THEN excluded.x 
-                                    ELSE nodes.x 
-                                END,
-                                y = CASE 
-                                    WHEN nodes.y != excluded.y THEN excluded.y 
-                                    ELSE nodes.y 
-                                END,
-                                label = CASE 
-                                    WHEN nodes.label != excluded.label THEN excluded.label 
-                                    ELSE nodes.label 
-                                END,
-                                chinese_label = CASE 
-                                    WHEN nodes.chinese_label != excluded.chinese_label THEN excluded.chinese_label 
-                                    ELSE nodes.chinese_label 
-                                END,
-                                color = CASE 
-                                    WHEN nodes.color != excluded.color THEN excluded.color 
-                                    ELSE nodes.color 
-                                END,
-                                radius = CASE 
-                                    WHEN nodes.radius != excluded.radius THEN excluded.radius 
-                                    ELSE nodes.radius 
-                                END,
-                                category = CASE 
-                                    WHEN nodes.category != excluded.category THEN excluded.category 
-                                    ELSE nodes.category 
-                                END,
-                                layers = CASE 
-                                    WHEN nodes.layers != excluded.layers THEN excluded.layers 
-                                    ELSE nodes.layers 
-                                END,
-                                modified_at = CASE 
-                                    WHEN nodes.x != excluded.x OR
-                                         nodes.y != excluded.y OR
-                                         nodes.label != excluded.label OR
-                                         nodes.chinese_label != excluded.chinese_label OR
-                                         nodes.color != excluded.color OR
-                                         nodes.radius != excluded.radius OR
-                                         nodes.category != excluded.category OR
-                                         nodes.layers != excluded.layers
-                                    THEN CURRENT_TIMESTAMP 
-                                    ELSE nodes.modified_at 
-                                END
-                        `, [
-                            nodeId,
-                            node.x,
-                            node.y,
-                            node.label || '',
-                            node.chineseLabel || '',
-                            node.color || '#3b82f6',
-                            node.radius || 20,
-                            node.category || null,
-                            (node.layers || []).join(',')
-                        ]);
+                        // Check if this node exists to preserve created_at
+                        this.db.get('SELECT created_at FROM nodes WHERE id = ?', [nodeId], (err, existingRow) => {
+                            const createdAt = existingRow ? existingRow.created_at : 'datetime(\'now\', \'+8 hours\')';
+                            
+                            this.db.run(`
+                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${createdAt}, datetime('now', '+8 hours'))
+                                ON CONFLICT(id) DO UPDATE SET
+                                    x = CASE 
+                                        WHEN nodes.x != excluded.x THEN excluded.x 
+                                        ELSE nodes.x 
+                                    END,
+                                    y = CASE 
+                                        WHEN nodes.y != excluded.y THEN excluded.y 
+                                        ELSE nodes.y 
+                                    END,
+                                    label = CASE 
+                                        WHEN nodes.label != excluded.label THEN excluded.label 
+                                        ELSE nodes.label 
+                                    END,
+                                    chinese_label = CASE 
+                                        WHEN nodes.chinese_label != excluded.chinese_label THEN excluded.chinese_label 
+                                        ELSE nodes.chinese_label 
+                                    END,
+                                    color = CASE 
+                                        WHEN nodes.color != excluded.color THEN excluded.color 
+                                        ELSE nodes.color 
+                                    END,
+                                    radius = CASE 
+                                        WHEN nodes.radius != excluded.radius THEN excluded.radius 
+                                        ELSE nodes.radius 
+                                    END,
+                                    category = CASE 
+                                        WHEN nodes.category != excluded.category THEN excluded.category 
+                                        ELSE nodes.category 
+                                    END,
+                                    layers = CASE 
+                                        WHEN nodes.layers != excluded.layers THEN excluded.layers 
+                                        ELSE nodes.layers 
+                                    END,
+                                    modified_at = CASE 
+                                        WHEN nodes.x != excluded.x OR
+                                             nodes.y != excluded.y OR
+                                             nodes.label != excluded.label OR
+                                             nodes.chinese_label != excluded.chinese_label OR
+                                             nodes.color != excluded.color OR
+                                             nodes.radius != excluded.radius OR
+                                             nodes.category != excluded.category OR
+                                             nodes.layers != excluded.layers
+                                        THEN datetime('now', '+8 hours') 
+                                        ELSE nodes.modified_at 
+                                    END
+                            `, [
+                                nodeId,
+                                node.x,
+                                node.y,
+                                node.label || '',
+                                node.chineseLabel || '',
+                                node.color || '#3b82f6',
+                                node.radius || 20,
+                                node.category || null,
+                                (node.layers || []).join(',')
+                            ]);
+                        });
                     }
 
-                    // Process edges with UPSERT and change detection
+                    // Process edges with UPSERT - same logic
                     for (const edge of edges) {
                         const edgeId = edge.id ? uuidToBuffer(edge.id) : uuidToBuffer(uuidv7());
                         
-                        this.db.run(`
-                            INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
-                            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                            ON CONFLICT(id) DO UPDATE SET
-                                from_node_id = CASE 
-                                    WHEN edges.from_node_id != excluded.from_node_id THEN excluded.from_node_id 
-                                    ELSE edges.from_node_id 
-                                END,
-                                to_node_id = CASE 
-                                    WHEN edges.to_node_id != excluded.to_node_id THEN excluded.to_node_id 
-                                    ELSE edges.to_node_id 
-                                END,
-                                weight = CASE 
-                                    WHEN edges.weight != excluded.weight THEN excluded.weight 
-                                    ELSE edges.weight 
-                                END,
-                                category = CASE 
-                                    WHEN edges.category != excluded.category THEN excluded.category 
-                                    ELSE edges.category 
-                                END,
-                                modified_at = CASE 
-                                    WHEN edges.from_node_id != excluded.from_node_id OR
-                                         edges.to_node_id != excluded.to_node_id OR
-                                         edges.weight != excluded.weight OR
-                                         edges.category != excluded.category
-                                    THEN CURRENT_TIMESTAMP 
-                                    ELSE edges.modified_at 
-                                END
-                        `, [
-                            edgeId,
-                            uuidToBuffer(String(edge.from)),
-                            uuidToBuffer(String(edge.to)),
-                            edge.weight || 1,
-                            edge.category || null
-                        ]);
+                        this.db.get('SELECT created_at FROM edges WHERE id = ?', [edgeId], (err, existingRow) => {
+                            const createdAt = existingRow ? existingRow.created_at : 'datetime(\'now\', \'+8 hours\')';
+                            
+                            this.db.run(`
+                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ${createdAt}, datetime('now', '+8 hours'))
+                                ON CONFLICT(id) DO UPDATE SET
+                                    from_node_id = CASE 
+                                        WHEN edges.from_node_id != excluded.from_node_id THEN excluded.from_node_id 
+                                        ELSE edges.from_node_id 
+                                    END,
+                                    to_node_id = CASE 
+                                        WHEN edges.to_node_id != excluded.to_node_id THEN excluded.to_node_id 
+                                        ELSE edges.to_node_id 
+                                    END,
+                                    weight = CASE 
+                                        WHEN edges.weight != excluded.weight THEN excluded.weight 
+                                        ELSE edges.weight 
+                                    END,
+                                    category = CASE 
+                                        WHEN edges.category != excluded.category THEN excluded.category 
+                                        ELSE edges.category 
+                                    END,
+                                    modified_at = CASE 
+                                        WHEN edges.from_node_id != excluded.from_node_id OR
+                                             edges.to_node_id != excluded.to_node_id OR
+                                             edges.weight != excluded.weight OR
+                                             edges.category != excluded.category
+                                        THEN datetime('now', '+8 hours') 
+                                        ELSE edges.modified_at 
+                                    END
+                            `, [
+                                edgeId,
+                                uuidToBuffer(String(edge.from)),
+                                uuidToBuffer(String(edge.to)),
+                                edge.weight || 1,
+                                edge.category || null
+                            ]);
+                        });
                     }
 
-                    // Clean up deleted nodes and edges
+                    // Clean up deleted nodes and edges - always do this
                     const currentNodeIds = nodes.map(n => uuidToBuffer(n.id)).filter(id => id !== null);
                     const currentEdgeIds = edges.map(e => uuidToBuffer(e.id)).filter(id => id !== null);
 

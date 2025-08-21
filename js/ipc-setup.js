@@ -48,22 +48,32 @@ function setupIPC() {
                 console.log('Database path:', dbManager ? dbManager.dbPath : 'no db manager');
                 
                 if (dbManager) {
+                    console.log('[save-current-graph] Saving to existing database:', dbManager.dbPath);
                     await saveGraphToDatabase();
                     showNotification('Graph saved to current file');
                 } else {
+                    console.log('[save-current-graph] No dbManager, falling back to Save As');
                     // Fallback to Save As if no database
                     await saveGraphToFile();
                 }
             });
 
             ipcRenderer.on('save-graph-file-request', async (event, filePath) => {
-                const result = await ipcRenderer.invoke('save-graph-file-request', filePath, graph.exportData());
+                const data = graph.exportData();
+                // Include current database path for accurate copying
+                if (dbManager) {
+                    data.currentDbPath = dbManager.dbPath;
+                }
+                console.log('[save-graph-file-request] Calling with current path:', data.currentDbPath);
+                
+                const result = await ipcRenderer.invoke('save-graph-file-request', filePath, data);
                 if (result.success) {
+                    console.log('[save-graph-file-request] Save completed, method:', result.method);
                     // Switch to the new database file
                     if (dbManager && result.filePath) {
                         try {
                             await dbManager.openFile(result.filePath);
-                            showNotification(`Graph saved as ${result.fileName}`);
+                            showNotification(`Graph saved as ${result.fileName} (${result.method})`);
                         } catch (error) {
                             console.error('Error switching to new database file:', error);
                             showNotification('Error switching to new database file: ' + error.message, 'error');

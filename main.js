@@ -180,6 +180,9 @@ function createWindow() {
 
 // IPC handlers for database files
 ipcMain.handle('save-graph-file', async (event, data) => {
+    console.log('[save-graph-file] Starting Save As operation...');
+    console.log('[save-graph-file] Graph data nodes:', data.nodes?.length, 'edges:', data.edges?.length);
+    
     try {
         const result = await dialog.showSaveDialog(mainWindow, {
             filters: [
@@ -189,24 +192,39 @@ ipcMain.handle('save-graph-file', async (event, data) => {
         });
         
         if (result.canceled) {
+            console.log('[save-graph-file] Save dialog cancelled');
             return { success: false, cancelled: true };
         }
         
-        // Create a new database manager for the selected file
+        console.log('[save-graph-file] Target file path:', result.filePath);
+        
+        // CRITICAL FIX: Save current graph data to new file instead of copying old file
+        console.log('[save-graph-file] Creating new database with current graph data...');
+        
+        // Ensure target directory exists
+        const targetDir = path.dirname(result.filePath);
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+            console.log('[save-graph-file] Created target directory:', targetDir);
+        }
+        
+        // Create new database and save current graph data
         const DatabaseManager = require('./database-manager');
         const dbManager = new DatabaseManager(result.filePath);
         await dbManager.init();
-        
-        // Save the graph data
         await dbManager.saveGraph(data);
         await dbManager.close();
+        
+        console.log('[save-graph-file] Database created successfully with current data');
         
         return { 
             success: true, 
             fileName: path.basename(result.filePath),
-            filePath: result.filePath
+            filePath: result.filePath,
+            method: 'save'
         };
     } catch (error) {
+        console.error('[save-graph-file] Error:', error);
         return { success: false, error: error.message };
     }
 });
@@ -255,20 +273,37 @@ ipcMain.handle('save-graph', async (event, data, filePath) => {
 });
 
 ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
+    console.log('[save-graph-file-request] Save As request for:', filePath);
+    console.log('[save-graph-file-request] Graph data nodes:', data.nodes?.length, 'edges:', data.edges?.length);
+    
     try {
+        // CRITICAL FIX: Save current graph data to new file instead of copying old file
+        console.log('[save-graph-file-request] Creating new database with current graph data...');
+        
+        // Ensure target directory exists
+        const targetDir = path.dirname(filePath);
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+            console.log('[save-graph-file-request] Created target directory:', targetDir);
+        }
+        
+        // Create new database and save current graph data
         const DatabaseManager = require('./database-manager');
         const dbManager = new DatabaseManager(filePath);
         await dbManager.init();
-        
         await dbManager.saveGraph(data);
         await dbManager.close();
+        
+        console.log('[save-graph-file-request] Database created successfully with current data');
         
         return { 
             success: true, 
             fileName: path.basename(filePath),
-            filePath: filePath
+            filePath: filePath,
+            method: 'save'
         };
     } catch (error) {
+        console.error('[save-graph-file-request] Error:', error);
         return { success: false, error: error.message };
     }
 });
