@@ -277,8 +277,8 @@ ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
     console.log('[save-graph-file-request] Graph data nodes:', data.nodes?.length, 'edges:', data.edges?.length);
     
     try {
-        // CRITICAL FIX: Save current graph data to new file instead of copying old file
-        console.log('[save-graph-file-request] Creating new database with current graph data...');
+        // CRITICAL FIX: Copy source database file to preserve all timestamps
+        console.log('[save-graph-file-request] Copying database file to preserve timestamps...');
         
         // Ensure target directory exists
         const targetDir = path.dirname(filePath);
@@ -287,20 +287,43 @@ ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
             console.log('[save-graph-file-request] Created target directory:', targetDir);
         }
         
-        // Create new database and save current graph data
-        const DatabaseManager = require('./database-manager');
-        const dbManager = new DatabaseManager(filePath);
-        await dbManager.init();
-        await dbManager.saveGraph(data);
-        await dbManager.close();
+        // Check if we have current database path to copy from
+        let sourceDbPath = null;
+        if (data && data.currentDbPath && fs.existsSync(data.currentDbPath)) {
+            sourceDbPath = data.currentDbPath;
+        } else {
+            // Fallback: use the default database path
+            sourceDbPath = path.join(__dirname, 'data', 'graph.db');
+        }
         
-        console.log('[save-graph-file-request] Database created successfully with current data');
+        if (fs.existsSync(sourceDbPath)) {
+            // Copy the database file (preserves all timestamps)
+            fs.copyFileSync(sourceDbPath, filePath);
+            console.log('[save-graph-file-request] Database copied successfully from:', sourceDbPath);
+            
+            // Now update the copied database with current graph data (UPSERT will preserve timestamps)
+            const DatabaseManager = require('./database-manager');
+            const dbManager = new DatabaseManager(filePath);
+            await dbManager.init();
+            await dbManager.saveGraph(data);
+            await dbManager.close();
+            
+            console.log('[save-graph-file-request] Updated copied database with current data');
+        } else {
+            // Fallback: create new database if source doesn't exist
+            console.log('[save-graph-file-request] Source database not found, creating new database...');
+            const DatabaseManager = require('./database-manager');
+            const dbManager = new DatabaseManager(filePath);
+            await dbManager.init();
+            await dbManager.saveGraph(data);
+            await dbManager.close();
+        }
         
         return { 
             success: true, 
             fileName: path.basename(filePath),
             filePath: filePath,
-            method: 'save'
+            method: 'copy'
         };
     } catch (error) {
         console.error('[save-graph-file-request] Error:', error);

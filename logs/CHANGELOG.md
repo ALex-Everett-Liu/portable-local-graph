@@ -2,6 +2,28 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.5] - 2025-08-21
+
+### 🎯 Save As Timestamp Preservation - Complete Fix
+- **Unified Save Behavior**: Save and Save As now behave identically for timestamp handling
+- **Database File Copying**: Save As operations now copy source database files instead of recreating
+- **Complete Timestamp Preservation**: All `created_at` and `modified_at` fields preserved during Save As
+- **Zero Data Loss**: Original database untouched during Save As operations
+- **Cross-Platform Consistency**: Both Electron and Web modes use identical copy+update workflow
+
+### 🔧 Technical Implementation
+- **File Copy Strategy**: `fs.copyFileSync()` used to duplicate database files with all data intact
+- **UPSERT Update**: After copying, UPSERT logic updates only changed records while preserving timestamps
+- **Source Database Detection**: Automatically detects current database path for accurate copying
+- **Fallback Handling**: Graceful fallback to new database creation if source unavailable
+- **Comprehensive Logging**: Enhanced debugging for Save As operations
+
+### 🗄️ Database Operations
+- **Copy-Then-Update**: New Save As workflow = copy database + UPSERT current data
+- **Timestamp Integrity**: No timestamp destruction during file operations
+- **Atomic Operations**: Each step logged and verified for data consistency
+- **Path Management**: Proper handling of source and target file paths
+
 ## [0.5.4] - 2025-08-21
 
 ### 🕐 Timezone Crisis Resolution

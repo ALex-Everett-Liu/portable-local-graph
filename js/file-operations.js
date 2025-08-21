@@ -66,11 +66,6 @@ async function saveAsNewFile() {
     if (!dbManager) return;
     
     try {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.db';
-        input.webkitdirectory = false;
-        
         // Create a new filename prompt
         const fileName = prompt('Enter new database filename:', 'graph-' + Date.now() + '.db');
         if (!fileName) return;
@@ -82,7 +77,7 @@ async function saveAsNewFile() {
         
         const newPath = path.join(path.dirname(dbManager.dbPath), fileName);
         
-        // CRITICAL FIX: Copy current database instead of recreating
+        // CRITICAL FIX: Copy current database file to preserve all timestamps
         try {
             // Use fs.copyFileSync in web mode via appropriate method
             const fs = require('fs');
@@ -90,11 +85,17 @@ async function saveAsNewFile() {
                 fs.copyFileSync(dbManager.dbPath, newPath);
                 console.log('Database copied successfully, preserving timestamps');
                 
-                // Switch to new database
+                // Now update the copied database with current graph data (UPSERT will preserve timestamps)
+                const data = graph.exportData();
+                data.currentDbPath = newPath; // Update current path reference
+                
+                // Switch to new database and update with current data
                 await dbManager.openFile(newPath);
+                await dbManager.saveGraph(data);
+                
                 showNotification('Graph saved as new file: ' + fileName);
             } else {
-                // Fallback
+                // Fallback: create new database if source doesn't exist
                 console.warn('Source database not found, creating new one');
                 await saveGraphToDatabase();
             }
