@@ -2,6 +2,29 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.4] - 2025-08-21
+
+### 🕐 Timezone Crisis Resolution
+- **Fixed 8-Hour Offset Issue**: Resolved UTC vs Beijing timezone discrepancy
+- **Local Time Storage**: All timestamps now correctly store Beijing local time (UTC+8)
+- **SQLite Function Fixes**: Replaced `CURRENT_TIMESTAMP` with `datetime('now', 'localtime')`
+- **Parameter Binding**: Fixed SQL injection vulnerability in timestamp handling
+- **Backward Compatibility**: Existing timestamps preserved, new records use local time
+- **Cross-Platform**: Works correctly across different system timezones
+
+### 🔧 Technical Implementation
+- **COALESCE Preservation**: `COALESCE((SELECT created_at FROM table WHERE id = ?), datetime('now', 'localtime'))`
+- **Safe SQL Construction**: Dynamic parameter binding based on record existence
+- **Local Time Injection**: All INSERT/UPDATE operations use local system time
+- **Debug Verification**: Enhanced logging to verify actual saved timestamps
+- **Transaction Safety**: All changes wrapped in proper rollback transactions
+
+### 🗄️ Database Schema Updates
+- **CREATE TABLE**: Use `CURRENT_TIMESTAMP` for defaults (SQLite requirement)
+- **INSERT Operations**: Use `datetime('now', 'localtime')` for local time
+- **UPSERT Logic**: Preserve existing timestamps via COALESCE subqueries
+- **Parameter Safety**: Eliminated string concatenation in SQL statements
+
 ## [0.5.3] - 2025-08-20
 
 ### 🚨 Critical Database Fix - Timestamp Preservation
