@@ -56,8 +56,13 @@ class DatabaseManager {
       this.dbPath,
     );
 
-    // Ensure previous connection is properly closed
+    // Ensure previous connection is properly closed and wait for completion
     await this.close();
+    
+    // Force garbage collection of old connection
+    if (this.db) {
+      console.warn("[DatabaseManager.openFile] Database connection still exists after close!");
+    }
 
     // Reset database instance to ensure clean state
     this.db = null;
@@ -71,7 +76,7 @@ class DatabaseManager {
 
     // Initialize new connection
     const result = await this.init();
-    console.log("[DatabaseManager.openFile] Database initialized successfully");
+    console.log("[DatabaseManager.openFile] Database initialized successfully, path:", this.dbPath);
     return result;
   }
 
@@ -634,6 +639,9 @@ class DatabaseManager {
     );
 
     return new Promise((resolve, reject) => {
+      // CRITICAL: Verify we're connected to the correct database
+      console.log("[DatabaseManager.loadGraph] Current database connection path:", this.dbPath);
+      
       // Load graph metadata
       console.log("[DatabaseManager.loadGraph] Loading graph metadata...");
       this.db.get(
@@ -679,6 +687,7 @@ class DatabaseManager {
             console.log(
               "[DatabaseManager.loadGraph] Found nodes:",
               nodeRows.length,
+              "from database:", this.dbPath,
             );
             console.log("[DatabaseManager.loadGraph] Node rows:", nodeRows);
 
@@ -697,6 +706,7 @@ class DatabaseManager {
               console.log(
                 "[DatabaseManager.loadGraph] Found edges:",
                 edgeRows.length,
+                "from database:", this.dbPath,
               );
               console.log("[DatabaseManager.loadGraph] Edge rows:", edgeRows);
 
