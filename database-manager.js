@@ -4,25 +4,16 @@ const fs = require('fs').promises;
 const { v7: uuidv7 } = require('uuid');
 
 /**
- * ⚠️ CRITICAL LESSON LEARNED ⚠️
+ * Database Connection Management & UPSERT Logic
  * 
- * NEVER use DELETE/INSERT for database updates!
+ * The issue was not with UPSERT logic itself, but with connection management.
+ * Each database file should maintain its own connection, and connections should
+ * be properly closed before switching to new files.
  * 
- * Original implementation used:
- *   DELETE FROM nodes;
- *   DELETE FROM edges;
- *   INSERT INTO nodes... (re-insert everything)
- * 
- * This caused catastrophic data loss:
- * - DESTROYED all created_at timestamps for thousands of records
- * - Reset modified_at timestamps on every save, even for unchanged records
- * - Made timestamp data meaningless and useless
- * 
- * FIXED with intelligent UPSERT operations and field-level change detection
- * - fetch existing data → compare changes → only update actual changes
- * - preserve created_at timestamps (immutable)
- * - only update modified_at for actual data changes
- * - use DELETE only for genuinely removed records
+ * CORRECTED APPROACH:
+ * - Proper connection management in openFile() to prevent data mixing
+ * - UPSERT with field-level change detection to preserve timestamps correctly
+ * - Each database maintains its own state without cross-contamination
  */
 
 // UUID conversion utilities for binary storage
@@ -61,9 +52,18 @@ class DatabaseManager {
     async openFile(filePath) {
         console.log('[DatabaseManager.openFile] Opening database file:', filePath);
         console.log('[DatabaseManager.openFile] Current dbPath before change:', this.dbPath);
+        
+        // Ensure previous connection is properly closed
         await this.close();
+        
+        // Reset database instance to ensure clean state
+        this.db = null;
+        
+        // Update the database path
         this.dbPath = filePath;
         console.log('[DatabaseManager.openFile] Database path set to:', this.dbPath);
+        
+        // Initialize new connection
         const result = await this.init();
         console.log('[DatabaseManager.openFile] Database initialized successfully');
         return result;
@@ -203,57 +203,54 @@ async saveGraph(data) {
     const { nodes = [], edges = [], scale = 1, offset = { x: 0, y: 0 }, metadata = {} } = data;
     
     try {
-        // ⚠️ CRITICAL LESSON LEARNED ⚠️
-        // NEVER use DELETE/INSERT for updates!
-        // Original implementation: DELETE FROM nodes; DELETE FROM edges; then INSERT
-        // This DESTROYED all created_at timestamps and reset modified_at for unchanged records
-        // Fixed with intelligent UPSERT and field-level change detection
-        
-        // Get existing data first
-        const existingNodes = await new Promise((resolve, reject) => {
-            this.db.all('SELECT * FROM nodes', (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            });
-        });
-
-        const existingEdges = await new Promise((resolve, reject) => {
-            this.db.all('SELECT * FROM edges', (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            });
-        });
-
-        const existingNodeMap = new Map();
-        existingNodes.forEach(node => {
-            existingNodeMap.set(bufferToUuid(node.id), node);
-        });
-
-        const existingEdgeMap = new Map();
-        existingEdges.forEach(edge => {
-            existingEdgeMap.set(bufferToUuid(edge.id), edge);
-        });
-
         return new Promise((resolve, reject) => {
             this.db.serialize(() => {
                 this.db.run('BEGIN TRANSACTION');
 
                 try {
-                    // Insert or update graph metadata using proper UPSERT
-                    // This preserves existing timestamps and only updates when actual changes occur
+                    const graphId = Buffer.from('00000000-0000-0000-0000-000000000000', 'hex');
+                    
+                    // UPSERT graph metadata with change detection
                     this.db.run(`
                         INSERT INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, created_at, modified_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                         ON CONFLICT(id) DO UPDATE SET
-                            name=excluded.name,
-                            description=excluded.description,
-                            scale=excluded.scale,
-                            offset_x=excluded.offset_x,
-                            offset_y=excluded.offset_y,
-                            metadata=excluded.metadata,
-                            modified_at=CURRENT_TIMESTAMP
+                            name = CASE 
+                                WHEN graphs.name != excluded.name THEN excluded.name 
+                                ELSE graphs.name 
+                            END,
+                            description = CASE 
+                                WHEN graphs.description != excluded.description THEN excluded.description 
+                                ELSE graphs.description 
+                            END,
+                            scale = CASE 
+                                WHEN graphs.scale != excluded.scale THEN excluded.scale 
+                                ELSE graphs.scale 
+                            END,
+                            offset_x = CASE 
+                                WHEN graphs.offset_x != excluded.offset_x THEN excluded.offset_x 
+                                ELSE graphs.offset_x 
+                            END,
+                            offset_y = CASE 
+                                WHEN graphs.offset_y != excluded.offset_y THEN excluded.offset_y 
+                                ELSE graphs.offset_y 
+                            END,
+                            metadata = CASE 
+                                WHEN graphs.metadata != excluded.metadata THEN excluded.metadata 
+                                ELSE graphs.metadata 
+                            END,
+                            modified_at = CASE 
+                                WHEN graphs.name != excluded.name OR
+                                     graphs.description != excluded.description OR
+                                     graphs.scale != excluded.scale OR
+                                     graphs.offset_x != excluded.offset_x OR
+                                     graphs.offset_y != excluded.offset_y OR
+                                     graphs.metadata != excluded.metadata
+                                THEN CURRENT_TIMESTAMP 
+                                ELSE graphs.modified_at 
+                            END
                     `, [
-                        Buffer.from('00000000-0000-0000-0000-000000000000', 'hex'),
+                        graphId,
                         metadata.name || 'Graph',
                         metadata.description || '',
                         scale,
@@ -262,118 +259,128 @@ async saveGraph(data) {
                         JSON.stringify(metadata)
                     ]);
 
-                    const processedNodeIds = new Set();
-                    const processedEdgeIds = new Set();
-
-                    // Process nodes with UPSERT
+                    // Process nodes with UPSERT and change detection
                     for (const node of nodes) {
                         const nodeId = node.id ? uuidToBuffer(node.id) : uuidToBuffer(uuidv7());
-                        const idStr = bufferToUuid(nodeId);
-                        const existing = existingNodeMap.get(idStr);
-                        const newNode = {
-                            x: node.x,
-                            y: node.y,
-                            label: node.label || '',
-                            chinese_label: node.chineseLabel || '',
-                            color: node.color || '#3b82f6',
-                            radius: node.radius || 20,
-                            category: node.category || null,
-                            layers: (node.layers || []).join(',')
-                        };
-
-                        processedNodeIds.add(idStr);
-
-                        if (!existing) {
-                            // New node - insert with created_at
-                            this.db.run(`
-                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                            `, [nodeId, newNode.x, newNode.y, newNode.label, newNode.chinese_label, newNode.color, newNode.radius, newNode.category, newNode.layers]);
-                        } else {
-                            // CRITICAL: Field-level change detection prevents false updates
-                            // This preserves created_at and only updates modified_at for actual changes
-                            const hasChanged = 
-                                existing.x !== newNode.x ||
-                                existing.y !== newNode.y ||
-                                existing.label !== newNode.label ||
-                                existing.chinese_label !== newNode.chinese_label ||
-                                existing.color !== newNode.color ||
-                                existing.radius !== newNode.radius ||
-                                existing.category !== newNode.category ||
-                                existing.layers !== newNode.layers;
-
-                            if (hasChanged) {
-                                // Update with new modified_at - only when actual changes detected
-                                this.db.run(`
-                                    UPDATE nodes SET
-                                        x=?, y=?, label=?, chinese_label=?, color=?, radius=?, category=?, layers=?,
-                                        modified_at=CURRENT_TIMESTAMP
-                                    WHERE id=?
-                                `, [newNode.x, newNode.y, newNode.label, newNode.chinese_label, newNode.color, newNode.radius, newNode.category, newNode.layers, nodeId]);
-                            }
-                            // If no change, do nothing - preserve existing modified_at
-                            // This prevents the timestamp destruction that occurred with DELETE/INSERT
-                        }
+                        
+                        this.db.run(`
+                            INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                            ON CONFLICT(id) DO UPDATE SET
+                                x = CASE 
+                                    WHEN nodes.x != excluded.x THEN excluded.x 
+                                    ELSE nodes.x 
+                                END,
+                                y = CASE 
+                                    WHEN nodes.y != excluded.y THEN excluded.y 
+                                    ELSE nodes.y 
+                                END,
+                                label = CASE 
+                                    WHEN nodes.label != excluded.label THEN excluded.label 
+                                    ELSE nodes.label 
+                                END,
+                                chinese_label = CASE 
+                                    WHEN nodes.chinese_label != excluded.chinese_label THEN excluded.chinese_label 
+                                    ELSE nodes.chinese_label 
+                                END,
+                                color = CASE 
+                                    WHEN nodes.color != excluded.color THEN excluded.color 
+                                    ELSE nodes.color 
+                                END,
+                                radius = CASE 
+                                    WHEN nodes.radius != excluded.radius THEN excluded.radius 
+                                    ELSE nodes.radius 
+                                END,
+                                category = CASE 
+                                    WHEN nodes.category != excluded.category THEN excluded.category 
+                                    ELSE nodes.category 
+                                END,
+                                layers = CASE 
+                                    WHEN nodes.layers != excluded.layers THEN excluded.layers 
+                                    ELSE nodes.layers 
+                                END,
+                                modified_at = CASE 
+                                    WHEN nodes.x != excluded.x OR
+                                         nodes.y != excluded.y OR
+                                         nodes.label != excluded.label OR
+                                         nodes.chinese_label != excluded.chinese_label OR
+                                         nodes.color != excluded.color OR
+                                         nodes.radius != excluded.radius OR
+                                         nodes.category != excluded.category OR
+                                         nodes.layers != excluded.layers
+                                    THEN CURRENT_TIMESTAMP 
+                                    ELSE nodes.modified_at 
+                                END
+                        `, [
+                            nodeId,
+                            node.x,
+                            node.y,
+                            node.label || '',
+                            node.chineseLabel || '',
+                            node.color || '#3b82f6',
+                            node.radius || 20,
+                            node.category || null,
+                            (node.layers || []).join(',')
+                        ]);
                     }
 
-                    // Process edges with UPSERT
+                    // Process edges with UPSERT and change detection
                     for (const edge of edges) {
                         const edgeId = edge.id ? uuidToBuffer(edge.id) : uuidToBuffer(uuidv7());
-                        const idStr = bufferToUuid(edgeId);
-                        const existing = existingEdgeMap.get(idStr);
-
-                        const newEdge = {
-                            from_node_id: uuidToBuffer(String(edge.from)),
-                            to_node_id: uuidToBuffer(String(edge.to)),
-                            weight: edge.weight || 1,
-                            category: edge.category || null
-                        };
-
-                        processedEdgeIds.add(idStr);
-
-                        if (!existing) {
-                            // New edge - insert with created_at
-                            this.db.run(`
-                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
-                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                            `, [edgeId, newEdge.from_node_id, newEdge.to_node_id, newEdge.weight, newEdge.category]);
-                        } else {
-                            // CRITICAL: Field-level change detection for edges - same principle as nodes
-                            const hasChanged = 
-                                !existing.from_node_id.equals(newEdge.from_node_id) ||
-                                !existing.to_node_id.equals(newEdge.to_node_id) ||
-                                existing.weight !== newEdge.weight ||
-                                existing.category !== newEdge.category;
-
-                            if (hasChanged) {
-                                // Update with new modified_at - only when actual changes detected
-                                this.db.run(`
-                                    UPDATE edges SET
-                                        from_node_id=?, to_node_id=?, weight=?, category=?,
-                                        modified_at=CURRENT_TIMESTAMP
-                                    WHERE id=?
-                                `, [newEdge.from_node_id, newEdge.to_node_id, newEdge.weight, newEdge.category, edgeId]);
-                            }
-                            // If no change, do nothing - preserve existing modified_at
-                            // This prevents the timestamp destruction that occurred with DELETE/INSERT
-                        }
+                        
+                        this.db.run(`
+                            INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
+                            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                            ON CONFLICT(id) DO UPDATE SET
+                                from_node_id = CASE 
+                                    WHEN edges.from_node_id != excluded.from_node_id THEN excluded.from_node_id 
+                                    ELSE edges.from_node_id 
+                                END,
+                                to_node_id = CASE 
+                                    WHEN edges.to_node_id != excluded.to_node_id THEN excluded.to_node_id 
+                                    ELSE edges.to_node_id 
+                                END,
+                                weight = CASE 
+                                    WHEN edges.weight != excluded.weight THEN excluded.weight 
+                                    ELSE edges.weight 
+                                END,
+                                category = CASE 
+                                    WHEN edges.category != excluded.category THEN excluded.category 
+                                    ELSE edges.category 
+                                END,
+                                modified_at = CASE 
+                                    WHEN edges.from_node_id != excluded.from_node_id OR
+                                         edges.to_node_id != excluded.to_node_id OR
+                                         edges.weight != excluded.weight OR
+                                         edges.category != excluded.category
+                                    THEN CURRENT_TIMESTAMP 
+                                    ELSE edges.modified_at 
+                                END
+                        `, [
+                            edgeId,
+                            uuidToBuffer(String(edge.from)),
+                            uuidToBuffer(String(edge.to)),
+                            edge.weight || 1,
+                            edge.category || null
+                        ]);
                     }
 
-                    // Remove deleted nodes and edges
-                    // DELETE is only used for genuinely removed records, not for updates
-                    // This prevents the data destruction that occurred with the old DELETE/INSERT pattern
-                    for (const existingNode of existingNodes) {
-                        const id = bufferToUuid(existingNode.id);
-                        if (!processedNodeIds.has(id)) {
-                            this.db.run('DELETE FROM nodes WHERE id = ?', [existingNode.id]);
-                        }
+                    // Clean up deleted nodes and edges
+                    const currentNodeIds = nodes.map(n => uuidToBuffer(n.id)).filter(id => id !== null);
+                    const currentEdgeIds = edges.map(e => uuidToBuffer(e.id)).filter(id => id !== null);
+
+                    if (currentNodeIds.length > 0) {
+                        const placeholders = currentNodeIds.map(() => '?').join(',');
+                        this.db.run(`DELETE FROM nodes WHERE id NOT IN (${placeholders})`, currentNodeIds);
+                    } else {
+                        this.db.run('DELETE FROM nodes');
                     }
 
-                    for (const existingEdge of existingEdges) {
-                        const id = bufferToUuid(existingEdge.id);
-                        if (!processedEdgeIds.has(id)) {
-                            this.db.run('DELETE FROM edges WHERE id = ?', [existingEdge.id]);
-                        }
+                    if (currentEdgeIds.length > 0) {
+                        const placeholders = currentEdgeIds.map(() => '?').join(',');
+                        this.db.run(`DELETE FROM edges WHERE id NOT IN (${placeholders})`, currentEdgeIds);
+                    } else {
+                        this.db.run('DELETE FROM edges');
                     }
 
                     this.db.run('COMMIT', (err) => {
@@ -590,8 +597,18 @@ async saveGraph(data) {
     async close() {
         return new Promise((resolve) => {
             if (this.db) {
-                this.db.close(() => resolve());
+                console.log('[DatabaseManager.close] Closing database connection:', this.dbPath);
+                this.db.close((err) => {
+                    if (err) {
+                        console.error('[DatabaseManager.close] Error closing database:', err);
+                    } else {
+                        console.log('[DatabaseManager.close] Database closed successfully:', this.dbPath);
+                    }
+                    this.db = null;
+                    resolve();
+                });
             } else {
+                console.log('[DatabaseManager.close] No active database to close');
                 resolve();
             }
         });
