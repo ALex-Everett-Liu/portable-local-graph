@@ -285,6 +285,7 @@ export class Graph {
         const pos = this.getMousePos(e);
         const data = this.graphData.exportData();
         const node = this.getNodeAt(pos.x, pos.y);
+        const edge = !node ? this.getEdgeAt(pos.x, pos.y) : null;
         
         if (e.button === 0) {
             if (this.mode === 'node') {
@@ -303,6 +304,11 @@ export class Graph {
                     };
                     this.selectedNode = node;
                     this.selectedEdge = null;
+                    this.onSelectionChange();
+                } else if (edge) {
+                    // Select edge on left-click
+                    this.selectedNode = null;
+                    this.selectedEdge = edge;
                     this.onSelectionChange();
                 } else {
                     this.selectedNode = null;

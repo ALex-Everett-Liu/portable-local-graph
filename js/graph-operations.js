@@ -244,11 +244,32 @@ function updateSelectionInfo() {
         const fromChinese = fromNode && fromNode.chineseLabel ? ` (${fromNode.chineseLabel})` : '';
         const toChinese = toNode && toNode.chineseLabel ? ` (${toNode.chineseLabel})` : '';
         
+        const formatDate = (timestamp) => {
+            if (!timestamp) return 'Not available';
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString();
+            } catch (e) {
+                console.error('Error formatting timestamp:', timestamp, e);
+                return 'Invalid date';
+            }
+        };
+        
+        const createdAtDisplay = edge.created_at ? 
+            `<p><strong>Created:</strong> ${formatDate(edge.created_at)}</p>` : 
+            '';
+            
+        const modifiedAtDisplay = edge.modified_at ? 
+            `<p><strong>Modified:</strong> ${formatDate(edge.modified_at)}</p>` : 
+            '';
+            
         selectionInfo.innerHTML = `
             <div style="font-size: 12px; line-height: 1.4;">
                 <p><strong>Edge:</strong> ${fromNode ? fromNode.label : 'Unknown'}${fromChinese} → ${toNode ? toNode.label : 'Unknown'}${toChinese}</p>
                 <p><strong>Weight:</strong> ${edge.weight}</p>
                 ${edge.category ? `<p><strong>Category:</strong> ${edge.category}</p>` : ''}
+                ${createdAtDisplay}
+                ${modifiedAtDisplay}
             </div>
         `;
     } else {

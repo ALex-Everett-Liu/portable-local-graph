@@ -2,6 +2,20 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.7] - 2025-08-21
+
+### 🖱️ Enhanced Edge Interaction
+- **Left-Click Edge Selection**: Added left-click edge selection in select mode for consistent node/edge behavior
+- **Selection Info Integration**: Left-clicking edges now displays complete information in Selection Info section
+- **Consistent UX Pattern**: Edge interaction now matches node behavior - left-click to select, right-click to edit
+- **Priority Handling**: Node selection takes priority when clicking near overlapping elements
+
+### 📊 Enhanced Edge Information Display
+- **Complete Metadata**: Edge selection-info now displays comprehensive information including timestamps
+- **Timestamp Support**: Added `created_at` and `modified_at` timestamp display for selected edges
+- **Category Enhancement**: Maintained and enhanced category display with additional metadata
+- **Rich Information**: Edges show source/target labels, Chinese labels, weight, category, and timestamps
+
 ## [0.5.6] - 2025-08-21
 
 ### 🔍 Selection Info Enhancement
