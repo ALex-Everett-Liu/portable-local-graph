@@ -2,6 +2,25 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.6] - 2025-08-21
+
+### 🔍 Selection Info Enhancement
+- **Layer Field Display**: Added `layer` field to selection-info display for nodes
+- **Timestamp Integration**: Fixed missing `created_at` and `modified_at` timestamp display in selection-info
+- **Database Field Mapping**: Resolved timestamp fields not being loaded from database into node objects
+- **Enhanced Node Info**: Selection-info now displays complete node metadata including layers and timestamps
+
+### 🗄️ Database Loading Fix
+- **Timestamp Field Loading**: Fixed `loadGraph` method to include `created_at` and `modified_at` fields in node objects
+- **Edge Timestamp Support**: Added `created_at` and `modified_at` to edge objects for consistency
+- **Complete Data Integrity**: All database timestamp fields now properly mapped to application objects
+- **Cross-Platform Compatibility**: Works with both existing and new database files
+
+### 🐛 Bug Resolution
+- **Timestamp Display Issue**: Fixed "Not available" showing for all timestamps despite existing in database
+- **Field Mapping**: Corrected incomplete node/edge object creation from database rows
+- **Date Formatting**: Added robust error handling for timestamp formatting in selection-info
+
 ## [0.5.5] - 2025-08-21
 
 ### 🎯 Save As Timestamp Preservation - Complete Fix

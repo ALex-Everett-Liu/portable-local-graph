@@ -726,6 +726,8 @@ class DatabaseManager {
                         .map((l) => l.trim())
                         .filter((l) => l)
                     : [],
+                  created_at: row.created_at,
+                  modified_at: row.modified_at
                 };
                 console.log(
                   "[DatabaseManager.loadGraph] Processed node:",
@@ -741,6 +743,8 @@ class DatabaseManager {
                   to: bufferToUuid(row.to_node_id),
                   weight: row.weight,
                   category: row.category,
+                  created_at: row.created_at,
+                  modified_at: row.modified_at
                 };
                 console.log(
                   "[DatabaseManager.loadGraph] Processed edge:",

@@ -199,6 +199,29 @@ function updateSelectionInfo() {
             `;
         }
             
+        const layersDisplay = node.layers && node.layers.length > 0 ? 
+            `<p><strong>Layers:</strong> ${node.layers.join(', ')}</p>` : 
+            '<p><strong>Layers:</strong> None</p>';
+            
+        const formatDate = (timestamp) => {
+            if (!timestamp) return 'Not available';
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString();
+            } catch (e) {
+                console.error('Error formatting timestamp:', timestamp, e);
+                return 'Invalid date';
+            }
+        };
+        
+        const createdAtDisplay = node.created_at ? 
+            `<p><strong>Created:</strong> ${formatDate(node.created_at)}</p>` : 
+            '<p><strong>Created:</strong> Not available</p>';
+            
+        const modifiedAtDisplay = node.modified_at ? 
+            `<p><strong>Modified:</strong> ${formatDate(node.modified_at)}</p>` : 
+            '<p><strong>Modified:</strong> Not available</p>';
+            
         selectionInfo.innerHTML = `
             <div style="font-size: 12px; line-height: 1.4;">
                 <p><strong>English:</strong> ${node.label}</p>
@@ -207,6 +230,9 @@ function updateSelectionInfo() {
                 <p><strong>Color:</strong> <span style="display: inline-block; width: 12px; height: 12px; background-color: ${node.color}; border: 1px solid #333; vertical-align: middle; margin-right: 4px;"></span>${node.color}</p>
                 <p><strong>Size:</strong> ${node.radius}px</p>
                 ${node.category ? `<p><strong>Category:</strong> ${node.category}</p>` : ''}
+                ${layersDisplay}
+                ${createdAtDisplay}
+                ${modifiedAtDisplay}
                 ${centralityDisplay}
             </div>
         `;
