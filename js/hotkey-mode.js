@@ -87,7 +87,7 @@ class HotkeyMode {
     this.hotkeys.set("l", {
       name: "Manage Layers",
       action: () => {
-        console.log("L key pressed - opening layer dialog");
+        // console.log("L key pressed - opening layer dialog");
         if (window.openLayerDialog) {
           window.openLayerDialog();
         } else {
@@ -110,20 +110,20 @@ class HotkeyMode {
         console.log("Key pressed: S");
         console.log("Hotkey mode active:", this.isActive);
         console.log("typeof require:", typeof require);
-        
+
         const saveBtn = document.getElementById("save-btn");
         console.log("save-btn element found:", !!saveBtn);
-        
+
         if (saveBtn) {
           console.log("Clicking save button directly...");
           saveBtn.click();
         } else {
           console.log("save-btn not found, trying alternative methods...");
-          
-          if (typeof require !== 'undefined') {
+
+          if (typeof require !== "undefined") {
             console.log("Using Electron IPC...");
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.send('save-current-graph');
+            const { ipcRenderer } = require("electron");
+            ipcRenderer.send("save-current-graph");
           } else {
             console.log("Using web save method...");
             if (window.saveGraphToDatabase) {
@@ -131,7 +131,12 @@ class HotkeyMode {
               window.saveGraphToDatabase();
             } else {
               console.log("ERROR: saveGraphToDatabase not found!");
-              console.log("Available window functions:", Object.keys(window).filter(k => k.toLowerCase().includes('save')));
+              console.log(
+                "Available window functions:",
+                Object.keys(window).filter((k) =>
+                  k.toLowerCase().includes("save"),
+                ),
+              );
             }
           }
         }
@@ -224,7 +229,7 @@ class HotkeyMode {
     this.hotkeys.set("d", {
       name: "Create Edge Search",
       action: () => {
-        const createEdgeBtn = document.getElementById('create-edge-search-btn');
+        const createEdgeBtn = document.getElementById("create-edge-search-btn");
         if (createEdgeBtn) {
           createEdgeBtn.click();
         } else if (window.showEdgeSearchDialog) {
@@ -238,7 +243,16 @@ class HotkeyMode {
     document.addEventListener("keydown", (e) => {
       console.log("=== KEY PRESSED ===");
       console.log("Key:", e.key, "Code:", e.code);
-      console.log("Alt:", e.altKey, "Ctrl:", e.ctrlKey, "Shift:", e.shiftKey, "Meta:", e.metaKey);
+      console.log(
+        "Alt:",
+        e.altKey,
+        "Ctrl:",
+        e.ctrlKey,
+        "Shift:",
+        e.shiftKey,
+        "Meta:",
+        e.metaKey,
+      );
       console.log("Hotkey mode active:", this.isActive);
       console.log("Target:", e.target.tagName);
 
@@ -290,7 +304,7 @@ class HotkeyMode {
     console.log("=== TOGGLE HOTKEY MODE ===");
     console.log("Current state:", this.isActive);
     console.log("Will change to:", !this.isActive);
-    
+
     if (this.isActive) {
       this.deactivate();
     } else {
@@ -421,7 +435,7 @@ class HotkeyMode {
       "manage-layers-btn": "L",
       "create-edge-search-btn": "D",
     };
-    
+
     // Check all buttons
     Object.entries(buttonMappings).forEach(([id, hotkey]) => {
       const button = document.getElementById(id);
@@ -432,7 +446,7 @@ class HotkeyMode {
         console.error(`Button ${id} NOT FOUND!`);
       }
     });
-    
+
     // Also check for save-btn specifically
     const saveBtn = document.getElementById("save-btn");
     console.log("save-btn direct check:", saveBtn);
