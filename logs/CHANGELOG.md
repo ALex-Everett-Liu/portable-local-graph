@@ -2,6 +2,21 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.5.8] - 2025-08-22
+
+### 🏷️ Custom View Naming System
+- **Rename Saved Views**: Added ability to rename any saved view in Quick Access panel
+- **Custom Dialog System**: Replaced Electron-incompatible prompt() with native modal dialogs
+- **Visual Identification**: Custom names make it easy to distinguish between different saved views
+- **Keyboard Support**: Enter to confirm, Escape to cancel in rename dialogs
+- **Backward Compatibility**: Existing saved views continue to work with auto-generated names
+
+### 🎯 Quick Access Enhancements
+- **Rename Button**: Added ✏️ rename button next to each saved view
+- **Delete Confirmation**: Added confirmation dialog before deleting saved views
+- **Enhanced Display**: Shows custom names when available, falls back to auto-generated names
+- **One-Click Renaming**: Simple pencil icon provides instant access to rename functionality
+
 ## [0.5.7] - 2025-08-21
 
 ### 🖱️ Enhanced Edge Interaction

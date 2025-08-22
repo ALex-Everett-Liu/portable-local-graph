@@ -13,9 +13,14 @@ function saveViewConfig() {
         return;
     }
     
+    const defaultName = `${centerNode.label} (D:${appState.filterParams.maxDistance}, H:${appState.filterParams.maxDepth})`;
+    
+    // Use a simple approach - just use the default name since we can't use prompt
+    // Users can rename later via the rename button
     const config = {
         id: 'view-' + Date.now(),
-        name: `${centerNode.label} (D:${appState.filterParams.maxDistance}, H:${appState.filterParams.maxDepth})`,
+        name: defaultName,
+        customName: defaultName, // Default to the generated name for now
         centerNodeId: appState.filterParams.centerNodeId,
         maxDistance: appState.filterParams.maxDistance,
         maxDepth: appState.filterParams.maxDepth,
@@ -86,11 +91,14 @@ function renderQuickAccess() {
             <div style="flex: 1; cursor: pointer; display: flex; align-items: center;" onclick="${onclickHandler}">
                 <span style="margin-right: 8px;">${typeIndicator}</span>
                 <div>
-                    <div style="font-weight: bold; font-size: 12px;">${config.name}</div>
+                    <div style="font-weight: bold; font-size: 12px;">${config.customName || config.name}</div>
                     <div style="font-size: 10px; color: #666;">${config.type === 'layer-view' ? 'Layer View' : 'Filter View'}</div>
                 </div>
             </div>
-            <button onclick="deleteViewConfig('${config.id}')" style="background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; width: 20px; height: 20px;">×</button>
+            <div style="display: flex; gap: 4px;">
+                <button onclick="renameViewConfig('${config.id}')" style="background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; width: 20px; height: 20px;" title="Rename view">✏️</button>
+                <button onclick="deleteViewConfig('${config.id}')" style="background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; width: 20px; height: 20px;" title="Delete view">×</button>
+            </div>
         `;
         container.appendChild(item);
     });
@@ -140,12 +148,85 @@ function loadViewConfig(configId) {
     }
 }
 
-// Delete view configuration
-function deleteViewConfig(configId) {
-    appState.quickAccess = appState.quickAccess.filter(c => c.id !== configId);
+// Rename view configuration
+let currentRenameConfigId = null;
+
+function renameViewConfig(configId) {
+    const config = appState.quickAccess.find(c => c.id === configId);
+    if (!config) {
+        showNotification('View configuration not found', 'error');
+        return;
+    }
+    
+    currentRenameConfigId = configId;
+    
+    const oldNameInput = document.getElementById('rename-old-view');
+    const newNameInput = document.getElementById('rename-new-view');
+    const errorDiv = document.getElementById('view-rename-error');
+    
+    if (!oldNameInput || !newNameInput || !errorDiv) return;
+    
+    // Set current name
+    oldNameInput.value = config.customName || config.name;
+    newNameInput.value = config.customName || config.name;
+    newNameInput.focus();
+    newNameInput.select();
+    
+    // Clear any previous error
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+    
+    // Show dialog
+    const dialog = document.getElementById('view-rename-dialog');
+    if (dialog) dialog.classList.remove('hidden');
+}
+
+function closeViewRenameDialog() {
+    currentRenameConfigId = null;
+    const dialog = document.getElementById('view-rename-dialog');
+    if (dialog) dialog.classList.add('hidden');
+}
+
+function handleViewRenameKeydown(e) {
+    if (e.key === 'Enter') {
+        applyViewRename();
+    } else if (e.key === 'Escape') {
+        closeViewRenameDialog();
+    }
+}
+
+function applyViewRename() {
+    if (!currentRenameConfigId) return;
+    
+    const config = appState.quickAccess.find(c => c.id === currentRenameConfigId);
+    if (!config) return;
+    
+    const newNameInput = document.getElementById('rename-new-view');
+    const errorDiv = document.getElementById('view-rename-error');
+    
+    const newName = newNameInput.value.trim();
+    
+    if (!newName) {
+        errorDiv.textContent = 'View name cannot be empty';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    config.customName = newName;
     saveQuickAccess();
     renderQuickAccess();
-    showNotification('View configuration deleted');
+    closeViewRenameDialog();
+    showNotification('View renamed successfully');
+}
+
+// Delete view configuration
+function deleteViewConfig(configId) {
+    if (confirm('Are you sure you want to delete this view?')) {
+        appState.quickAccess = appState.quickAccess.filter(c => c.id !== configId);
+        saveQuickAccess();
+        renderQuickAccess();
+        showNotification('View configuration deleted');
+    }
 }
 
 // Export functions
@@ -156,7 +237,10 @@ if (typeof module !== 'undefined' && module.exports) {
         saveQuickAccess,
         renderQuickAccess,
         loadViewConfig,
-        deleteViewConfig
+        deleteViewConfig,
+        renameViewConfig,
+        closeViewRenameDialog,
+        applyViewRename
     };
 } else {
     Object.assign(window, {
@@ -165,6 +249,9 @@ if (typeof module !== 'undefined' && module.exports) {
         saveQuickAccess,
         renderQuickAccess,
         loadViewConfig,
-        deleteViewConfig
+        deleteViewConfig,
+        renameViewConfig,
+        closeViewRenameDialog,
+        applyViewRename
     });
 }

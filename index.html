@@ -300,6 +300,33 @@
         </div>
     </div>
 
+    <!-- View Rename Dialog -->
+    <div id="view-rename-dialog" class="dialog hidden" style="width: 400px;">
+        <div class="dialog-content">
+            <h3>Rename Saved View</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label>Current View Name:</label>
+                <input type="text" id="rename-old-view" readonly style="background: #f5f5f5; cursor: not-allowed;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label>New View Name:</label>
+                <input type="text" id="rename-new-view" placeholder="Enter new view name..." maxlength="50" onkeydown="handleViewRenameKeydown(event)">
+                <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                    View names cannot be empty
+                </div>
+            </div>
+            
+            <div id="view-rename-error" style="display: none; color: #d32f2f; font-size: 12px; margin-bottom: 15px; padding: 8px; background: #ffebee; border-radius: 4px;"></div>
+            
+            <div class="dialog-buttons">
+                <button id="view-rename-ok" onclick="applyViewRename()">Rename</button>
+                <button id="view-rename-cancel" onclick="closeViewRenameDialog()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Node Connections Overview Window -->
     <div id="node-connections-dialog" class="dialog hidden" style="width: 500px; max-height: 70vh;">
         <div class="dialog-content" style="max-height: 65vh; overflow-y: auto;">

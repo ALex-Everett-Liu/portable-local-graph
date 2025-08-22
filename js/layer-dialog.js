@@ -119,9 +119,14 @@ function saveLayerView() {
         return;
     }
     
+    const defaultName = `${selectedLayers.length} layer(s) (${mode})`;
+    
+    // Use a simple approach - just use the default name since we can't use prompt
+    // Users can rename later via the rename button
     const config = {
         id: 'layer-view-' + Date.now(),
-        name: `${selectedLayers.length} layer(s) (${mode})`,
+        name: defaultName,
+        customName: defaultName, // Default to the generated name for now
         selectedLayers: [...selectedLayers],
         filterMode: mode,
         timestamp: new Date().toISOString(),
@@ -156,6 +161,7 @@ function saveLayerView() {
             appState.quickAccess.push({
                 id: config.id,
                 name: config.name,
+                customName: config.customName,
                 type: 'layer-view',
                 layers: config.selectedLayers,
                 mode: config.filterMode,
