@@ -77,6 +77,11 @@
                         <input type="number" id="weight-input" placeholder="Enter weight" step="0.1" min="0">
                         <label>Category:</label>
                         <input type="text" id="edge-category" placeholder="Category (optional)">
+                        <div style="margin: 15px 0; text-align: center;">
+                            <button id="reverse-edge-btn" class="tool-btn" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 8px 16px; font-size: 12px;">
+                                ↺ Reverse Direction
+                            </button>
+                        </div>
                         <div class="dialog-buttons">
                             <button id="weight-ok">OK</button>
                             <button id="weight-cancel">Cancel</button>
@@ -254,6 +259,18 @@
                                 <button id="manage-layers-btn" class="tool-btn">Manage Layers</button>
                                 <button id="apply-layer-filter-btn" class="tool-btn">Apply Filter</button>
                                 <button id="reset-layer-filter-btn" class="tool-btn">Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h4>Display Options</h4>
+                            <div class="filter-controls">
+                                <div style="margin-bottom: 8px;">
+                                    <label style="font-size: 11px; display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="show-edge-arrows" style="margin-right: 6px;">
+                                        Show Edge Arrows
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         

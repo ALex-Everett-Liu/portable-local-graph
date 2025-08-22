@@ -24,6 +24,12 @@ function initializeGraph() {
         return;
     }
     
+    // Ensure appState.showEdgeArrows is initialized
+    if (typeof appState.showEdgeArrows === 'undefined') {
+        appState.showEdgeArrows = false;
+        console.log('Initialized appState.showEdgeArrows to false');
+    }
+    
     window.graph = new Graph(canvas, {
         mode: appState.mode,
         onModeChange: (mode) => setMode(mode),
@@ -31,7 +37,8 @@ function initializeGraph() {
         onSelectionChange: updateGraphInfo
     });
     
-        console.log('Graph initialized successfully');
+    console.log('Graph initialized successfully');
+    console.log('appState.showEdgeArrows:', appState.showEdgeArrows);
     
     // Start animation loop for highlighted nodes
     if (graph && typeof graph.startAnimationLoop === 'function') {

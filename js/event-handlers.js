@@ -32,6 +32,7 @@ function setupEventListeners() {
     document.getElementById('weight-ok').addEventListener('click', handleWeightOK);
     document.getElementById('weight-cancel').addEventListener('click', handleWeightCancel);
     document.getElementById('weight-delete').addEventListener('click', handleWeightDelete);
+    document.getElementById('reverse-edge-btn').addEventListener('click', handleReverseEdgeDirection);
     
     document.getElementById('node-ok').addEventListener('click', handleNodeOK);
     document.getElementById('node-cancel').addEventListener('click', handleNodeCancel);
@@ -54,6 +55,29 @@ function setupEventListeners() {
     document.getElementById('reset-filter-btn').addEventListener('click', resetFilter);
     document.getElementById('save-view-btn').addEventListener('click', saveViewConfig);
     document.getElementById('analyze-distances-btn').addEventListener('click', showDistanceAnalysis);
+    
+    // Display options
+    const arrowCheckbox = document.getElementById('show-edge-arrows');
+    if (arrowCheckbox) {
+        // Ensure appState.showEdgeArrows is initialized
+        if (typeof appState.showEdgeArrows === 'undefined') {
+            appState.showEdgeArrows = false;
+        }
+        
+        arrowCheckbox.addEventListener('change', (e) => {
+            console.log("Edge arrows checkbox changed:", e.target.checked);
+            appState.showEdgeArrows = e.target.checked;
+            console.log("appState.showEdgeArrows set to:", appState.showEdgeArrows);
+            graph.render();
+            console.log("Graph re-rendered");
+        });
+        
+        // Set initial state
+        arrowCheckbox.checked = appState.showEdgeArrows;
+        console.log("Initial arrow checkbox state:", arrowCheckbox.checked, "appState.showEdgeArrows:", appState.showEdgeArrows);
+    } else {
+        console.warn("Edge arrows checkbox not found");
+    }
     
     // Edge creation via search
     document.getElementById('create-edge-search-btn').addEventListener('click', showEdgeSearchDialog);

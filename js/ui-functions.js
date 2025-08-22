@@ -140,6 +140,30 @@ function handleWeightOK() {
     dialog.classList.add('hidden');
 }
 
+// Handle reverse edge direction
+function handleReverseEdgeDirection() {
+    const dialog = document.getElementById('weight-dialog');
+    const edgeId = dialog.dataset.edgeId;
+    
+    const edge = graph.edges.find(e => e.id == edgeId);
+    if (edge) {
+        saveState();
+        // Swap source and target nodes
+        [edge.from, edge.to] = [edge.to, edge.from];
+        graph.render();
+        appState.isModified = true;
+        
+        // Show notification with node labels
+        const sourceNode = graph.nodes.find(n => n.id === edge.from);
+        const targetNode = graph.nodes.find(n => n.id === edge.to);
+        if (sourceNode && targetNode) {
+            showNotification(`Edge direction reversed: ${targetNode.label} → ${sourceNode.label}`);
+        } else {
+            showNotification('Edge direction reversed');
+        }
+    }
+}
+
 // Handle weight cancel
 function handleWeightCancel() {
     document.getElementById('weight-dialog').classList.add('hidden');
@@ -197,6 +221,7 @@ if (typeof module !== 'undefined' && module.exports) {
         handleWeightOK,
         handleWeightCancel,
         handleWeightDelete,
+        handleReverseEdgeDirection,
         showNotification
     };
 } else {
@@ -209,6 +234,7 @@ if (typeof module !== 'undefined' && module.exports) {
         handleWeightOK,
         handleWeightCancel,
         handleWeightDelete,
+        handleReverseEdgeDirection,
         showNotification
     });
 }

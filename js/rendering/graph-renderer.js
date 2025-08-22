@@ -43,11 +43,28 @@ export class GraphRenderer {
      * @param {Object} filterState - Current filter state {layerFilterEnabled, activeLayers, layerFilterMode}
      */
     render(nodes, edges, viewState, selectionState = {}, filterState = {}) {
+        // Ensure appState is available
+        if (!window.appState) {
+            console.warn('appState not available, creating fallback');
+            window.appState = { showEdgeArrows: false };
+        }
+        
+        // Ensure showEdgeArrows is initialized
+        if (typeof window.appState.showEdgeArrows === 'undefined') {
+            window.appState.showEdgeArrows = false;
+        }
+        
+        console.log("=== GRAPH RENDER START ===");
+        console.log("Nodes:", nodes.length, "Edges:", edges.length);
+        console.log("Show edge arrows:", window.appState.showEdgeArrows);
+        
         if (!viewState) {
             viewState = { scale: 1, offset: { x: 0, y: 0 } };
         }
         const { scale, offset } = viewState;
         const { selectedNode, selectedEdge, highlightedNodes = [] } = selectionState;
+        
+        console.log("View state - scale:", scale, "offset:", offset);
         
         this.clearCanvas();
         
@@ -63,6 +80,7 @@ export class GraphRenderer {
         this.renderNodes(nodes, viewState, selectionState, filterState);
         
         this.ctx.restore();
+        console.log("=== GRAPH RENDER END ===");
     }
 
     /**
@@ -110,13 +128,18 @@ export class GraphRenderer {
      */
     renderEdges(edges, nodes, viewState, selectedEdge) {
         const { scale } = viewState;
+        console.log("renderEdges called with", edges.length, "edges, scale:", scale);
         
         edges.forEach(edge => {
             const from = nodes.find(n => n.id === edge.from);
             const to = nodes.find(n => n.id === edge.to);
             
-            if (!from || !to) return;
+            if (!from || !to) {
+                console.log("Skipping edge", edge.id, "- missing from/to nodes");
+                return;
+            }
             
+            console.log("Processing edge", edge.id, "from node", edge.from, "to node", edge.to);
             const isSelected = selectedEdge && selectedEdge.id === edge.id;
             this.renderEdge(from, to, edge, scale, isSelected);
         });
@@ -131,6 +154,8 @@ export class GraphRenderer {
      * @param {boolean} isSelected - Whether edge is selected
      */
     renderEdge(from, to, edge, scale, isSelected) {
+        console.log("renderEdge called for edge:", edge.id, "showEdgeArrows:", window.appState ? window.appState.showEdgeArrows : 'undefined');
+        
         this.ctx.strokeStyle = isSelected ? '#F4A460' : '#EFF0E9';
         this.ctx.lineWidth = getScaledLineWidth(
             isSelected ? 3 : getEdgeLineWidth(edge.weight), 
@@ -142,8 +167,96 @@ export class GraphRenderer {
         this.ctx.lineTo(to.x, to.y);
         this.ctx.stroke();
         
+        // Draw arrow if enabled in app state
+        const showArrows = window.appState && window.appState.showEdgeArrows === true;
+        if (showArrows) {
+            console.log("Rendering arrow for edge", edge.id, "from", from.id, "to", to.id);
+            console.log("Arrow rendering conditions met - showEdgeArrows is true");
+            this.renderEdgeArrow(from, to, scale);
+        } else {
+            console.log("Skipping arrow - showEdgeArrows is", window.appState ? window.appState.showEdgeArrows : 'undefined');
+        }
+        
         // Always draw weight label
         this.renderEdgeLabel(from, to, edge, scale);
+    }
+
+    /**
+     * Render direction arrow on edge
+     * @param {Object} from - From node
+     * @param {Object} to - To node
+     * @param {number} scale - Current zoom scale
+     */
+    renderEdgeArrow(from, to, scale) {
+        console.log("=== ARROW RENDERING DEBUG ===");
+        console.log("renderEdgeArrow called with scale:", scale, "from:", from, "to:", to);
+        console.log("From node position:", {x: from.x, y: from.y, radius: from.radius});
+        console.log("To node position:", {x: to.x, y: to.y, radius: to.radius});
+        
+        // Calculate direction vector
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        
+        console.log("Vector calculations - dx:", dx, "dy:", dy, "length:", length);
+        
+        if (length === 0) {
+            console.log("Skipping arrow - zero length vector");
+            return;
+        }
+        
+        // Calculate arrow position (near the end of the line)
+        const arrowDistance = 15 / scale; // Distance from target node
+        const arrowX = to.x - (dx / length) * arrowDistance;
+        const arrowY = to.y - (dy / length) * arrowDistance;
+        
+        console.log("Arrow position calculations:");
+        console.log("- arrowDistance:", arrowDistance, "(15/scale)")
+        console.log("- arrowX:", arrowX, "=", to.x, "- (", dx, "/", length, ") *", arrowDistance);
+        console.log("- arrowY:", arrowY, "=", to.y, "- (", dy, "/", length, ") *", arrowDistance);
+        
+        // Calculate arrow size based on scale
+        const arrowSize = 8 / scale;
+        const arrowAngle = Math.PI / 6; // 30 degrees
+        
+        console.log("Arrow size parameters:");
+        console.log("- arrowSize:", arrowSize, "(8/scale)")
+        console.log("- arrowAngle:", arrowAngle, "radians (", (arrowAngle * 180 / Math.PI), "degrees)")
+        
+        // Calculate arrow points
+        const angle = Math.atan2(dy, dx);
+        console.log("Angle calculation - atan2(dy, dx):", angle, "radians (", (angle * 180 / Math.PI), "degrees)")
+        
+        const x1 = arrowX - arrowSize * Math.cos(angle - arrowAngle);
+        const y1 = arrowY - arrowSize * Math.sin(angle - arrowAngle);
+        const x2 = arrowX - arrowSize * Math.cos(angle + arrowAngle);
+        const y2 = arrowY - arrowSize * Math.sin(angle + arrowAngle);
+        
+        console.log("Arrow triangle points:");
+        console.log("- Tip (arrowX, arrowY):", arrowX, arrowY)
+        console.log("- Point 1 (x1, y1):", x1, y1)
+        console.log("- Point 2 (x2, y2):", x2, y2)
+        
+        // Draw arrow
+        this.ctx.fillStyle = '#ff0000'; // Make it bright red for visibility
+        console.log("Drawing arrow with fillStyle:", this.ctx.fillStyle)
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(arrowX, arrowY);
+        this.ctx.lineTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.closePath();
+        
+        // Log path coordinates for debugging
+        console.log("Arrow path created with points:", [
+            {x: arrowX, y: arrowY},
+            {x: x1, y: y1},
+            {x: x2, y: y2}
+        ]);
+        
+        this.ctx.fill();
+        console.log("Arrow filled successfully");
+        console.log("=== ARROW RENDERING COMPLETE ===");
     }
 
     /**

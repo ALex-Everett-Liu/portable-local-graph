@@ -10,6 +10,37 @@ function initializeApplication() {
         return;
     }
     
+    // Ensure appState is available globally - create if missing
+    if (typeof window.appState === 'undefined') {
+        console.warn('appState not available, creating it');
+        window.appState = {
+            mode: 'node',
+            edgeStart: null,
+            selectedNode: null,
+            selectedEdge: null,
+            undoStack: [],
+            redoStack: [],
+            maxHistorySize: 50,
+            isModified: false,
+            isFiltered: false,
+            showEdgeArrows: false,
+            filterParams: {
+                centerNodeId: null,
+                maxDistance: 10,
+                maxDepth: 3
+            },
+            quickAccess: []
+        };
+    }
+    
+    // Ensure showEdgeArrows is initialized
+    if (typeof window.appState.showEdgeArrows === 'undefined') {
+        window.appState.showEdgeArrows = false;
+        console.log('Force initialized appState.showEdgeArrows to false');
+    }
+    
+    console.log('appState.showEdgeArrows:', window.appState.showEdgeArrows);
+    
     try {
         // Initialize all modules in sequence
         initializeGraph();
