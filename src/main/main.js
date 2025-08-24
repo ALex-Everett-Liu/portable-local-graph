@@ -48,7 +48,7 @@ function createWindow() {
                         if (!result.canceled && result.filePaths.length > 0) {
                             const filePath = result.filePaths[0];
                             if (filePath.endsWith('.db')) {
-                                const DatabaseManager = require('./database-manager');
+                                const DatabaseManager = require('../database-manager.js');
                                 const dbManager = new DatabaseManager(filePath);
                                 await dbManager.init();
                                 const graphs = await dbManager.listGraphs();
@@ -209,7 +209,7 @@ ipcMain.handle('save-graph-file', async (event, data) => {
         }
         
         // Create new database and save current graph data
-        const DatabaseManager = require('./database-manager');
+        const DatabaseManager = require('../database-manager.js');
         const dbManager = new DatabaseManager(result.filePath);
         await dbManager.init();
         await dbManager.saveGraph(data);
@@ -243,7 +243,7 @@ ipcMain.handle('open-graph-file', async () => {
         }
         
         const filePath = result.filePaths[0];
-        const DatabaseManager = require('./database-manager');
+        const DatabaseManager = require('../database-manager.js');
         const dbManager = new DatabaseManager(filePath);
         await dbManager.init();
         
@@ -302,7 +302,7 @@ ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
             console.log('[save-graph-file-request] Database copied successfully from:', sourceDbPath);
             
             // Now update the copied database with current graph data (UPSERT will preserve timestamps)
-            const DatabaseManager = require('./database-manager');
+            const DatabaseManager = require('../database-manager.js');
             const dbManager = new DatabaseManager(filePath);
             await dbManager.init();
             await dbManager.saveGraph(data);
@@ -312,7 +312,7 @@ ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
         } else {
             // Fallback: create new database if source doesn't exist
             console.log('[save-graph-file-request] Source database not found, creating new database...');
-            const DatabaseManager = require('./database-manager');
+            const DatabaseManager = require('../database-manager.js');
             const dbManager = new DatabaseManager(filePath);
             await dbManager.init();
             await dbManager.saveGraph(data);
