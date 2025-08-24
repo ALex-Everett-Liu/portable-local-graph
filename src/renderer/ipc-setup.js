@@ -127,7 +127,7 @@ async function initializeDatabase() {
     if (typeof require !== 'undefined') {
         try {
             console.log('[initializeDatabase] Electron mode detected');
-            const DatabaseManager = require('./database-manager');
+            const DatabaseManager = require('../server/database-manager');
             console.log('[initializeDatabase] DatabaseManager loaded successfully');
             
             dbManager = new DatabaseManager();
