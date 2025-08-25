@@ -1,5 +1,5 @@
 // Event handlers module
-function setupEventListeners() {
+window.setupEventListeners = function setupEventListeners() {
     console.log('Setting up event listeners...');
     
     // Check if buttons exist
@@ -166,15 +166,21 @@ async function handleLoadClick() {
             
             // CRITICAL: Switch database to the new file and load from it
             if (result.filePath) {
-                const dbInstanceManager = (typeof require !== 'undefined') 
-                    ? require('./db-instance-manager').dbInstanceManager 
-                    : window.dbInstanceManager;
+                const dbInstanceManager = require('./db-instance-manager').dbInstanceManager;
                 
-                console.log('Switching database to:', result.filePath);
-                // Use unified method to switch database AND load content
-                await dbInstanceManager.switchToDatabase(result.filePath);
-                const currentDb = dbInstanceManager.getCurrentDb();
-                console.log('Database now pointing to:', currentDb ? currentDb.dbPath : 'unknown');
+                if (dbInstanceManager && typeof dbInstanceManager.switchToDatabase === 'function') {
+                    console.log('Switching database to:', result.filePath);
+                    // Use unified method to switch database AND load content
+                    await dbInstanceManager.switchToDatabase(result.filePath);
+                    const currentDb = dbInstanceManager.getCurrentDb();
+                    console.log('Database now pointing to:', currentDb ? currentDb.dbPath : 'unknown');
+                } else {
+                    console.warn('[handleLoadClick] dbInstanceManager not available for database switching');
+                    // Fallback to using the returned data directly
+                    console.log('Falling back to direct data loading...');
+                    loadGraphData(result.graphData);
+                    appState.isModified = false;
+                }
             } else {
                 // Fallback to using the returned data
                 loadGraphData(result.graphData);
@@ -192,7 +198,5 @@ async function handleLoadClick() {
 
 // Export for module system
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { setupEventListeners };
-} else {
-    window.setupEventListeners = setupEventListeners;
+    module.exports = { setupEventListeners: window.setupEventListeners };
 }
