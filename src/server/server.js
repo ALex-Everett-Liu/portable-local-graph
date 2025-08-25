@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const DatabaseManager = require('./database-manager');
+const DatabaseManager = require('./sqlite-manager');
 
 const app = express();
 const PORT = process.env.PORT || 3012;

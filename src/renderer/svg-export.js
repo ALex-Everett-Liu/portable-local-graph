@@ -127,7 +127,11 @@ async function importJSON() {
                         await loadGraphData(data);
                         
                         // Save to database if available
-                        if (dbManager) {
+                        const dbInstanceManager = (typeof require !== 'undefined') 
+                            ? require('./db-instance-manager').dbInstanceManager 
+                            : window.dbInstanceManager;
+                        const currentDb = dbInstanceManager ? dbInstanceManager.getCurrentDb() : null;
+                        if (currentDb) {
                             await saveGraphToDatabase();
                         }
                         

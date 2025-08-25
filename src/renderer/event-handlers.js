@@ -135,7 +135,11 @@ async function handleSaveClick() {
     } else {
         // Web mode
         console.log('Web mode save triggered');
-        if (dbManager && currentGraphId) {
+        const dbInstanceManager = (typeof require !== 'undefined') 
+            ? require('./db-instance-manager').dbInstanceManager 
+            : window.dbInstanceManager;
+        const currentDb = dbInstanceManager ? dbInstanceManager.getCurrentDb() : null;
+        if (currentDb && currentGraphId) {
             console.log('Saving to database...');
             saveGraphToDatabase();
         } else {
@@ -161,10 +165,15 @@ async function handleLoadClick() {
             console.log('File opened successfully:', result.filePath);
             
             // CRITICAL: Switch database to the new file and load from it
-            if (result.filePath && dbManager) {
+            if (result.filePath) {
+                const dbInstanceManager = (typeof require !== 'undefined') 
+                    ? require('./db-instance-manager').dbInstanceManager 
+                    : window.dbInstanceManager;
+                
                 console.log('Switching database to:', result.filePath);
-                await dbManager.openFile(result.filePath);
-                console.log('Database now pointing to:', dbManager.dbPath);
+                await dbInstanceManager.openFile(result.filePath);
+                const currentDb = dbInstanceManager.getCurrentDb();
+                console.log('Database now pointing to:', currentDb ? currentDb.dbPath : 'unknown');
                 
                 // Load the graph data from the new database
                 await loadGraphFromDatabase();

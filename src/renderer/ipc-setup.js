@@ -1,8 +1,5 @@
 // IPC setup for Electron
 
-// Global database manager instance
-let dbManager = null;
-
 function setupIPC() {
     if (typeof require !== 'undefined') {
         try {
@@ -31,19 +28,14 @@ function setupIPC() {
                     try {
                         console.log('Opening database via openFile:', result.filePath);
                         
-                        // Always create fresh database manager for file isolation
+                        // 使用数据库单例进行原子切换
+                        const dbInstanceManager = (typeof require !== 'undefined') 
+                            ? require('./db-instance-manager').dbInstanceManager 
+                            : window.dbInstanceManager;
+                        
                         if (typeof require !== 'undefined') {
-                            const DatabaseManager = require('../server/database-manager');
-                            
-                            // Close existing connection
-                            if (dbManager) {
-                                await dbManager.close();
-                            }
-                            
-                            // Create new instance for the new file
-                            dbManager = new DatabaseManager(result.filePath);
-                            await dbManager.init();
-                            console.log('Database isolated to new file:', result.filePath);
+                            await dbInstanceManager.openFile(result.filePath);
+                            console.log('Database switched to new file:', result.filePath);
                         }
                         
                         await loadGraphFromDatabase();
@@ -59,11 +51,15 @@ function setupIPC() {
             });
 
             ipcRenderer.on('save-current-graph', async () => {
+                const dbInstanceManager = (typeof require !== 'undefined') 
+                    ? require('./db-instance-manager').dbInstanceManager 
+                    : window.dbInstanceManager;
+                const currentDb = dbInstanceManager ? dbInstanceManager.getCurrentDb() : null;
                 console.log('Save triggered for current file');
-                console.log('Database path:', dbManager ? dbManager.dbPath : 'no db manager');
+                console.log('Database path:', currentDb ? currentDb.dbPath : 'no db manager');
                 
-                if (dbManager) {
-                    console.log('[save-current-graph] Saving to existing database:', dbManager.dbPath);
+                if (currentDb) {
+                    console.log('[save-current-graph] Saving to existing database:', currentDb.dbPath);
                     await saveGraphToDatabase();
                     showNotification('Graph saved to current file');
                 } else {
@@ -75,19 +71,25 @@ function setupIPC() {
 
             ipcRenderer.on('save-graph-file-request', async (event, filePath) => {
                 const data = graph.exportData();
+                
                 // Include current database path for accurate copying
-                if (dbManager) {
-                    data.currentDbPath = dbManager.dbPath;
+                const dbInstanceManager = (typeof require !== 'undefined') 
+                    ? require('./db-instance-manager').dbInstanceManager 
+                    : window.dbInstanceManager;
+                const currentDb = dbInstanceManager ? dbInstanceManager.getCurrentDb() : null;
+                if (currentDb) {
+                    data.currentDbPath = currentDb.dbPath;
                 }
+                
                 console.log('[save-graph-file-request] Calling with current path:', data.currentDbPath);
                 
                 const result = await ipcRenderer.invoke('save-graph-file-request', filePath, data);
                 if (result.success) {
                     console.log('[save-graph-file-request] Save completed, method:', result.method);
-                    // Switch to the new database file
-                    if (dbManager && result.filePath) {
+                    // Switch to the new database file using singleton
+                    if (result.filePath) {
                         try {
-                            await dbManager.openFile(result.filePath);
+                            await dbInstanceManager.openFile(result.filePath);
                             showNotification(`Graph saved as ${result.fileName} (${result.method})`);
                         } catch (error) {
                             console.error('Error switching to new database file:', error);
@@ -142,37 +144,20 @@ async function initializeDatabase() {
     if (typeof require !== 'undefined') {
         try {
             console.log('[initializeDatabase] Electron mode detected');
-            const DatabaseManager = require('../server/database-manager');
-            console.log('[initializeDatabase] DatabaseManager loaded successfully');
             
-            // Always start fresh - close any existing connections first
-            if (dbManager) {
-                console.log('[initializeDatabase] Closing existing database connection...');
-                await dbManager.close();
-            }
+            const dbInstanceManager = require('./db-instance-manager').dbInstanceManager;
+            // Use database instance manager for initialization
+            await dbInstanceManager.initialize();
+            console.log('[initializeDatabase] Database initialized successfully');
             
-            dbManager = new DatabaseManager();
-            console.log('[initializeDatabase] Fresh DatabaseManager instance created');
-            console.log('[initializeDatabase] Initial database path:', dbManager.dbPath);
-            
-            try {
-                console.log('[initializeDatabase] Calling dbManager.init()...');
-                await dbManager.init();
-                console.log('[initializeDatabase] Database initialized successfully');
-                
-                // Automatically load the most recent graph
-                console.log('[initializeDatabase] Loading most recent graph...');
-                await loadGraphFromDatabase();
-            } catch (error) {
-                console.error('[initializeDatabase] Error initializing database:', error);
-                console.error('[initializeDatabase] Error stack:', error.stack);
-                // Fallback to default graph
-                console.log('[initializeDatabase] Falling back to default graph');
-                await loadDefaultGraph();
-            }
+            // Automatically load the most recent graph
+            console.log('[initializeDatabase] Loading most recent graph...');
+            await loadGraphFromDatabase();
         } catch (error) {
-            console.error('[initializeDatabase] Error loading DatabaseManager:', error);
-            console.log('[initializeDatabase] Falling back to web mode');
+            console.error('[initializeDatabase] Error initializing database:', error);
+            console.error('[initializeDatabase] Error stack:', error.stack);
+            // Fallback to default graph
+            console.log('[initializeDatabase] Falling back to default graph');
             await loadDefaultGraph();
         }
     } else {

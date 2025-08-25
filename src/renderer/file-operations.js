@@ -1,7 +1,12 @@
-// File operations module
+// File operations module - 仅负责数据操作，不负责数据库实例管理
 
-// Global database manager instance (shared with ipc-setup.js)
-// This is declared in ipc-setup.js but referenced here
+// Get current database instance
+function getCurrentDb() {
+    const dbInstanceManager = (typeof require !== 'undefined') 
+        ? require('./db-instance-manager').dbInstanceManager 
+        : window.dbInstanceManager;
+    return dbInstanceManager ? dbInstanceManager.getCurrentDb() : null;
+}
 
 // Save graph to file
 async function saveGraphToFile() {
@@ -12,10 +17,13 @@ async function saveGraphToFile() {
         try {
             const { ipcRenderer } = require('electron');
             const data = graph.exportData();
-            // Include current database path for accurate copying
-            if (dbManager) {
-                data.currentDbPath = dbManager.dbPath;
+            
+            // Include current database path
+            const currentDb = getCurrentDb();
+            if (currentDb) {
+                data.currentDbPath = currentDb.dbPath;
             }
+            
             console.log('[saveGraphToFile] Calling save-graph-file with data:', { 
                 hasCurrentPath: !!data.currentDbPath,
                 currentPath: data.currentDbPath,
@@ -44,7 +52,11 @@ async function saveGraphToFile() {
 
 // Save graph to database
 async function saveGraphToDatabase() {
-    if (!dbManager) return;
+    const currentDb = getCurrentDb();
+    if (!currentDb) {
+        console.error('No database available for save');
+        return;
+    }
     
     try {
         const graphData = graph.exportData();
@@ -56,7 +68,7 @@ async function saveGraphToDatabase() {
             }
         };
         
-        await dbManager.saveGraph(data);
+        await currentDb.saveGraph(data);
         appState.isModified = false;
     } catch (error) {
         console.error('Error saving to database:', error);
@@ -66,7 +78,10 @@ async function saveGraphToDatabase() {
 
 // Save as new database file (web mode)
 async function saveAsNewFile() {
-    if (!dbManager) return;
+    const dbInstanceManager = (typeof require !== 'undefined') 
+        ? require('./db-instance-manager').dbInstanceManager 
+        : window.dbInstanceManager;
+    if (!dbInstanceManager) return;
     
     try {
         // Create a new filename prompt
@@ -78,14 +93,15 @@ async function saveAsNewFile() {
             return;
         }
         
-        const newPath = path.join(path.dirname(dbManager.dbPath), fileName);
+        const newPath = path.join(path.dirname(dbInstanceManager.getCurrentDb().dbPath), fileName);
         
         // CRITICAL FIX: Copy current database file to preserve all timestamps
         try {
             // Use fs.copyFileSync in web mode via appropriate method
             const fs = require('fs');
-            if (fs.existsSync(dbManager.dbPath)) {
-                fs.copyFileSync(dbManager.dbPath, newPath);
+            const currentDbPath = dbInstanceManager.getCurrentDb().dbPath;
+            if (fs.existsSync(currentDbPath)) {
+                fs.copyFileSync(currentDbPath, newPath);
                 console.log('Database copied successfully, preserving timestamps');
                 
                 // Now update the copied database with current graph data (UPSERT will preserve timestamps)
@@ -93,8 +109,8 @@ async function saveAsNewFile() {
                 data.currentDbPath = newPath; // Update current path reference
                 
                 // Switch to new database and update with current data
-                await dbManager.openFile(newPath);
-                await dbManager.saveGraph(data);
+                await dbInstanceManager.openFile(newPath);
+                await dbInstanceManager.saveGraph(data);
                 
                 showNotification('Graph saved as new file: ' + fileName);
             } else {
@@ -143,9 +159,12 @@ function fallbackToJSONLoad() {
             reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (dbManager) {
+                    const dbInstanceManager = (typeof require !== 'undefined') 
+                        ? require('./db-instance-manager').dbInstanceManager 
+                        : window.dbInstanceManager;
+                    if (dbInstanceManager) {
                         // Import JSON to database
-                        await dbManager.importFromJSON(data);
+                        await dbInstanceManager.importFromJSON(data);
                         await loadGraphFromDatabase();
                         showNotification('JSON imported to database!');
                     } else {
@@ -163,10 +182,13 @@ function fallbackToJSONLoad() {
 
 // Open from database selector
 async function openFromDatabase() {
-    if (!dbManager) return;
+    const dbInstanceManager = (typeof require !== 'undefined') 
+        ? require('./db-instance-manager').dbInstanceManager 
+        : window.dbInstanceManager;
+    if (!dbInstanceManager) return;
     
     try {
-        const graphs = await dbManager.listGraphs();
+        const graphs = await dbInstanceManager.listGraphs();
         if (graphs.length === 0) {
             showNotification('No graphs found in database', 'info');
             return;
@@ -187,16 +209,15 @@ async function loadGraphFromDatabase(graphId = null) {
     try {
         console.log('[loadGraphFromDatabase] Loading graph from database...');
         
-        // IMPORTANT: This function should NOT create database instances
-        // It should only load data from the existing dbManager
-        if (!dbManager) {
-            console.error('[loadGraphFromDatabase] No dbManager available');
+        const currentDb = getCurrentDb();
+        if (!currentDb) {
+            console.error('[loadGraphFromDatabase] No database available');
             await loadDefaultGraph();
             return;
         }
         
-        const data = await dbManager.loadGraph(graphId);
-        console.log('[loadGraphFromDatabase] Received data from new dbManager:', data);
+        const data = await currentDb.loadGraph(graphId);
+        console.log('[loadGraphFromDatabase] Received data from database:', data);
         
         if (data && data.nodes && data.nodes.length > 0) {
             console.log('[loadGraphFromDatabase] Loading graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
