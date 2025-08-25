@@ -2,29 +2,54 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.0] - 2025-08-25
+
+### 🏗️ Major Directory Restructure (Complete Rewrite)
+- **Directory Architecture**: Completely eliminated `js/` directory in favor of standard `src/` structure
+- **Modern Structure**: Adopted Electron/Node.js conventions with `src/main/`, `src/renderer/`, `src/server/`
+- **Breaking Changes**: All file paths updated to use `src/` prefix throughout codebase
+- **File Renaming**: Resolved naming conflicts with `sqlite-manager.js` and `db-instance-manager.js` separation
+
+### 🔧 Database Architecture Overhaul (Fraught with Issues)
+- **Singleton Pattern**: Implemented `DatabaseInstanceManager` for database lifecycle management
+- **Connection Isolation**: Fixed atomic file switching with complete connection cleanup
+- **Variable Reference Hell**: Eliminated 15+ `dbManager` undefined reference errors across renderer files
+- **Scope Isolation**: Resolved global scope conflicts in HTML script loading
+- **Cross-Platform Compatibility**: Unified access patterns for Electron and web modes
+
+### ⚠️ Critical Data Contamination Issue (Unsolved)
+- **Database Isolation Failure**: Severe cross-contamination between database files during switching
+- **Data Merging Bug**: Save operations incorrectly merge graph state instead of replacing
+- **File Corruption**: Original database files get permanently polluted with foreign data
+- **Root Cause**: Graph state not properly cleared on file switching (fundamental design flaw)
+- **Status**: Architecture works at connection level but fails at application state level
+
+### 🐛 Failed Attempts and Struggles
+- **Initial Mistake**: First attempted to change code logic instead of just directory structure
+- **Variable Chaos**: Multiple iterations of `dbManager` vs `dbInstanceManager` confusion
+- **Loading Order Issues**: HTML script tag conflicts causing duplicate declarations
+- **Incomplete Migration**: Fixed variable references but missed state isolation
+- **Silent Data Loss**: Database contamination discovered after "fixing" variable issues
+
+### 📊 Technical Debt Created
+- **State Management Gap**: Graph state persistence across file switches
+- **Testing Deficit**: No comprehensive database isolation tests
+- **Architecture Flaw**: Connection isolation ≠ data isolation
+- **Emergency Documentation**: Added DATABASE_ANALYSIS.md to track critical issues
+
+### 🎯 Partial Successes
+- **Structure**: Successfully migrated from `js/` to `src/` directory
+- **Variables**: Eliminated all undefined `dbManager` references
+- **Connections**: Database connection lifecycle properly managed
+- **Files**: All imports and references updated correctly
+
+### 🚨 Known Critical Issues (Unresolved)
+- **Data Contamination**: Database switching causes permanent data corruption
+- **State Isolation**: Graph state not cleared between database files
+- **Testing**: No validation of database isolation
+- **User Impact**: Users may lose data without warning
+
 ## [0.5.9] - 2025-08-22
-
-### 🎯 Edge Direction Visualization
-- **Direction Arrows**: Added optional visual arrows on edges to show direction
-- **Toggle Control**: New "Show Edge Arrows" checkbox in Display Options
-- **Scale-Responsive**: Arrows adjust size based on zoom level for optimal visibility
-- **Bright Red Color**: Uses #ff0000 for maximum visibility against edge lines
-- **Backward Compatibility**: Default behavior remains arrows-off to preserve existing style
-- **Debug Logging**: Comprehensive console logging for troubleshooting visibility issues
-
-### 🔧 Technical Implementation
-- **Trigonometric Calculations**: Precise arrow positioning using vector math
-- **Canvas Rendering**: Direct canvas drawing with proper coordinate transformations
-- **Zoom Adaptation**: Arrow size scales inversely with zoom level (8px/scale)
-- **Performance Optimized**: Only renders when enabled, zero overhead when disabled
-- **Multi-layer Safety**: Arrow positioned at 15px from target node (15/scale)
-
-### 🐛 Critical Global State Fix
-- **appState Initialization**: Fixed global scope issues causing undefined state access
-- **Multi-layer Defense**: Implemented fallback creation at multiple access points
-- **Script Loading Order**: Resolved race conditions between module loading and state access
-- **Robust State Management**: Ensures appState always exists before any module usage
-- **Error Prevention**: Added validation and warning logs for state initialization issues
 
 ## [0.5.8] - 2025-08-22
 
