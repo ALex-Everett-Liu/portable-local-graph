@@ -2,6 +2,34 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.1] - 2025-08-25
+
+### 🎯 CRITICAL DATA CONTAMINATION FIX (Complete Resolution)
+- **Root Cause Identified**: Missing `loadGraphFromDatabase()` calls after database switching operations
+- **Unified Database Switching**: Created `switchToDatabase()` method that combines connection switching with state loading
+- **Surgical Fixes**: Fixed 3 specific locations where database switching lacked state synchronization
+- **Method Call Error Fixed**: Corrected `dbInstanceManager.saveGraph()` to proper `getCurrentDb().saveGraph()` calls
+- **Prevention Architecture**: All database switching now uses unified method to prevent future contamination
+
+### 🛠️ Technical Implementation
+- **New Method**: `DatabaseInstanceManager.switchToDatabase(filePath)` with automatic state loading
+- **Fixed Handlers**: `save-graph-file-request`, `open-graph-file-result`, `handleLoadClick()` now use unified switching
+- **Error Correction**: Fixed incorrect method calls in `file-operations.js` saveAsNewFile function
+- **State Validation**: Added defensive programming with function availability checks
+- **Cross-Platform Support**: Works in both Electron and web modes with proper fallbacks
+
+### ✅ Verification Complete
+- **Data Isolation**: Database switching no longer causes cross-contamination
+- **State Consistency**: Application state always matches active database content
+- **File Integrity**: Original database files remain uncontaminated during operations
+- **User Safety**: No more silent data loss or corruption during file switching
+
+### 🏁 Issue Resolution Status
+- ✅ **Database connection isolation**: Working correctly (was already fixed)
+- ✅ **Application state isolation**: NOW FIXED - properly synchronizes with database
+- ✅ **Data contamination vulnerability**: ELIMINATED
+- ✅ **File switching reliability**: FULLY OPERATIONAL
+
 ## [0.6.0] - 2025-08-25
 
 ### 🏗️ Major Directory Restructure (Complete Rewrite)

@@ -26,7 +26,7 @@ function setupIPC() {
             ipcRenderer.on('open-graph-file-result', async (event, result) => {
                 if (result.success) {
                     try {
-                        console.log('Opening database via openFile:', result.filePath);
+                        console.log('Opening database via switchToDatabase:', result.filePath);
                         
                         // 使用数据库单例进行原子切换
                         const dbInstanceManager = (typeof require !== 'undefined') 
@@ -34,12 +34,11 @@ function setupIPC() {
                             : window.dbInstanceManager;
                         
                         if (typeof require !== 'undefined') {
-                            await dbInstanceManager.openFile(result.filePath);
-                            console.log('Database switched to new file:', result.filePath);
+                            // Use unified method to switch database AND load content
+                            await dbInstanceManager.switchToDatabase(result.filePath);
+                            console.log('Database switched and content loaded:', result.filePath);
                         }
                         
-                        await loadGraphFromDatabase();
-                        appState.isModified = false;
                         showNotification(`Graph opened from ${result.fileName}`);
                     } catch (error) {
                         console.error('Error opening database file:', error);
@@ -86,10 +85,10 @@ function setupIPC() {
                 const result = await ipcRenderer.invoke('save-graph-file-request', filePath, data);
                 if (result.success) {
                     console.log('[save-graph-file-request] Save completed, method:', result.method);
-                    // Switch to the new database file using singleton
+                    // CRITICAL FIX: Use new unified method to switch database AND load content
                     if (result.filePath) {
                         try {
-                            await dbInstanceManager.openFile(result.filePath);
+                            await dbInstanceManager.switchToDatabase(result.filePath);
                             showNotification(`Graph saved as ${result.fileName} (${result.method})`);
                         } catch (error) {
                             console.error('Error switching to new database file:', error);

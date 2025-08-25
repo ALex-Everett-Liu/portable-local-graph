@@ -37,6 +37,37 @@ class DatabaseInstanceManager {
         console.log('[DatabaseManagerSingleton] Successfully switched to:', this.currentFilePath);
     }
 
+    /**
+     * Switch to a new database file and automatically load its graph data
+     * This prevents data contamination by ensuring the application state matches the database
+     * @param {string} filePath - Path to the database file to switch to
+     * @returns {Promise<void>}
+     */
+    async switchToDatabase(filePath) {
+        console.log('[DatabaseInstanceManager] Switching to database and loading content:', filePath);
+        
+        // Switch the database connection
+        await this.openFile(filePath);
+        
+        // Load the graph data from the new database to sync application state
+        if (typeof loadGraphFromDatabase === 'function') {
+            await loadGraphFromDatabase();
+        } else if (typeof window !== 'undefined' && window.loadGraphFromDatabase) {
+            await window.loadGraphFromDatabase();
+        } else {
+            console.warn('[DatabaseInstanceManager] loadGraphFromDatabase function not available');
+        }
+        
+        // Reset modification state
+        if (typeof appState !== 'undefined' && appState) {
+            appState.isModified = false;
+        } else if (typeof window !== 'undefined' && window.appState) {
+            window.appState.isModified = false;
+        }
+        
+        console.log('[DatabaseInstanceManager] Database switch and content loading completed');
+    }
+
     async close() {
         if (this.dbManager) {
             await this.dbManager.close();

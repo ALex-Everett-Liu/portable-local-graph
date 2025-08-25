@@ -171,17 +171,15 @@ async function handleLoadClick() {
                     : window.dbInstanceManager;
                 
                 console.log('Switching database to:', result.filePath);
-                await dbInstanceManager.openFile(result.filePath);
+                // Use unified method to switch database AND load content
+                await dbInstanceManager.switchToDatabase(result.filePath);
                 const currentDb = dbInstanceManager.getCurrentDb();
                 console.log('Database now pointing to:', currentDb ? currentDb.dbPath : 'unknown');
-                
-                // Load the graph data from the new database
-                await loadGraphFromDatabase();
             } else {
                 // Fallback to using the returned data
                 loadGraphData(result.graphData);
+                appState.isModified = false;
             }
-            appState.isModified = false;
             showNotification(`Graph opened from ${result.fileName}`);
         } else if (!result.cancelled) {
             showNotification('Error opening graph: ' + result.error, 'error');

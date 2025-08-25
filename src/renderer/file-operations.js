@@ -108,9 +108,13 @@ async function saveAsNewFile() {
                 const data = graph.exportData();
                 data.currentDbPath = newPath; // Update current path reference
                 
-                // Switch to new database and update with current data
+                // CRITICAL FIX: Switch to new database and update with current data
                 await dbInstanceManager.openFile(newPath);
-                await dbInstanceManager.saveGraph(data);
+                const currentDb = dbInstanceManager.getCurrentDb();
+                await currentDb.saveGraph(data);
+                
+                // CRITICAL FIX: Load the database content to sync application state
+                await loadGraphFromDatabase();
                 
                 showNotification('Graph saved as new file: ' + fileName);
             } else {
