@@ -1,5 +1,8 @@
 // IPC setup for Electron
 
+// Global database manager instance
+let dbManager = null;
+
 function setupIPC() {
     if (typeof require !== 'undefined') {
         try {
@@ -25,19 +28,31 @@ function setupIPC() {
             
             ipcRenderer.on('open-graph-file-result', async (event, result) => {
                 if (result.success) {
-                    // Switch to the new database file and load automatically
-                    if (result.filePath && dbManager) {
+                    try {
                         console.log('Opening database via openFile:', result.filePath);
-                        await dbManager.openFile(result.filePath);
-                        console.log('Database switched to:', result.filePath);
+                        
+                        // Always create fresh database manager for file isolation
+                        if (typeof require !== 'undefined') {
+                            const DatabaseManager = require('../server/database-manager');
+                            
+                            // Close existing connection
+                            if (dbManager) {
+                                await dbManager.close();
+                            }
+                            
+                            // Create new instance for the new file
+                            dbManager = new DatabaseManager(result.filePath);
+                            await dbManager.init();
+                            console.log('Database isolated to new file:', result.filePath);
+                        }
+                        
                         await loadGraphFromDatabase();
-                    } else if (result.graphData) {
-                        // Fallback to using the returned data
-                        loadGraphData(result.graphData);
+                        appState.isModified = false;
+                        showNotification(`Graph opened from ${result.fileName}`);
+                    } catch (error) {
+                        console.error('Error opening database file:', error);
+                        showNotification('Error opening database: ' + error.message, 'error');
                     }
-                    
-                    appState.isModified = false;
-                    showNotification(`Graph opened from ${result.fileName}`);
                 } else if (!result.cancelled) {
                     showNotification('Error opening graph: ' + result.error, 'error');
                 }
@@ -130,8 +145,14 @@ async function initializeDatabase() {
             const DatabaseManager = require('../server/database-manager');
             console.log('[initializeDatabase] DatabaseManager loaded successfully');
             
+            // Always start fresh - close any existing connections first
+            if (dbManager) {
+                console.log('[initializeDatabase] Closing existing database connection...');
+                await dbManager.close();
+            }
+            
             dbManager = new DatabaseManager();
-            console.log('[initializeDatabase] DatabaseManager instance created');
+            console.log('[initializeDatabase] Fresh DatabaseManager instance created');
             console.log('[initializeDatabase] Initial database path:', dbManager.dbPath);
             
             try {

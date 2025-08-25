@@ -1,5 +1,8 @@
 // File operations module
 
+// Global database manager instance (shared with ipc-setup.js)
+// This is declared in ipc-setup.js but referenced here
+
 // Save graph to file
 async function saveGraphToFile() {
     console.log('saveGraphToFile called');
@@ -181,20 +184,19 @@ async function openFromDatabase() {
 
 // Load graph from database
 async function loadGraphFromDatabase() {
-    if (!dbManager) {
-        console.error('[loadGraphFromDatabase] No database manager available');
-        return;
-    }
-    
-    console.log('[loadGraphFromDatabase] Starting to load graph from database...');
-    console.log('[loadGraphFromDatabase] Database path:', dbManager.dbPath);
-    
-    // Auto-save completely removed - no need to disable anything
-    
     try {
-        console.log('[loadGraphFromDatabase] Calling dbManager.loadGraph()...');
+        console.log('[loadGraphFromDatabase] Loading graph from database...');
+        
+        // Use existing dbManager if available, otherwise create new one
+        if (!dbManager && typeof require !== 'undefined') {
+            console.log('[loadGraphFromDatabase] No existing dbManager, creating new instance...');
+            const DatabaseManager = require('../server/database-manager');
+            dbManager = new DatabaseManager();
+            await dbManager.init();
+        }
+        
         const data = await dbManager.loadGraph();
-        console.log('[loadGraphFromDatabase] Received data from dbManager:', data);
+        console.log('[loadGraphFromDatabase] Received data from new dbManager:', data);
         
         if (data && data.nodes && data.nodes.length > 0) {
             console.log('[loadGraphFromDatabase] Loading graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
@@ -206,7 +208,6 @@ async function loadGraphFromDatabase() {
             loadGraphData({nodes: [], edges: [], scale: 1, offset: {x: 0, y: 0}});
         } else {
             console.log('[loadGraphFromDatabase] No valid data returned from database, creating default graph');
-            console.log('[loadGraphFromDatabase] Data structure:', JSON.stringify(data, null, 2));
             await loadDefaultGraph();
         }
     } catch (error) {
