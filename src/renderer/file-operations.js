@@ -183,19 +183,19 @@ async function openFromDatabase() {
 }
 
 // Load graph from database
-async function loadGraphFromDatabase() {
+async function loadGraphFromDatabase(graphId = null) {
     try {
         console.log('[loadGraphFromDatabase] Loading graph from database...');
         
-        // Use existing dbManager if available, otherwise create new one
-        if (!dbManager && typeof require !== 'undefined') {
-            console.log('[loadGraphFromDatabase] No existing dbManager, creating new instance...');
-            const DatabaseManager = require('../server/database-manager');
-            dbManager = new DatabaseManager();
-            await dbManager.init();
+        // IMPORTANT: This function should NOT create database instances
+        // It should only load data from the existing dbManager
+        if (!dbManager) {
+            console.error('[loadGraphFromDatabase] No dbManager available');
+            await loadDefaultGraph();
+            return;
         }
         
-        const data = await dbManager.loadGraph();
+        const data = await dbManager.loadGraph(graphId);
         console.log('[loadGraphFromDatabase] Received data from new dbManager:', data);
         
         if (data && data.nodes && data.nodes.length > 0) {
