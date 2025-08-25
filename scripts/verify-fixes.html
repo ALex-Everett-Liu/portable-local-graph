@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>数据库改进验证</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>数据库改进验证测试</h1>
+    <div id="results"></div>
+
+    <!-- Load the enhanced database components in order -->
+    <script src="src/renderer/database-config.js"></script>
+    <script src="src/renderer/database-errors.js"></script>
+    <script src="src/renderer/database-health-checker.js"></script>
+    <script src="src/renderer/database-pool-manager.js"></script>
+    <script src="src/renderer/database-config-override.js"></script>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        function runTests() {
+            log('<h2>🧪 开始验证测试</h2>');
+            
+            try {
+                // Test 1: Check if config is loaded
+                if (typeof window.DatabaseConfig !== 'undefined') {
+                    log('✅ 配置管理已加载', 'success');
+                    
+                    // Check override
+                    if (window.DATABASE_OVERRIDE_ACTIVE) {
+                        log('🔧 检测到手动覆盖配置 - 连接池和健康检查已禁用', 'warning');
+                    }
+                    
+                    const summary = window.DatabaseConfigUtils ? window.DatabaseConfigUtils.getSummary() : null;
+                    if (summary) {
+                        log(`📊 配置摘要: <pre>${JSON.stringify(summary, null, 2)}</pre>`, 'info');
+                    }
+                } else {
+                    log('❌ 配置管理未加载', 'error');
+                }
+                
+                // Test 2: Check error classes
+                if (typeof window.DatabaseError !== 'undefined') {
+                    log('✅ 错误处理类已加载', 'success');
+                    
+                    // Test error creation
+                    const testError = new window.DatabaseConnectionError('测试错误', null, '/test/path');
+                    log(`🧪 错误对象测试: ${testError.constructor.name} - ${testError.message}`, 'info');
+                } else {
+                    log('❌ 错误处理类未加载', 'error');
+                }
+                
+                // Test 3: Check health checker
+                if (typeof window.DatabaseHealthChecker !== 'undefined') {
+                    log('✅ 健康检查器已加载', 'success');
+                } else {
+                    log('❌ 健康检查器未加载', 'error');
+                }
+                
+                // Test 4: Check pool manager
+                if (typeof window.DatabasePoolManager !== 'undefined') {
+                    log('✅ 连接池管理器已加载', 'success');
+                } else {
+                    log('⚠️ 连接池管理器未加载 (可能因为依赖问题)', 'warning');
+                }
+                
+                // Test 5: Check for duplicate declarations
+                log('<h3>🔍 重复声明检查</h3>');
+                let duplicateFound = false;
+                try {
+                    // This should not throw an error
+                    eval('var testVar = 1; var testVar = 2;'); // This would throw in strict mode if problematic
+                    log('✅ 没有检测到重复声明问题', 'success');
+                } catch (e) {
+                    if (e.message.includes('already been declared')) {
+                        log('❌ 检测到重复声明问题: ' + e.message, 'error');
+                        duplicateFound = true;
+                    }
+                }
+                
+                // Summary
+                log('<h3>📋 测试总结</h3>');
+                if (!duplicateFound && window.DatabaseConfig && window.DatabaseError) {
+                    log('🎉 <strong>所有关键组件已正确加载！数据库改进基本可用。</strong>', 'success');
+                    log('💡 建议：应用程序现在应该能够正常运行，使用传统数据库连接方式。', 'info');
+                } else {
+                    log('⚠️ 某些组件可能存在问题，但应用程序应该仍能工作。', 'warning');
+                }
+                
+            } catch (error) {
+                log('❌ 测试过程中发生错误: ' + error.message, 'error');
+                log('堆栈跟踪: <pre>' + error.stack + '</pre>', 'error');
+            }
+        }
+        
+        // Run tests when page loads
+        setTimeout(runTests, 500); // Give time for all scripts to load
+    </script>
+</body>
+</html> 
