@@ -44,7 +44,12 @@ function bufferToUuid(buffer) {
 }
 
 class DatabaseManager {
-  constructor(dbPath = path.join(__dirname, "data", "graph.db")) {
+  constructor(dbPath = null) {
+    // Fix path for new directory structure
+    if (!dbPath) {
+      // Use project root data directory instead of server directory
+      dbPath = path.join(process.cwd(), "data", "graph.db");
+    }
     this.dbPath = dbPath;
     this.db = null;
   }

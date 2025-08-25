@@ -28,15 +28,15 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Browser Runtime                             │
+│                     Electron Application                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
-│  │   HTML/CSS UI   │  │   JavaScript     │  │   Canvas API    │ │
-│  │                 │  │   Modules        │  │                 │ │
-│  │ • Toolbar       │  │ • 12 modules     │  │ • 2D Rendering  │ │
-│  │ • Mode buttons  │  │ • 45-96 lines    │  │ • Zoom/pan      │ │
-│  │ • Dialog boxes  │  │ • Modular design │  │ • Grid system   │ │
-│  │ • Status bar    │  │ • Event-driven   │  │ • Hit detection │ │
+│  │     Main        │  │   Renderer       │  │   Server        │ │
+│  │   Process       │  │   Process        │  │   Process       │ │
+│  │                 │  │                  │  │                 │ │
+│  │ • Menu system   │  │ • UI components  │  │ • REST API      │ │
+│  │ • File dialogs  │  │ • Canvas engine  │  │ • Database      │ │
+│  │ • IPC handlers  │  │ • Event system   │  │ • Persistence   │ │
 │  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
 │                              │                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
@@ -61,15 +61,28 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Optional Server Mode                         │
+│                    Directory Structure                          │
 ├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
-│  │   Express.js    │  │   SQLite DB      │  │   REST API      │ │
-│  │                 │  │                  │  │                 │ │
-│  │ • CRUD graphs  │  │ • Real-time      │  │ • REST endpoints│  │
-│  │ • Auto-save    │  │ • Multi-graph    │  │ • Validation    │  │
-│  │ • Statistics   │  │ • Transactions   │  │ • JSON/DB API   │  │
-│  └─────────────────┘  └──────────────────┘  └─────────────────┘ │
+│  src/                                                           │
+│  ├── main/                   # Electron main process              │
+│  │   └── main.js            # Menu system & IPC handlers         │
+│  ├── server/                 # Node.js backend                  │
+│  │   ├── server.js          # Express server                   │
+│  │   ├── server-sqlite.js   # SQLite server                    │
+│  │   ├── database-manager.js # Database operations              │
+│  │   └── data/              # Database files                   │
+│  │       └── graph.db       # Default database                 │
+│  └── renderer/               # Electron renderer process        │
+│      ├── index.html          # Main HTML file                   │
+│      ├── styles.css          # UI styling                       │
+│      ├── graph.js            # Core graph engine                │
+│      ├── app.js              # Application controller           │
+│      ├── *.js                # Modular components               │
+│      ├── core/               # Core modules                     │
+│      ├── rendering/          # Canvas rendering                 │
+│      ├── analysis/           # Graph analysis                   │
+│      ├── filtering/          # Graph filtering                  │
+│      └── utils/              # Utility functions                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -77,7 +90,7 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     js/ Directory Structure                      │
+│                 src/renderer Directory Structure                │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
 │  │ core/           │  │ rendering/      │  │ filtering/      │ │
@@ -88,11 +101,11 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │  │   .js (898)     │  │                 │  │                 │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │ analysis/       │  │ utils/          │  │ index.js        │ │
-│  │ • graph-analysis│  │ • geometry.js   │  │ • Module        │ │
-│  │   .js (45)      │  │   .js (23)      │  │   exports       │ │
-│  │                 │  │ • algorithms.js │  │                 │ │
-│  │                 │  │   .js (28)      │  │                 │ │
+│  │ analysis/       │  │ utils/          │  │ *.js            │ │
+│  │ • graph-analysis│  │ • geometry.js   │  │ • Modular       │ │
+│  │   .js (45)      │  │   .js (23)      │  │   components    │ │
+│  │ • centrality    │  │ • algorithms.js │  │                 │ │
+│  │   .js           │  │   .js (28)      │  │                 │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -100,15 +113,17 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 ### Module Line Count Summary
 | Directory | Module | Lines | Purpose |
 |-----------|--------|-------|---------|
-| **core** | graph-data.js | 96 | Event-driven data structure |
-| **core** | export-manager.js | 73 | Export functionality (JSON, SVG, CSV, GraphML) |
-| **core** | graph-compatibility.js | 898 | Backward compatibility layer (DEPRECATED) |
-| **rendering** | graph-renderer.js | 89 | Pure canvas rendering engine |
-| **filtering** | graph-filter.js | 67 | Local graph filtering algorithms |
-| **filtering** | filter-state-manager.js | 73 | Filter state management |
-| **analysis** | graph-analysis.js | 45 | Centrality calculation algorithms |
-| **utils** | geometry.js | 23 | Mathematical utilities |
-| **utils** | algorithms.js | 28 | Graph algorithms (Dijkstra, BFS) |
+| **src/renderer/core** | graph-data.js | 96 | Event-driven data structure |
+| **src/renderer/core** | export-manager.js | 73 | Export functionality (JSON, SVG, CSV, GraphML) |
+| **src/renderer/core** | graph-compatibility.js | 898 | Backward compatibility layer (DEPRECATED) |
+| **src/renderer/rendering** | graph-renderer.js | 89 | Pure canvas rendering engine |
+| **src/renderer/filtering** | graph-filter.js | 67 | Local graph filtering algorithms |
+| **src/renderer/filtering** | filter-state-manager.js | 73 | Filter state management |
+| **src/renderer/analysis** | graph-analysis.js | 45 | Centrality calculation algorithms |
+| **src/renderer/utils** | geometry.js | 23 | Mathematical utilities |
+| **src/renderer/utils** | algorithms.js | 28 | Graph algorithms (Dijkstra, BFS) |
+| **src/server** | database-manager.js | ~400 | SQLite database operations |
+| **src/main** | main.js | ~400 | Electron main process
 
 **Total Modular Code**: 465 lines (excluding deprecated compatibility layer)
 
@@ -340,14 +355,14 @@ Test independently → Integrate via events → Maintain backward compatibility
 ### 3. Working with Modular Components
 ```
 // Direct modular usage (future)
-import { GraphData } from './js/core/graph-data.js';
-import { GraphRenderer } from './js/rendering/graph-renderer.js';
+import { GraphData } from './src/renderer/core/graph-data.js';
+import { GraphRenderer } from './src/renderer/rendering/graph-renderer.js';
 
 const data = new GraphData();
 const renderer = new GraphRenderer(canvas);
 
 // Current compatibility usage
-import { Graph } from './js/core/graph-compatibility.js';
+import { Graph } from './src/renderer/core/graph-compatibility.js';
 const graph = new Graph(canvas);
 ```
 
@@ -407,6 +422,7 @@ Phase 3: Remove compatibility layer
 - **Core modules**: kebab-case (graph-data.js, graph-renderer.js)
 - **Static assets**: kebab-case (styles.css, index.html)
 - **Data files**: kebab-case with timestamp (graph-20250115.json)
+- **Directory structure**: src/main/, src/server/, src/renderer/ for Electron/Node.js conventions
 
 ### CSS Classes
 - **Components**: `.toolbar`, `.canvas-container`, `.dialog`
@@ -423,7 +439,7 @@ Phase 3: Remove compatibility layer
 
 ## Module Details
 
-### Graph Data Management (graph-data.js - 96 lines)
+### Graph Data Management (src/renderer/core/graph-data.js - 96 lines)
 **Core data structure with event-driven updates**
 ```javascript
 export class GraphData extends EventTarget {
@@ -444,7 +460,7 @@ export class GraphData extends EventTarget {
 }
 ```
 
-### Rendering Engine (graph-renderer.js - 89 lines)
+### Rendering Engine (src/renderer/rendering/graph-renderer.js - 89 lines)
 **Pure rendering logic with styling and hit detection**
 ```javascript
 export class GraphRenderer {
@@ -462,7 +478,7 @@ export class GraphRenderer {
 }
 ```
 
-### Analysis Engine (graph-analysis.js - 45 lines)
+### Analysis Engine (src/renderer/analysis/graph-analysis.js - 45 lines)
 **Centrality and graph analysis algorithms**
 ```javascript
 export class GraphAnalysis {
@@ -477,7 +493,7 @@ export class GraphAnalysis {
 }
 ```
 
-### Compatibility Layer (graph-compatibility.js - 898 lines)
+### Compatibility Layer (src/renderer/core/graph-compatibility.js - 898 lines)
 **⚠️ DEPRECATED - Migration bridge only**
 - Provides 100% backward compatibility
 - Internally uses modular components
