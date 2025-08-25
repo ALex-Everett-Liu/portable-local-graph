@@ -51,6 +51,28 @@
 
 ## [0.5.9] - 2025-08-22
 
+### 🎯 Edge Direction Visualization
+- **Direction Arrows**: Added optional visual arrows on edges to show direction
+- **Toggle Control**: New "Show Edge Arrows" checkbox in Display Options
+- **Scale-Responsive**: Arrows adjust size based on zoom level for optimal visibility
+- **Bright Red Color**: Uses #ff0000 for maximum visibility against edge lines
+- **Backward Compatibility**: Default behavior remains arrows-off to preserve existing style
+- **Debug Logging**: Comprehensive console logging for troubleshooting visibility issues
+
+### 🔧 Technical Implementation
+- **Trigonometric Calculations**: Precise arrow positioning using vector math
+- **Canvas Rendering**: Direct canvas drawing with proper coordinate transformations
+- **Zoom Adaptation**: Arrow size scales inversely with zoom level (8px/scale)
+- **Performance Optimized**: Only renders when enabled, zero overhead when disabled
+- **Multi-layer Safety**: Arrow positioned at 15px from target node (15/scale)
+
+### 🐛 Critical Global State Fix
+- **appState Initialization**: Fixed global scope issues causing undefined state access
+- **Multi-layer Defense**: Implemented fallback creation at multiple access points
+- **Script Loading Order**: Resolved race conditions between module loading and state access
+- **Robust State Management**: Ensures appState always exists before any module usage
+- **Error Prevention**: Added validation and warning logs for state initialization issues
+
 ## [0.5.8] - 2025-08-22
 
 ### 🏷️ Custom View Naming System
@@ -156,7 +178,7 @@
 
 ### 📊 Database Anti-Pattern Prevention
 - **Critical Lesson Learned**: Documented the DELETE/INSERT anti-pattern disaster
-- **Code Documentation**: Added comprehensive warnings throughout database-manager.js  
+- **Code Documentation**: Added comprehensive warnings throughout database-manager.js
 - **Architecture Guide**: New section in ARCHITECTURE.md covering database best practices
 - **Timestamp Integrity**: Thousands of records now maintain meaningful timestamps
 - **Performance Optimization**: Reduced unnecessary database writes by 95%+
