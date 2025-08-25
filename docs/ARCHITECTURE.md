@@ -66,12 +66,8 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │  src/                                                           │
 │  ├── main/                   # Electron main process              │
 │  │   └── main.js            # Menu system & IPC handlers         │
-│  ├── server/                 # Node.js backend                  │
-│  │   ├── server.js          # Express server                   │
-│  │   ├── server-sqlite.js   # SQLite server                    │
-│  │   ├── database-manager.js # Database operations              │
-│  │   └── data/              # Database files                   │
-│  │       └── graph.db       # Default database                 │
+│  ├── server/                 # Server utilities                  │
+│  │   └── database-manager.js # Database operations              │
 │  └── renderer/               # Electron renderer process        │
 │      ├── index.html          # Main HTML file                   │
 │      ├── styles.css          # UI styling                       │
@@ -83,6 +79,12 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │      ├── analysis/           # Graph analysis                   │
 │      ├── filtering/          # Graph filtering                  │
 │      └── utils/              # Utility functions                │
+├─────────────────────────────────────────────────────────────────┐
+│  Root Level Files                                              │
+├─────────────────────────────────────────────────────────────────┤
+│  ├── src/server/server.js    # SQLite Express server            │
+│  ├── data/                   # Database files                   │
+│  │   └── graph.db           # Default SQLite database           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
