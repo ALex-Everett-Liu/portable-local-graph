@@ -202,6 +202,22 @@ class DatabaseManager {
                 },
               );
             }
+
+            const hasLayers = columns.some(
+              (col) => col.name === "layers",
+            );
+            if (!hasLayers) {
+              this.db.run(
+                "ALTER TABLE nodes ADD COLUMN layers TEXT",
+                (err) => {
+                  if (err)
+                    console.warn(
+                      "Could not add layers column:",
+                      err.message,
+                    );
+                },
+              );
+            }
           }
         });
 
