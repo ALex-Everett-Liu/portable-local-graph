@@ -42,6 +42,8 @@ function setupLayerDialogEvents() {
     const selectNoneBtn = document.getElementById('select-none-layers-btn');
     const invertBtn = document.getElementById('invert-selection-btn');
     const searchInput = document.getElementById('layer-search-input');
+    const exportJsonBtn = document.getElementById('export-layers-json-btn');
+    const exportCsvBtn = document.getElementById('export-layers-csv-btn');
     
     if (applyBtn) applyBtn.addEventListener('click', applyLayerDialogSelection);
     if (cancelBtn) cancelBtn.addEventListener('click', closeLayerDialog);
@@ -51,6 +53,8 @@ function setupLayerDialogEvents() {
     if (selectNoneBtn) selectNoneBtn.addEventListener('click', selectNoneLayers);
     if (invertBtn) invertBtn.addEventListener('click', invertLayerSelection);
     if (searchInput) searchInput.addEventListener('input', handleLayerSearch);
+    if (exportJsonBtn) exportJsonBtn.addEventListener('click', exportSelectedLayersFromDialog);
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportSelectedLayersCSVFromDialog);
 
 
     // Mode radio buttons
@@ -585,6 +589,56 @@ function renderLayerGrid() {
     layerGrid.appendChild(gridContainer);
 }
 
+// Export functions for dialog
+function exportSelectedLayersFromDialog() {
+    const selectedLayers = Array.from(layerDialogState.selectedLayers);
+    
+    if (selectedLayers.length === 0) {
+        showNotification('Please select at least one layer to export', 'warning');
+        return;
+    }
+
+    try {
+        const json = window.exportManager.exportLayersJSON(selectedLayers);
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.json`;
+        window.exportManager.downloadFile(json, filename, 'application/json');
+        
+        const nodeCount = JSON.parse(json).nodes.length;
+        showNotification(`Exported ${selectedLayers.length} layer(s) with ${nodeCount} nodes as JSON`);
+    } catch (error) {
+        console.error('Error exporting layers to JSON:', error);
+        showNotification('Error exporting layers: ' + error.message, 'error');
+    }
+}
+
+function exportSelectedLayersCSVFromDialog() {
+    const selectedLayers = Array.from(layerDialogState.selectedLayers);
+    
+    if (selectedLayers.length === 0) {
+        showNotification('Please select at least one layer to export', 'warning');
+        return;
+    }
+
+    try {
+        const csv = window.exportManager.exportLayersNodesCSV(selectedLayers);
+        if (!csv) {
+            showNotification('No nodes found in selected layers', 'warning');
+            return;
+        }
+        
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.csv`;
+        window.exportManager.downloadFile(csv, filename, 'text/csv');
+        
+        const lines = csv.split('\n').length - 2; // Subtract header and empty line
+        showNotification(`Exported ${selectedLayers.length} layer(s) with ${lines} nodes as CSV`);
+    } catch (error) {
+        console.error('Error exporting layers to CSV:', error);
+        showNotification('Error exporting layers: ' + error.message, 'error');
+    }
+}
+
 // Export functions for global access
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -593,7 +647,9 @@ if (typeof module !== 'undefined' && module.exports) {
         updateLayerSummary,
         openLayerRenameDialog,
         closeLayerRenameDialog,
-        applyLayerRename
+        applyLayerRename,
+        exportSelectedLayersFromDialog,
+        exportSelectedLayersCSVFromDialog
     };
 } else {
     Object.assign(window, {
@@ -609,6 +665,8 @@ if (typeof module !== 'undefined' && module.exports) {
         applyLayerRename,
         handleLayerRenameKeydown,
         saveLayerView,
-        loadLayerView
+        loadLayerView,
+        exportSelectedLayersFromDialog,
+        exportSelectedLayersCSVFromDialog
     });
 }

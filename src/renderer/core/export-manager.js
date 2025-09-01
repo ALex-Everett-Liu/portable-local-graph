@@ -38,6 +38,38 @@ export class ExportManager {
     }
 
     /**
+     * Export nodes from specific layers as JSON (edges excluded)
+     * @param {Array<string>} layerNames - Array of layer names to include
+     * @param {Object} options - Export options
+     * @returns {string} JSON string with filtered nodes
+     */
+    exportLayersJSON(layerNames, options = {}) {
+        const data = this.graphData.exportData();
+        
+        // Filter nodes that belong to any of the specified layers
+        const filteredNodes = data.nodes.filter(node => {
+            if (!node.layers || !Array.isArray(node.layers)) return false;
+            return node.layers.some(layer => layerNames.includes(layer));
+        });
+
+        const exportData = {
+            nodes: filteredNodes,
+            edges: [], // Exclude edges to avoid cross-layer connections
+            scale: options.scale || 1,
+            offset: options.offset || { x: 0, y: 0 },
+            timestamp: new Date().toISOString(),
+            version: '1.0',
+            exportedFrom: {
+                type: 'layer-filter',
+                layers: layerNames,
+                nodeCount: filteredNodes.length
+            }
+        };
+        
+        return JSON.stringify(exportData, null, 2);
+    }
+
+    /**
      * Import graph data from JSON
      * @param {string} jsonString - JSON string
      * @returns {Object} Import result
@@ -161,6 +193,42 @@ export class ExportManager {
         let csv = headers.join(',') + '\n';
 
         data.nodes.forEach(node => {
+            const row = [
+                node.id,
+                `"${node.label || ''}"`,
+                node.x || 0,
+                node.y || 0,
+                node.color || '#6737E8',
+                node.radius || 20,
+                node.category || '',
+                `"${(node.layers || []).join(';')}"`
+            ];
+            csv += row.join(',') + '\n';
+        });
+
+        return csv;
+    }
+
+    /**
+     * Export nodes from specific layers as CSV (edges excluded)
+     * @param {Array<string>} layerNames - Array of layer names to include
+     * @returns {string} CSV string with filtered nodes
+     */
+    exportLayersNodesCSV(layerNames) {
+        const data = this.graphData.exportData();
+        
+        // Filter nodes that belong to any of the specified layers
+        const filteredNodes = data.nodes.filter(node => {
+            if (!node.layers || !Array.isArray(node.layers)) return false;
+            return node.layers.some(layer => layerNames.includes(layer));
+        });
+
+        if (filteredNodes.length === 0) return '';
+
+        const headers = ['id', 'label', 'x', 'y', 'color', 'radius', 'category', 'layers'];
+        let csv = headers.join(',') + '\n';
+
+        filteredNodes.forEach(node => {
             const row = [
                 node.id,
                 `"${node.label || ''}"`,
