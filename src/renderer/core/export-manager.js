@@ -72,11 +72,16 @@ export class ExportManager {
     /**
      * Import graph data from JSON
      * @param {string} jsonString - JSON string
+     * @param {Object} options - Import options
+     * @param {boolean} options.merge - Whether to merge with existing data (default: false)
+     * @param {string} options.conflictResolution - How to handle ID conflicts: 'replace', 'skip', 'rename' (default: 'replace')
      * @returns {Object} Import result
      */
-    importJSON(jsonString) {
+    importJSON(jsonString, options = {}) {
         try {
             const data = JSON.parse(jsonString);
+            const merge = options.merge || false;
+            const conflictResolution = options.conflictResolution || 'replace';
             
             // Validate required fields
             if (!data.nodes || !Array.isArray(data.nodes)) {
@@ -86,7 +91,21 @@ export class ExportManager {
                 throw new Error('Invalid JSON: missing or invalid edges array');
             }
             
-            this.graphData.loadData(data);
+            let importResult;
+            if (merge) {
+                importResult = this.mergeData(data, conflictResolution);
+            } else {
+                // Original behavior: replace all data
+                this.graphData.loadData(data);
+                importResult = {
+                    nodesAdded: data.nodes.length,
+                    nodesSkipped: 0,
+                    nodesRenamed: 0,
+                    edgesAdded: data.edges.length,
+                    edgesSkipped: 0,
+                    conflicts: []
+                };
+            }
             
             return {
                 success: true,
@@ -95,7 +114,8 @@ export class ExportManager {
                     edges: data.edges,
                     scale: data.scale || 1,
                     offset: data.offset || { x: 0, y: 0 }
-                }
+                },
+                mergeResult: merge ? importResult : null
             };
         } catch (error) {
             return {
@@ -367,6 +387,165 @@ export class ExportManager {
             width: maxX - minX,
             height: maxY - minY
         };
+    }
+
+    /**
+     * Merge new data with existing graph data
+     * @param {Object} newData - Data to merge
+     * @param {string} conflictResolution - How to handle ID conflicts
+     * @returns {Object} Merge result with statistics
+     */
+    mergeData(newData, conflictResolution = 'replace') {
+        const existingNodes = this.graphData.exportData().nodes;
+        const existingEdges = this.graphData.exportData().edges;
+        
+        const existingNodeIds = new Set(existingNodes.map(node => node.id));
+        const existingEdgeIds = new Set(existingEdges.map(edge => edge.id));
+        
+        const conflicts = [];
+        const finalNodes = [...existingNodes];
+        const finalEdges = [...existingEdges];
+        
+        // Process nodes
+        const nodeMapping = new Map(); // Maps old IDs to new IDs for edges
+        let nodesAdded = 0;
+        let nodesSkipped = 0;
+        let nodesRenamed = 0;
+        
+        newData.nodes.forEach(newNode => {
+            if (existingNodeIds.has(newNode.id)) {
+                // ID conflict detected
+                const conflict = {
+                    type: 'node_id_conflict',
+                    id: newNode.id,
+                    existing: existingNodes.find(n => n.id === newNode.id),
+                    incoming: newNode
+                };
+                
+                switch (conflictResolution) {
+                    case 'skip':
+                        conflicts.push(conflict);
+                        nodesSkipped++;
+                        return;
+                        
+                    case 'rename':
+                        const newId = this.generateUniqueId(newNode.id, existingNodeIds);
+                        nodeMapping.set(newNode.id, newId);
+                        newNode = { ...newNode, id: newId };
+                        existingNodeIds.add(newId);
+                        finalNodes.push(newNode);
+                        nodesRenamed++;
+                        conflicts.push({...conflict, resolution: 'renamed', newId});
+                        break;
+                        
+                    case 'replace':
+                    default:
+                        // Replace existing node
+                        const index = finalNodes.findIndex(n => n.id === newNode.id);
+                        finalNodes[index] = newNode;
+                        conflicts.push({...conflict, resolution: 'replaced'});
+                        nodesAdded++;
+                        break;
+                }
+            } else {
+                // No conflict, add new node
+                finalNodes.push(newNode);
+                existingNodeIds.add(newNode.id);
+                nodesAdded++;
+            }
+        });
+        
+        // Process edges
+        let edgesAdded = 0;
+        let edgesSkipped = 0;
+        
+        newData.edges.forEach(newEdge => {
+            // Map node IDs if they were renamed
+            let fromId = nodeMapping.get(newEdge.from) || newEdge.from;
+            let toId = nodeMapping.get(newEdge.to) || newEdge.to;
+            
+            // Check if edge ID conflicts
+            let finalEdgeId = newEdge.id;
+            if (existingEdgeIds.has(newEdge.id)) {
+                switch (conflictResolution) {
+                    case 'skip':
+                        conflicts.push({
+                            type: 'edge_id_conflict',
+                            id: newEdge.id,
+                            resolution: 'skipped'
+                        });
+                        edgesSkipped++;
+                        return;
+                        
+                    case 'rename':
+                        finalEdgeId = this.generateUniqueId(newEdge.id, existingEdgeIds);
+                        existingEdgeIds.add(finalEdgeId);
+                        break;
+                        
+                    case 'replace':
+                        // Remove existing edge
+                        finalEdges = finalEdges.filter(e => e.id !== newEdge.id);
+                        break;
+                }
+            }
+            
+            // Validate edge references exist
+            if (!existingNodeIds.has(fromId) || !existingNodeIds.has(toId)) {
+                conflicts.push({
+                    type: 'edge_orphaned',
+                    id: newEdge.id,
+                    from: fromId,
+                    to: toId,
+                    resolution: 'skipped'
+                });
+                edgesSkipped++;
+                return;
+            }
+            
+            // Add valid edge
+            const finalEdge = {
+                ...newEdge,
+                id: finalEdgeId,
+                from: fromId,
+                to: toId
+            };
+            
+            finalEdges.push(finalEdge);
+            existingEdgeIds.add(finalEdgeId);
+            edgesAdded++;
+        });
+        
+        // Update graph data
+        this.graphData.nodes = finalNodes;
+        this.graphData.edges = finalEdges;
+        this.graphData.rebuildMaps();
+        
+        return {
+            nodesAdded,
+            nodesSkipped,
+            nodesRenamed,
+            edgesAdded,
+            edgesSkipped,
+            conflicts
+        };
+    }
+
+    /**
+     * Generate a unique ID by appending a suffix
+     * @param {string} baseId - Original ID
+     * @param {Set} existingIds - Set of existing IDs
+     * @returns {string} Unique ID
+     */
+    generateUniqueId(baseId, existingIds) {
+        let counter = 1;
+        let newId = `${baseId}_${counter}`;
+        
+        while (existingIds.has(newId)) {
+            counter++;
+            newId = `${baseId}_${counter}`;
+        }
+        
+        return newId;
     }
 
     /**

@@ -1,4 +1,4 @@
-// SVG export functionality
+// SVG export functionality - Cleaned to only contain SVG-related functions
 
 // Generate SVG from current graph
 function generateSVG() {
@@ -87,79 +87,15 @@ function exportSVG() {
     showNotification('SVG exported successfully!');
 }
 
-// Export JSON
-function exportJSON() {
-    const data = graph.exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `graph_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showNotification('JSON exported successfully!');
-}
-
-// Import JSON
-async function importJSON() {
-    if (typeof require !== 'undefined') {
-        // Electron mode - use file dialog
-        const { ipcRenderer } = require('electron');
-        const result = await ipcRenderer.invoke('import-json-file');
-        if (result.success) {
-            await loadGraphData(result.graphData);
-            showNotification(`JSON imported from ${result.fileName}`);
-        } else if (!result.cancelled) {
-            showNotification('Error importing JSON: ' + result.error, 'error');
-        }
-    } else {
-        // Web mode - use file input
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        await loadGraphData(data);
-                        
-                        // Save to database if available
-                        const dbInstanceManager = (typeof require !== 'undefined') 
-                            ? require('./db-instance-manager').dbInstanceManager 
-                            : window.dbInstanceManager;
-                        const currentDb = dbInstanceManager ? dbInstanceManager.getCurrentDb() : null;
-                        if (currentDb) {
-                            await saveGraphToDatabase();
-                        }
-                        
-                        showNotification(`JSON imported from ${file.name}`);
-                    } catch (error) {
-                        showNotification('Error importing JSON: Invalid format', 'error');
-                    }
-                };
-                reader.readAsText(file);
-            }
-        };
-        input.click();
-    }
-}
-
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         generateSVG,
-        exportSVG,
-        exportJSON,
-        importJSON
+        exportSVG
     };
 } else {
     Object.assign(window, {
         generateSVG,
-        exportSVG,
-        exportJSON,
-        importJSON
+        exportSVG
     });
 }

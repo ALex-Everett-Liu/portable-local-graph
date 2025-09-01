@@ -599,13 +599,35 @@ function exportSelectedLayersFromDialog() {
     }
 
     try {
-        const json = window.exportManager.exportLayersJSON(selectedLayers);
+        // Get nodes from selected layers
+        const allNodes = graph.nodes;
+        const layerNodes = allNodes.filter(node => 
+            selectedLayers.some(layer => 
+                (node.layers || []).includes(layer)
+            )
+        );
+        
+        const exportData = {
+            nodes: layerNodes,
+            edges: [], // Exclude edges to avoid cross-layer connections
+            scale: graph.scale,
+            offset: graph.offset
+        };
+        
+        const json = JSON.stringify(exportData, null, 2);
         const timestamp = new Date().toISOString().split('T')[0];
         const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.json`;
-        window.exportManager.downloadFile(json, filename, 'application/json');
         
-        const nodeCount = JSON.parse(json).nodes.length;
-        showNotification(`Exported ${selectedLayers.length} layer(s) with ${nodeCount} nodes as JSON`);
+        // Create download link
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showNotification(`Exported ${selectedLayers.length} layer(s) with ${layerNodes.length} nodes as JSON (edges excluded)`);
     } catch (error) {
         console.error('Error exporting layers to JSON:', error);
         showNotification('Error exporting layers: ' + error.message, 'error');
@@ -621,18 +643,52 @@ function exportSelectedLayersCSVFromDialog() {
     }
 
     try {
-        const csv = window.exportManager.exportLayersNodesCSV(selectedLayers);
-        if (!csv) {
+        // Get nodes from selected layers
+        const allNodes = graph.nodes;
+        const layerNodes = allNodes.filter(node => 
+            selectedLayers.some(layer => 
+                (node.layers || []).includes(layer)
+            )
+        );
+        
+        if (layerNodes.length === 0) {
             showNotification('No nodes found in selected layers', 'warning');
             return;
         }
         
+        // Create CSV
+        const headers = ['id', 'x', 'y', 'label', 'chinese', 'color', 'radius', 'category', 'layers'];
+        const csvRows = [headers.join(',')];
+        
+        layerNodes.forEach(node => {
+            const row = [
+                node.id,
+                node.x,
+                node.y,
+                `"${(node.label || '').replace(/"/g, '""')}"`,
+                `"${(node.chinese || '').replace(/"/g, '""')}"`,
+                `"${(node.color || '').replace(/"/g, '""')}"`,
+                node.radius || 20,
+                `"${(node.category || '').replace(/"/g, '""')}"`,
+                `"${(node.layers || []).join(';').replace(/"/g, '""')}"`
+            ];
+            csvRows.push(row.join(','));
+        });
+        
+        const csv = csvRows.join('\n');
         const timestamp = new Date().toISOString().split('T')[0];
         const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.csv`;
-        window.exportManager.downloadFile(csv, filename, 'text/csv');
         
-        const lines = csv.split('\n').length - 2; // Subtract header and empty line
-        showNotification(`Exported ${selectedLayers.length} layer(s) with ${lines} nodes as CSV`);
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showNotification(`Exported ${selectedLayers.length} layer(s) with ${layerNodes.length} nodes as CSV`);
     } catch (error) {
         console.error('Error exporting layers to CSV:', error);
         showNotification('Error exporting layers: ' + error.message, 'error');

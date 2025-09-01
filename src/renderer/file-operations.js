@@ -151,37 +151,220 @@ async function openGraphFile() {
     }
 }
 
-// Fallback to JSON load via file input
+// Fallback to JSON load via file input with merge option
 function fallbackToJSONLoad() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const data = JSON.parse(e.target.result);
-                    const dbInstanceManager = (typeof require !== 'undefined') 
-                        ? require('./db-instance-manager').dbInstanceManager 
-                        : window.dbInstanceManager;
-                    if (dbInstanceManager) {
-                        // Import JSON to database
-                        await dbInstanceManager.importFromJSON(data);
-                        await loadGraphFromDatabase();
-                        showNotification('JSON imported to database!');
+                    const jsonString = e.target.result;
+                    
+                    // Show import mode dialog
+                    const result = await showImportModeDialog(jsonString);
+                    if (!result) return; // User cancelled
+                    
+                    const { mode, conflictResolution } = result;
+                    
+                    if (mode === 'replace') {
+                        // Original behavior: replace all data
+                        const data = JSON.parse(jsonString);
+                        const dbInstanceManager = (typeof require !== 'undefined') 
+                            ? require('./db-instance-manager').dbInstanceManager 
+                            : window.dbInstanceManager;
+                        if (dbInstanceManager) {
+                            await dbInstanceManager.importFromJSON(data);
+                            await loadGraphFromDatabase();
+                            showNotification('JSON imported to database!');
+                        } else {
+                            loadGraphData(data);
+                        }
                     } else {
-                        loadGraphData(data);
+                        // Merge mode: use ExportManager
+                        if (!window.exportManager) {
+                            showNotification('Export manager not available', 'error');
+                            return;
+                        }
+                        
+                        const importResult = window.exportManager.importJSON(jsonString, {
+                            merge: true,
+                            conflictResolution: conflictResolution
+                        });
+                        
+                        if (importResult.success) {
+                            const mergeResult = importResult.mergeResult;
+                            const message = this.formatImportNotification(mergeResult);
+                            showNotification(message);
+                            updateGraphInfo();
+                            graph.render();
+                        } else {
+                            showNotification('Error importing graph: ' + importResult.error, 'error');
+                        }
                     }
                 } catch (error) {
-                    showNotification('Error loading graph: Invalid JSON');
+                    console.error('Error loading graph:', error);
+                    showNotification('Error loading graph: ' + error.message, 'error');
                 }
             };
             reader.readAsText(file);
         }
     };
     input.click();
+}
+
+/**
+ * Show import mode selection dialog
+ * @param {string} jsonString - The JSON data to import
+ * @returns {Promise<Object|null>} Import options or null if cancelled
+ */
+function showImportModeDialog(jsonString) {
+    return new Promise((resolve) => {
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'import-dialog';
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            height: auto;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: block;
+        `;
+        
+        const content = document.createElement('div');
+        content.className = 'import-dialog-content';
+        content.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin: 0;
+        `;
+        
+        // Parse data for preview
+        let data;
+        let nodeCount = 0;
+        let edgeCount = 0;
+        try {
+            data = JSON.parse(jsonString);
+            nodeCount = data.nodes?.length || 0;
+            edgeCount = data.edges?.length || 0;
+        } catch (e) {
+            showNotification('Invalid JSON format', 'error');
+            resolve(null);
+            return;
+        }
+        
+        content.innerHTML = `
+            <h3>Import Options</h3>
+            <p>Found ${nodeCount} nodes and ${edgeCount} edges in the file.</p>
+            
+            <div style="margin: 15px 0;">
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="import-mode" value="replace" checked style="margin-right: 8px;">
+                    <strong>Replace Current Graph</strong><br>
+                    <small style="color: #666;">Replace all existing data with imported data</small>
+                </label>
+                
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="import-mode" value="merge" style="margin-right: 8px;">
+                    <strong>Merge with Current Graph</strong><br>
+                    <small style="color: #666;">Add imported data to existing graph</small>
+                </label>
+            </div>
+            
+            <div id="merge-options" style="display: none; margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+                <label style="display: block; margin-bottom: 5px;">Handle ID Conflicts:</label>
+                <select id="conflict-resolution" style="width: 100%; padding: 5px;">
+                    <option value="replace">Replace existing items</option>
+                    <option value="skip">Skip conflicting items</option>
+                    <option value="rename">Rename imported items</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button id="import-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="import-confirm" class="btn btn-primary">Import</button>
+            </div>
+        `;
+        
+        // Remove any existing import dialogs first
+        const existingDialog = document.querySelector('.import-dialog');
+        if (existingDialog && existingDialog.parentNode) {
+            existingDialog.parentNode.removeChild(existingDialog);
+        }
+        
+        dialog.appendChild(content);
+        document.body.appendChild(dialog);
+        
+        // Handle radio buttons
+        const replaceRadio = content.querySelector('input[value="replace"]');
+        const mergeRadio = content.querySelector('input[value="merge"]');
+        const mergeOptions = content.querySelector('#merge-options');
+        
+        const updateUI = () => {
+            mergeOptions.style.display = mergeRadio.checked ? 'block' : 'none';
+        };
+        
+        replaceRadio.addEventListener('change', updateUI);
+        mergeRadio.addEventListener('change', updateUI);
+        
+        // Handle buttons
+        content.querySelector('#import-cancel').onclick = () => {
+            document.body.removeChild(dialog);
+            resolve(null);
+        };
+        
+        content.querySelector('#import-confirm').onclick = () => {
+            const mode = content.querySelector('input[name="import-mode"]:checked').value;
+            const conflictResolution = content.querySelector('#conflict-resolution').value;
+            
+            document.body.removeChild(dialog);
+            resolve({ mode, conflictResolution });
+        };
+        
+        // Handle escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(dialog);
+                document.removeEventListener('keydown', handleEscape);
+                resolve(null);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    });
+}
+
+/**
+ * Format import result notification
+ * @param {Object} result - Merge result from exportManager
+ * @returns {string} Formatted notification message
+ */
+function formatImportNotification(result) {
+    const parts = [];
+    
+    if (result.nodesAdded > 0) parts.push(`${result.nodesAdded} nodes added`);
+    if (result.nodesSkipped > 0) parts.push(`${result.nodesSkipped} nodes skipped`);
+    if (result.nodesRenamed > 0) parts.push(`${result.nodesRenamed} nodes renamed`);
+    if (result.edgesAdded > 0) parts.push(`${result.edgesAdded} edges added`);
+    if (result.edgesSkipped > 0) parts.push(`${result.edgesSkipped} edges skipped`);
+    
+    const conflictCount = result.conflicts?.length || 0;
+    if (conflictCount > 0) parts.push(`${conflictCount} conflicts resolved`);
+    
+    return parts.length > 0 ? parts.join(', ') : 'Import completed';
 }
 
 // Open from database selector
@@ -281,7 +464,8 @@ if (typeof module !== 'undefined' && module.exports) {
         fallbackToJSONLoad,
         openFromDatabase,
         loadGraphFromDatabase,
-        loadGraphData
+        loadGraphData,
+        formatImportNotification
     };
 } else {
     Object.assign(window, {
@@ -292,6 +476,7 @@ if (typeof module !== 'undefined' && module.exports) {
         fallbackToJSONLoad,
         openFromDatabase,
         loadGraphFromDatabase,
-        loadGraphData
+        loadGraphData,
+        formatImportNotification
     });
 }

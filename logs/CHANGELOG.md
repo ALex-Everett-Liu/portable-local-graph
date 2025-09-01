@@ -2,6 +2,34 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.3] - 2025-09-01
+
+### 🔄 JSON Import/Export Enhancement (Complete)
+- **Selective Layer Export**: Added ability to export nodes from specific layers while excluding edges to avoid cross-layer connection issues
+- **Merge Import Functionality**: New option to supplement current graph instead of replacing it entirely
+- **Conflict Resolution**: Three strategies for handling ID conflicts during merge import (replace/skip/rename)
+- **Dialog Integration**: Proper HTML-based import dialog following same pattern as layer management dialogs
+- **CSV Export Support**: Added CSV export for selective layer data with comprehensive node information
+
+### 🔧 Technical Implementation
+- **New Module**: Dedicated `json-import-export.js` module for clean separation from SVG functionality
+- **Merge Logic**: Intelligent merging with node/edge conflict detection and resolution strategies
+- **Layer Filtering**: Precise node filtering by layer membership with edge exclusion for data integrity
+- **Dialog System**: Replaced dynamic JS dialogs with proper HTML modal system for consistent positioning
+- **Export Formats**: JSON for complete data, CSV for spreadsheet compatibility
+
+### 🎯 User Experience
+- **Layer Export**: "Manage Layers" → "Export JSON/CSV" exports nodes from selected layers only
+- **Import Options**: Clear choice between "Replace Current Graph" vs "Merge with Current Graph"
+- **Visual Feedback**: Real-time notification of import results with detailed statistics
+- **Seamless Integration**: Works with both Electron file dialogs and web file inputs
+
+### 🛡️ Data Integrity
+- **Cross-layer Safety**: Edges excluded from layer exports to prevent broken connections
+- **Conflict Prevention**: Smart ID conflict resolution prevents data corruption during merge
+- **State Preservation**: Original graph state maintained during merge operations
+- **Backward Compatibility**: All existing JSON export/import functionality preserved
+
 ## [0.6.1] - 2025-08-25
 
 ### 🎯 CRITICAL DATA CONTAMINATION FIX (Complete Resolution)

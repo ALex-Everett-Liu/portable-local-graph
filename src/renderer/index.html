@@ -366,6 +366,42 @@
         </div>
     </div>
 
+    <!-- Import Options Dialog -->
+    <div id="import-dialog" class="dialog hidden" style="width: 400px;">
+        <div class="dialog-content">
+            <h3>Import Options</h3>
+            <p id="import-stats">Found 0 nodes and 0 edges in the file.</p>
+            
+            <div style="margin: 15px 0;">
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="import-mode" value="replace" checked style="margin-right: 8px;">
+                    <strong>Replace Current Graph</strong><br>
+                    <small style="color: #666;">Replace all existing data with imported data</small>
+                </label>
+                
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="import-mode" value="merge" style="margin-right: 8px;">
+                    <strong>Merge with Current Graph</strong><br>
+                    <small style="color: #666;">Add imported data to existing graph</small>
+                </label>
+            </div>
+            
+            <div id="merge-options" style="display: none; margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+                <label style="display: block; margin-bottom: 5px;">Handle ID Conflicts:</label>
+                <select id="conflict-resolution" style="width: 100%; padding: 5px;">
+                    <option value="replace">Replace existing items</option>
+                    <option value="skip">Skip conflicting items</option>
+                    <option value="rename">Rename imported items</option>
+                </select>
+            </div>
+            
+            <div class="dialog-buttons">
+                <button id="import-cancel">Cancel</button>
+                <button id="import-confirm">Import</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Layer Management Dialog -->
     <div id="layer-management-dialog" class="dialog hidden" style="width: 600px; max-height: 80vh;">
         <div class="dialog-content" style="max-height: 75vh; overflow-y: auto;">
@@ -443,6 +479,7 @@
     <script src="keyboard-shortcuts.js"></script>
     <script src="command-palette.js"></script>
     <script src="hotkey-mode.js"></script>
+    <script src="json-import-export.js"></script>
     <script src="svg-export.js"></script>
     <script src="sidebar-resize.js"></script>
     <script src="layer-dialog.js"></script>
