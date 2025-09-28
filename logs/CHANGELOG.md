@@ -2,6 +2,38 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.4] - 2025-09-28
+
+### 🔧 Edge Direction Consistency Fix
+- **Undirected Edge Handling**: Fixed inconsistency between centrality calculations and distance analysis
+- **Algorithm Alignment**: All graph algorithms now consistently treat edges as undirected
+- **Infinity Depth Resolution**: Eliminated "Infinity" depth values in Local Graph Filter analysis
+- **Bidirectional Traversal**: Dijkstra, BFS, and depth calculations now check both edge directions
+
+### 🎯 AND/OR Filter Conditions
+- **User-Selectable Logic**: New dropdown in Local Graph Filter to choose between AND/OR conditions
+- **OR Condition (Default)**: Nodes included if they meet either distance OR depth criteria (more inclusive)
+- **AND Condition**: Nodes included only if they meet both distance AND depth criteria (more restrictive)
+- **Visual Interface**: Clear dropdown options explaining the difference between conditions
+- **Backward Compatibility**: OR condition maintains existing behavior as default
+
+### 🔧 Technical Implementation
+- **Algorithm Updates**: Modified `dijkstra()` and `bfs()` in `utils/algorithms.js` for undirected traversal
+- **Filter Logic Enhancement**: Updated `filterLocalGraph()` in `graph-compatibility.js` with condition parameter
+- **Distance Analysis**: Enhanced `analyzeDistancesTable()` to apply AND/OR filtering logic
+- **UI Integration**: Added condition selector dropdown to Local Graph Filter section
+
+### 📊 Filter Behavior
+- **OR Logic**: `distance <= maxDistance OR depth <= maxDepth` (inclusive filtering)
+- **AND Logic**: `distance <= maxDistance AND depth <= maxDepth` (restrictive filtering)
+- **Consistent Application**: Both graph filtering and distance analysis use same condition logic
+- **Real-time Updates**: Condition changes apply immediately to both filtering and analysis
+
+### 🐛 Bug Fixes
+- **Edge Direction Bug**: Fixed directed vs undirected edge inconsistency across algorithms
+- **Infinity Values**: Resolved unreachable nodes showing "Infinity" depth in analysis tables
+- **Filter Consistency**: Ensured filtering logic is consistent between different graph operations
+
 ## [0.6.3] - 2025-09-01
 
 ### 🔄 JSON Import/Export Enhancement (Complete)

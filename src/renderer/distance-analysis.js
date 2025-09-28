@@ -37,17 +37,20 @@ function showDistanceAnalysis() {
         // Get current slider values instead of using appState defaults
         const maxDistance = parseInt(document.getElementById('max-distance').value);
         const maxDepth = parseInt(document.getElementById('max-depth').value);
-        
+        const condition = document.getElementById('filter-condition').value;
+
         console.log('Calling analyzeDistancesTable with:', {
             centerNodeId: appState.filterParams.centerNodeId,
             maxDistance: maxDistance,
-            maxDepth: maxDepth
+            maxDepth: maxDepth,
+            condition: condition
         });
-        
+
         const analysis = graph.analyzeDistancesTable(
             appState.filterParams.centerNodeId,
             maxDistance,
-            maxDepth
+            maxDepth,
+            condition
         );
 
         console.log('Analysis result:', analysis);
@@ -195,11 +198,13 @@ function applyFilter() {
     
     const maxDistance = parseInt(document.getElementById('max-distance').value);
     const maxDepth = parseInt(document.getElementById('max-depth').value);
-    
+    const condition = document.getElementById('filter-condition').value;
+
     graph.applyLocalGraphFilter(
         appState.filterParams.centerNodeId,
         maxDistance,
-        maxDepth
+        maxDepth,
+        condition
     );
     
     updateGraphInfo();

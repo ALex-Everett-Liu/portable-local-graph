@@ -823,11 +823,12 @@ export class Graph {
             
             if (currentDepth >= maxDepth) continue;
             
-            const connectedEdges = data.edges.filter(edge => 
-                edge.from === currentId || edge.to === currentId
-            );
-            
-            connectedEdges.forEach(edge => {
+            // Find connected edges (treat as undirected - check both directions)
+            const outgoingEdges = data.edges.filter(edge => edge.from === currentId);
+            const incomingEdges = data.edges.filter(edge => edge.to === currentId);
+            const allEdges = [...outgoingEdges, ...incomingEdges];
+
+            allEdges.forEach(edge => {
                 const neighborId = edge.from === currentId ? edge.to : edge.from;
                 if (depths.get(neighborId) === Infinity) {
                     depths.set(neighborId, currentDepth + 1);
@@ -839,7 +840,7 @@ export class Graph {
         return depths;
     }
 
-    analyzeDistancesTable(centerNodeId, maxDistance = 10, maxDepth = 5) {
+    analyzeDistancesTable(centerNodeId, maxDistance = 10, maxDepth = 5, condition = 'OR') {
         const data = this.graphData.exportData();
         const centerNode = data.nodes.find(n => n.id === centerNodeId);
         if (!centerNode) {
@@ -851,27 +852,43 @@ export class Graph {
 
         const distances = this.calculateDistances(centerNodeId, maxDistance, maxDepth);
         console.log('[analyzeDistancesTable] Distances:', Object.fromEntries(distances));
-        
+
         // Calculate depths using BFS for layered analysis
         const depths = this.calculateDepths(centerNodeId, maxDepth);
         console.log('[analyzeDistancesTable] Depths:', Object.fromEntries(depths));
-        
-        // Create analysis data for all reachable nodes
+
+        // Create analysis data based on condition
         const analysisData = [];
         distances.forEach((distance, nodeId) => {
             const node = data.nodes.find(n => n.id === nodeId);
             if (node) {
-                analysisData.push({
-                    id: node.id,
-                    label: node.label,
-                    chineseLabel: node.chineseLabel || '',
-                    x: node.x,
-                    y: node.y,
-                    distance: distance,
-                    depth: depths.get(nodeId) || 0,
-                    color: node.color,
-                    radius: node.radius
-                });
+                const depth = depths.get(nodeId) || Infinity;
+
+                // Apply filtering based on condition
+                let shouldInclude = false;
+                if (condition === 'AND') {
+                    // AND condition: must meet both distance AND depth criteria
+                    shouldInclude = distance !== Infinity && depth !== Infinity &&
+                                   distance <= maxDistance && depth <= maxDepth;
+                } else {
+                    // OR condition: must meet either distance OR depth criteria
+                    shouldInclude = (distance !== Infinity && distance <= maxDistance) ||
+                                   (depth !== Infinity && depth <= maxDepth);
+                }
+
+                if (shouldInclude) {
+                    analysisData.push({
+                        id: node.id,
+                        label: node.label,
+                        chineseLabel: node.chineseLabel || '',
+                        x: node.x,
+                        y: node.y,
+                        distance: distance,
+                        depth: depth,
+                        color: node.color,
+                        radius: node.radius
+                    });
+                }
             }
         });
 
@@ -883,7 +900,7 @@ export class Graph {
         };
     }
 
-    filterLocalGraph(centerNodeId, maxDistance = 10, maxDepth = 5) {
+    filterLocalGraph(centerNodeId, maxDistance = 10, maxDepth = 5, condition = 'OR') {
         const data = this.graphData.exportData();
         const centerNode = data.nodes.find(n => n.id === centerNodeId);
         if (!centerNode) {
@@ -891,13 +908,30 @@ export class Graph {
         }
 
         const distances = this.calculateDistances(centerNodeId, maxDistance, maxDepth);
-        
-        const filteredNodes = data.nodes.filter(node => 
-            distances.has(node.id) && distances.get(node.id) !== Infinity
-        );
-        
+        const depths = this.calculateDepths(centerNodeId, maxDepth);
+
+        let filteredNodes;
+
+        if (condition === 'AND') {
+            // AND condition: node must meet both distance AND depth criteria
+            filteredNodes = data.nodes.filter(node => {
+                const distance = distances.get(node.id);
+                const depth = depths.get(node.id);
+                return distance !== Infinity && depth !== Infinity &&
+                       distance <= maxDistance && depth <= maxDepth;
+            });
+        } else {
+            // OR condition (default): node must meet either distance OR depth criteria
+            filteredNodes = data.nodes.filter(node => {
+                const distance = distances.get(node.id);
+                const depth = depths.get(node.id);
+                return (distance !== Infinity && distance <= maxDistance) ||
+                       (depth !== Infinity && depth <= maxDepth);
+            });
+        }
+
         const nodeIds = new Set(filteredNodes.map(n => n.id));
-        const filteredEdges = data.edges.filter(edge => 
+        const filteredEdges = data.edges.filter(edge =>
             nodeIds.has(edge.from) && nodeIds.has(edge.to)
         );
 
@@ -906,7 +940,7 @@ export class Graph {
             edges: filteredEdges,
             centerNode,
             distances: Object.fromEntries(distances),
-            depths: {}
+            depths: Object.fromEntries(depths)
         };
     }
 

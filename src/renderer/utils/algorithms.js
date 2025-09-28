@@ -47,15 +47,15 @@ export function dijkstra(nodes, edges, startNodeId) {
         if (visited.has(current.nodeId)) continue;
         visited.add(current.nodeId);
         
-        // Find connected edges
-        const connectedEdges = edges.filter(edge => 
-            edge.from === current.nodeId || edge.to === current.nodeId
-        );
-        
-        connectedEdges.forEach(edge => {
+        // Find connected edges (treat as undirected - check both directions)
+        const outgoingEdges = edges.filter(edge => edge.from === current.nodeId);
+        const incomingEdges = edges.filter(edge => edge.to === current.nodeId);
+        const allEdges = [...outgoingEdges, ...incomingEdges];
+
+        allEdges.forEach(edge => {
             const neighborId = edge.from === current.nodeId ? edge.to : edge.from;
             if (visited.has(neighborId)) return;
-            
+
             const newDistance = current.distance + edge.weight;
             if (newDistance < distances.get(neighborId)) {
                 distances.set(neighborId, newDistance);
@@ -86,11 +86,12 @@ export function bfs(nodes, edges, startNodeId) {
         const currentId = queue.shift();
         const currentDistance = distances.get(currentId);
         
-        const connectedEdges = edges.filter(edge => 
-            edge.from === currentId || edge.to === currentId
-        );
-        
-        connectedEdges.forEach(edge => {
+        // Find connected edges (treat as undirected - check both directions)
+        const outgoingEdges = edges.filter(edge => edge.from === currentId);
+        const incomingEdges = edges.filter(edge => edge.to === currentId);
+        const allEdges = [...outgoingEdges, ...incomingEdges];
+
+        allEdges.forEach(edge => {
             const neighborId = edge.from === currentId ? edge.to : edge.from;
             if (distances.get(neighborId) === Infinity) {
                 distances.set(neighborId, currentDistance + 1);
