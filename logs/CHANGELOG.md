@@ -2,6 +2,35 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.5] - 2025-10-04
+
+### 🎨 Enhanced Node Color Editing
+- **Hex Color Input**: Added hex color input field alongside the color picker in Edit Node dialog
+- **Real-time Synchronization**: Color picker and hex input stay synchronized automatically
+- **Input Validation**: Validates hex color format (#RRGGBB) with user-friendly error messages
+- **Monospace Font**: Hex input uses monospace font for better readability
+- **Backward Compatibility**: Existing color picker functionality remains unchanged
+
+### 📍 Precise Position Editing
+- **X,Y Coordinate Inputs**: Added numeric input fields for precise node positioning in Edit Node dialog
+- **Position Display**: Shows current node coordinates rounded to integers
+- **Input Validation**: Validates numeric coordinates with clear error messages
+- **Decimal Support**: Accepts both integer and decimal coordinate values
+- **Drag Compatibility**: Manual positioning works alongside existing drag-and-drop functionality
+
+### 🔧 Technical Implementation
+- **Enhanced UI Functions**: Updated `showNodeDialog()`, `handleNodeOK()`, and `handleNodeCancel()` functions
+- **Helper Functions**: Added `isValidHex()`, `hexToRgb()`, and `rgbToHex()` utility functions
+- **Input Synchronization**: Bidirectional sync between color picker and hex input fields
+- **Position Validation**: Numeric validation for X and Y coordinate inputs
+- **Error Handling**: User-friendly notifications for invalid inputs
+
+### 🎯 User Experience
+- **Precise Control**: Users can now input exact hex colors and coordinates
+- **Visual Feedback**: Real-time validation with clear error messages
+- **Professional Interface**: Clean layout with proper spacing and alignment
+- **Enhanced Workflow**: Quick access to both color and position editing in one dialog
+
 ## [0.6.4] - 2025-09-28
 
 ### 🔧 Edge Direction Consistency Fix
