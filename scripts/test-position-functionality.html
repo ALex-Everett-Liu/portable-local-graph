@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Position Editing</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .position-display { margin: 10px 0; font-family: monospace; }
+        input[type="number"] { width: 80px; padding: 5px; margin: 0 5px; }
+        .position-controls { display: flex; gap: 10px; align-items: center; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Position Editing Test</h1>
+
+    <div class="test-container">
+        <h3>Test Position Input Validation</h3>
+        <div class="position-controls">
+            <label>X:</label>
+            <input type="number" id="test-x" placeholder="X coordinate" step="1" value="100">
+            <label>Y:</label>
+            <input type="number" id="test-y" placeholder="Y coordinate" step="1" value="200">
+            <button onclick="testPositionValidation()">Test Validation</button>
+        </div>
+        <div class="position-display" id="position-result">
+            Enter coordinates and click Test Validation
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h3>Test Position Parsing</h3>
+        <div class="position-controls">
+            <input type="text" id="parse-x" placeholder="Enter X value" value="150.75">
+            <input type="text" id="parse-y" placeholder="Enter Y value" value="-25.5">
+            <button onclick="testPositionParsing()">Parse Values</button>
+        </div>
+        <div class="position-display" id="parsing-result">
+            Enter values and click Parse Values
+        </div>
+    </div>
+
+    <script>
+        function testPositionValidation() {
+            const xInput = document.getElementById('test-x');
+            const yInput = document.getElementById('test-y');
+            const result = document.getElementById('position-result');
+
+            const x = parseFloat(xInput.value);
+            const y = parseFloat(yInput.value);
+
+            if (isNaN(x) || isNaN(y)) {
+                result.innerHTML = `<span style="color: red;">❌ Invalid coordinates: X=${xInput.value}, Y=${yInput.value}</span><br>
+                Please enter valid numeric values.`;
+            } else {
+                result.innerHTML = `<span style="color: green;">✅ Valid coordinates: X=${x}, Y=${y}</span><br>
+                Coordinates are ready for saving.`;
+            }
+        }
+
+        function testPositionParsing() {
+            const xInput = document.getElementById('parse-x');
+            const yInput = document.getElementById('parse-y');
+            const result = document.getElementById('parsing-result');
+
+            const x = parseFloat(xInput.value);
+            const y = parseFloat(yInput.value);
+
+            result.innerHTML = `
+                <strong>Original values:</strong> X="${xInput.value}", Y="${yInput.value}"<br>
+                <strong>Parsed values:</strong> X=${x}, Y=${y}<br>
+                <strong>Type:</strong> X: ${typeof x}, Y: ${typeof y}
+            `;
+        }
+
+        // Test edge cases
+        console.log('Testing position parsing:');
+        console.log('parseFloat("100"):', parseFloat("100"));
+        console.log('parseFloat("100.5"):', parseFloat("100.5"));
+        console.log('parseFloat("-50"):', parseFloat("-50"));
+        console.log('parseFloat("abc"):', parseFloat("abc"));
+        console.log('parseFloat(""):', parseFloat(""));
+        console.log('isNaN(parseFloat("abc")):', isNaN(parseFloat("abc")));
+    </script>
+</body>
+</html>

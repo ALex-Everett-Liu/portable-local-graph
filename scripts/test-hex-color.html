@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Hex Color Input</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .color-display { width: 50px; height: 50px; border: 2px solid #000; margin: 10px 0; }
+        input[type="text"] { font-family: monospace; width: 100px; padding: 5px; }
+        input[type="color"] { width: 50px; height: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Hex Color Input Test</h1>
+
+    <div class="test-container">
+        <h3>Test 1: Basic Hex Input</h3>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="color" id="color-picker" value="#3b82f6">
+            <input type="text" id="hex-input" placeholder="#3b82f6" value="#3b82f6">
+        </div>
+        <div class="color-display" id="color-display" style="background-color: #3b82f6;"></div>
+        <p>Status: <span id="status">Ready</span></p>
+    </div>
+
+    <div class="test-container">
+        <h3>Test 2: Validation Test</h3>
+        <input type="text" id="test-hex" placeholder="Enter hex color...">
+        <button onclick="testValidation()">Test Validation</button>
+        <p>Result: <span id="validation-result">Ready</span></p>
+    </div>
+
+    <script>
+        // Helper functions from ui-functions.js
+        function isValidHex(hex) {
+            return /^#[0-9A-F]{6}$/i.test(hex);
+        }
+
+        function hexToRgb(hex) {
+            if (!isValidHex(hex)) return null;
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // Test functionality
+        const colorPicker = document.getElementById('color-picker');
+        const hexInput = document.getElementById('hex-input');
+        const colorDisplay = document.getElementById('color-display');
+        const status = document.getElementById('status');
+
+        // Sync color picker with hex input
+        colorPicker.addEventListener('input', () => {
+            hexInput.value = colorPicker.value;
+            colorDisplay.style.backgroundColor = colorPicker.value;
+            status.textContent = 'Color picker changed to: ' + colorPicker.value;
+        });
+
+        // Sync hex input with color picker
+        hexInput.addEventListener('input', () => {
+            if (isValidHex(hexInput.value)) {
+                colorPicker.value = hexInput.value;
+                colorDisplay.style.backgroundColor = hexInput.value;
+                status.textContent = 'Hex input changed to: ' + hexInput.value;
+            } else {
+                status.textContent = 'Invalid hex format: ' + hexInput.value;
+            }
+        });
+
+        // Validate on blur
+        hexInput.addEventListener('blur', () => {
+            if (!isValidHex(hexInput.value) && hexInput.value !== '') {
+                status.textContent = 'Invalid hex color format. Resetting to previous value.';
+                hexInput.value = colorPicker.value;
+            }
+        });
+
+        function testValidation() {
+            const testHex = document.getElementById('test-hex').value;
+            const result = document.getElementById('validation-result');
+
+            if (isValidHex(testHex)) {
+                const rgb = hexToRgb(testHex);
+                result.textContent = `Valid! RGB: (${rgb.r}, ${rgb.g}, ${rgb.b})`;
+                result.style.color = 'green';
+            } else {
+                result.textContent = 'Invalid hex color format';
+                result.style.color = 'red';
+            }
+        }
+
+        // Test cases
+        console.log('Testing hex validation:');
+        console.log('#3b82f6:', isValidHex('#3b82f6')); // true
+        console.log('#3B82F6:', isValidHex('#3B82F6')); // true
+        console.log('3b82f6:', isValidHex('3b82f6'));   // false (missing #)
+        console.log('#3b82f:', isValidHex('#3b82f'));   // false (too short)
+        console.log('#3b82f6g:', isValidHex('#3b82f6g')); // false (invalid char)
+    </script>
+</body>
+</html>
