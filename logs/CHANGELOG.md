@@ -11,10 +11,17 @@
 - **Seamless Integration**: Works transparently with existing save/load operations - no user action required
 - **Database Schema**: Added `filter_state` table to store comprehensive filter configuration
 
+### 🛡️ Critical Data Preservation Fix
+- **Complete Data Integrity**: ALL nodes and edges are now saved to database regardless of filter state
+- **No Data Loss**: Previously, saving with active filters could cause inactive nodes/edges to be lost
+- **Filter-Only Persistence**: Only the filter state (visibility settings) is saved, not filtered data
+- **Full Restorability**: Inactive layers can be fully restored after save/load operations
+- **Backward Safety**: Existing filtered graphs will load with complete data and applied filters
+
 ### 💾 Technical Implementation
 - **Database Enhancement**: New `filter_state` table with support for both layer and distance filters
 - **State Management**: FilterStateManager state is captured and stored during save operations
-- **Automatic Restoration**: Filter state is automatically applied when loading graphs from database
+- **Load-Time Filtering**: Complete graph data is loaded first, then filters are applied (preserving all data)
 - **Backward Compatibility**: Existing graphs without filter state load normally (no filters applied)
 - **Error Handling**: Graceful handling of missing or corrupted filter state data
 
@@ -22,7 +29,7 @@
 - **Workflow Continuity**: Users can restart work exactly where they left off with same layer visibility
 - **No Manual Setup**: Layer filters are automatically restored - no need to reconfigure visibility
 - **Professional Workflow**: Supports iterative graph analysis with persistent filtering preferences
-- **Data Integrity**: Original node layer assignments remain unchanged - only visibility state is saved
+- **Data Safety**: Users can save filtered views without losing access to hidden data
 
 ### 🔍 Filter State Components
 - **Layer Filter**: Active layers array, include/exclude mode, enabled/disabled status

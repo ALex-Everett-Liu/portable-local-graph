@@ -417,59 +417,29 @@ async function loadGraphFromDatabase(graphId = null) {
         console.log('[loadGraphFromDatabase] Received data from database:', data);
         
         if (data && data.nodes && data.nodes.length > 0) {
-            console.log('[loadGraphFromDatabase] Loading graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
+            console.log('[loadGraphFromDatabase] Loading complete graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
             console.log('[loadGraphFromDatabase] Filter state:', data.filterState);
 
-            // Apply filter state to data BEFORE loading if available
-            let filteredData = data;
-            console.log('[loadGraphFromDatabase] Checking filter conditions:', {
-                hasFilterState: !!data.filterState,
-                hasLayerFilter: !!data.filterState?.layerFilter,
-                layerFilterEnabled: data.filterState?.layerFilter?.enabled,
-                activeLayers: data.filterState?.layerFilter?.activeLayers,
-                activeLayersLength: data.filterState?.layerFilter?.activeLayers?.length
-            });
+            // Load ALL data first (preserve complete graph)
+            loadGraphData(data);
 
-            if (data.filterState && data.filterState.layerFilter && data.filterState.layerFilter.enabled) {
-                console.log('[loadGraphFromDatabase] Applying layer filter to data before loading...');
-                console.log('[loadGraphFromDatabase] Filter state detected:', data.filterState.layerFilter);
-                filteredData = applyLayerFilterToData(data, data.filterState.layerFilter);
-                console.log('[loadGraphFromDatabase] After filtering:', {
-                    originalNodes: data.nodes.length,
-                    filteredNodes: filteredData.nodes.length,
-                    originalEdges: data.edges.length,
-                    filteredEdges: filteredData.edges.length
-                });
-                // Add flag to indicate filtering was applied
-                filteredData.appliedFilter = {
-                    type: 'layer',
-                    originalNodesCount: data.nodes.length,
-                    filteredNodesCount: filteredData.nodes.length,
-                    originalEdgesCount: data.edges.length,
-                    filteredEdgesCount: filteredData.edges.length
-                };
-            } else {
-                console.log('[loadGraphFromDatabase] No layer filter to apply, loading all data');
-            }
-
-            loadGraphData(filteredData);
-
-            // Restore filter state UI/settings after loading
+            // Apply filter state AFTER loading complete data
             if (data.filterState && graph.filterStateManager) {
-                console.log('[loadGraphFromDatabase] Restoring filter state UI/settings:', data.filterState);
+                console.log('[loadGraphFromDatabase] Applying filter state to loaded graph:', data.filterState);
                 try {
-                    // Restore layer filter settings (but data is already filtered)
+                    // Restore layer filter
                     if (data.filterState.layerFilter) {
                         const { activeLayers, mode, enabled } = data.filterState.layerFilter;
 
-                        // Set the filter mode and state for UI consistency
+                        // Set the filter mode regardless
                         graph.setLayerFilterMode(mode);
 
                         if (enabled && activeLayers && activeLayers.length > 0) {
-                            // Update the filter state manager for UI consistency
-                            graph.filterStateManager.applyLayerFilter(activeLayers, mode);
-                            console.log('[loadGraphFromDatabase] Layer filter UI state restored:', activeLayers, 'mode:', mode);
+                            // Apply the layer filter to the loaded complete graph
+                            graph.setActiveLayers(activeLayers);
+                            console.log('[loadGraphFromDatabase] Layer filter applied to complete graph:', activeLayers, 'mode:', mode);
                         } else {
+                            // Clear the filter if no active layers or disabled
                             graph.clearLayerFilter();
                             console.log('[loadGraphFromDatabase] Layer filter cleared (no active layers or disabled)');
                         }
@@ -500,47 +470,6 @@ async function loadGraphFromDatabase(graphId = null) {
         console.error('[loadGraphFromDatabase] Error stack:', error.stack);
         showNotification('Error loading graph: ' + error.message, 'error');
     }
-}
-
-// Apply layer filter to raw data before loading
-function applyLayerFilterToData(data, layerFilter) {
-    const { activeLayers, mode } = layerFilter;
-
-    if (!activeLayers || activeLayers.length === 0) {
-        return data; // No filtering needed
-    }
-
-    const activeLayersSet = new Set(activeLayers);
-
-    // Filter nodes based on layer membership
-    const filteredNodes = data.nodes.filter(node => {
-        const nodeLayers = node.layers || [];
-        const hasMatchingLayer = nodeLayers.some(layer => activeLayersSet.has(layer));
-        return mode === 'include' ? hasMatchingLayer : !hasMatchingLayer;
-    });
-
-    // Create set of filtered node IDs
-    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-
-    // Filter edges - only keep edges where both nodes are in the filtered set
-    const filteredEdges = data.edges.filter(edge => {
-        return filteredNodeIds.has(edge.from) && filteredNodeIds.has(edge.to);
-    });
-
-    console.log('[applyLayerFilterToData] Applied layer filter:', {
-        originalNodes: data.nodes.length,
-        filteredNodes: filteredNodes.length,
-        originalEdges: data.edges.length,
-        filteredEdges: filteredEdges.length,
-        activeLayers,
-        mode
-    });
-
-    return {
-        ...data,
-        nodes: filteredNodes,
-        edges: filteredEdges
-    };
 }
 
 // Load graph data
