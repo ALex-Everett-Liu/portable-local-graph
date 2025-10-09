@@ -57,19 +57,29 @@ async function saveGraphToDatabase() {
         console.error('No database available for save');
         return;
     }
-    
+
     try {
         const graphData = graph.exportData();
+
+        // Include filter state from FilterStateManager
+        let filterState = null;
+        if (graph.filterStateManager) {
+            filterState = graph.filterStateManager.getState();
+            console.log('[saveGraphToDatabase] Including filter state:', filterState);
+        }
+
         const data = {
             ...graphData,
             metadata: {
                 name: 'Graph ' + new Date().toLocaleString(),
                 lastModified: new Date().toISOString()
-            }
+            },
+            filterState: filterState
         };
-        
+
         await currentDb.saveGraph(data);
         appState.isModified = false;
+        console.log('[saveGraphToDatabase] Graph saved with filter state');
     } catch (error) {
         console.error('Error saving to database:', error);
         showNotification('Error saving graph: ' + error.message, 'error');
@@ -408,7 +418,34 @@ async function loadGraphFromDatabase(graphId = null) {
         
         if (data && data.nodes && data.nodes.length > 0) {
             console.log('[loadGraphFromDatabase] Loading graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
+            console.log('[loadGraphFromDatabase] Filter state:', data.filterState);
+
             loadGraphData(data);
+
+            // Restore filter state if available
+            if (data.filterState && graph.filterStateManager) {
+                console.log('[loadGraphFromDatabase] Restoring filter state:', data.filterState);
+                try {
+                    // Restore layer filter
+                    if (data.filterState.layerFilter) {
+                        const { activeLayers, mode } = data.filterState.layerFilter;
+                        if (data.filterState.layerFilter.enabled && activeLayers.length > 0) {
+                            graph.filterStateManager.applyLayerFilter(activeLayers, mode);
+                            console.log('[loadGraphFromDatabase] Layer filter restored:', activeLayers, 'mode:', mode);
+                        }
+                    }
+
+                    // Restore distance filter
+                    if (data.filterState.distanceFilter && data.filterState.distanceFilter.centerNodeId) {
+                        const { centerNodeId, maxDistance, maxDepth } = data.filterState.distanceFilter;
+                        graph.filterStateManager.applyLocalGraphFilter(centerNodeId, maxDistance, maxDepth);
+                        console.log('[loadGraphFromDatabase] Distance filter restored for node:', centerNodeId);
+                    }
+                } catch (error) {
+                    console.warn('[loadGraphFromDatabase] Error restoring filter state:', error);
+                }
+            }
+
             appState.isModified = false;
             showNotification('Graph loaded from database!');
         } else if (data && data.nodes && data.nodes.length === 0) {

@@ -145,6 +145,20 @@ class DatabaseManager {
             )
         `;
 
+    const createFilterStateTable = `
+            CREATE TABLE IF NOT EXISTS filter_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                layer_filter_enabled BOOLEAN DEFAULT 0,
+                layer_filter_active_layers TEXT DEFAULT '[]',
+                layer_filter_mode TEXT DEFAULT 'include',
+                distance_filter_center_node_id BLOB,
+                distance_filter_max_distance REAL DEFAULT 10,
+                distance_filter_max_depth INTEGER DEFAULT 5,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+
     return new Promise((resolve, reject) => {
       this.db.serialize(() => {
         this.db.run(createGraphsTable, (err) => {
@@ -154,6 +168,9 @@ class DatabaseManager {
           if (err) reject(err);
         });
         this.db.run(createEdgesTable, (err) => {
+          if (err) reject(err);
+        });
+        this.db.run(createFilterStateTable, (err) => {
           if (err) reject(err);
         });
 
@@ -611,6 +628,30 @@ class DatabaseManager {
               this.db.run("DELETE FROM edges");
             }
 
+            // Save filter state if provided
+            if (data.filterState) {
+              const { layerFilter, distanceFilter } = data.filterState;
+
+              // Convert active layers array to JSON string
+              const activeLayersJson = JSON.stringify(layerFilter?.activeLayers || []);
+              const centerNodeId = distanceFilter?.centerNodeId ? uuidToBuffer(distanceFilter.centerNodeId) : null;
+
+              this.db.run(`
+                INSERT OR REPLACE INTO filter_state (
+                  id, layer_filter_enabled, layer_filter_active_layers, layer_filter_mode,
+                  distance_filter_center_node_id, distance_filter_max_distance, distance_filter_max_depth,
+                  modified_at
+                ) VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+              `, [
+                layerFilter?.enabled ? 1 : 0,
+                activeLayersJson,
+                layerFilter?.mode || 'include',
+                centerNodeId,
+                distanceFilter?.maxDistance || 10,
+                distanceFilter?.maxDepth || 5
+              ]);
+            }
+
             this.db.run("COMMIT", (err) => {
               if (err) {
                 this.db.run("ROLLBACK");
@@ -781,14 +822,40 @@ class DatabaseManager {
                 offset,
               };
 
-              console.log("[DatabaseManager.loadGraph] Final data:", data);
-              console.log(
-                "[DatabaseManager.loadGraph] Nodes count:",
-                nodes.length,
-                "Edges count:",
-                edges.length,
-              );
-              resolve(data);
+              // Load filter state
+              console.log("[DatabaseManager.loadGraph] Loading filter state...");
+              this.db.get("SELECT * FROM filter_state WHERE id = 1", (err, filterRow) => {
+                if (!err && filterRow) {
+                  try {
+                    data.filterState = {
+                      layerFilter: {
+                        enabled: Boolean(filterRow.layer_filter_enabled),
+                        activeLayers: JSON.parse(filterRow.layer_filter_active_layers || '[]'),
+                        mode: filterRow.layer_filter_mode || 'include'
+                      },
+                      distanceFilter: {
+                        centerNodeId: filterRow.distance_filter_center_node_id ? bufferToUuid(filterRow.distance_filter_center_node_id) : null,
+                        maxDistance: filterRow.distance_filter_max_distance || 10,
+                        maxDepth: filterRow.distance_filter_max_depth || 5
+                      }
+                    };
+                    console.log("[DatabaseManager.loadGraph] Loaded filter state:", data.filterState);
+                  } catch (parseError) {
+                    console.warn("[DatabaseManager.loadGraph] Error parsing filter state:", parseError);
+                  }
+                } else {
+                  console.log("[DatabaseManager.loadGraph] No filter state found or error:", err);
+                }
+
+                console.log("[DatabaseManager.loadGraph] Final data:", data);
+                console.log(
+                  "[DatabaseManager.loadGraph] Nodes count:",
+                  nodes.length,
+                  "Edges count:",
+                  edges.length,
+                );
+                resolve(data);
+              });
             });
           });
         },
