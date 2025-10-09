@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal Graph Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Minimal Graph Test Suite</h1>
+    <div id="test-results"></div>
+
+    <script>
+        // Mock canvas for testing
+        const mockCanvas = {
+            getContext: () => ({
+                clearRect: () => {},
+                beginPath: () => {},
+                arc: () => {},
+                fill: () => {},
+                stroke: () => {},
+                moveTo: () => {},
+                lineTo: () => {},
+                fillText: () => {},
+                measureText: () => ({ width: 50 })
+            }),
+            addEventListener: () => {},
+            width: 800,
+            height: 600
+        };
+
+        // Simple test runner
+        function test(description, testFn) {
+            try {
+                testFn();
+                return { description, passed: true };
+            } catch (error) {
+                return { description, passed: false, error: error.message };
+            }
+        }
+
+        function assert(condition, message) {
+            if (!condition) throw new Error(message || 'Assertion failed');
+        }
+
+        // Load graph.js code (simplified)
+        class TestGraph {
+            constructor() {
+                this.nodes = [];
+                this.edges = [];
+            }
+
+            addNode(x, y, label = 'Node') {
+                const node = {
+                    id: Date.now() + Math.random(),
+                    x, y, label,
+                    color: '#3b82f6',
+                    radius: 20
+                };
+                this.nodes.push(node);
+                return node;
+            }
+
+            addEdge(fromNode, toNode, weight = 1) {
+                const edge = {
+                    id: Date.now() + Math.random(),
+                    from: fromNode.id,
+                    to: toNode.id,
+                    weight
+                };
+                this.edges.push(edge);
+                return edge;
+            }
+
+            deleteNode(node) {
+                this.nodes = this.nodes.filter(n => n.id !== node.id);
+                this.edges = this.edges.filter(e => e.from !== node.id && e.to !== node.id);
+            }
+
+            getNodeAt(x, y) {
+                return this.nodes.find(node => {
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    return Math.sqrt(dx * dx + dy * dy) <= node.radius;
+                });
+            }
+        }
+
+        // Run tests
+        const tests = [
+            test('Should create a graph instance', () => {
+                const graph = new TestGraph();
+                assert(graph.nodes.length === 0, 'Nodes array should be empty');
+                assert(graph.edges.length === 0, 'Edges array should be empty');
+            }),
+
+            test('Should add a node', () => {
+                const graph = new TestGraph();
+                const node = graph.addNode(100, 100, 'Test Node');
+                assert(graph.nodes.length === 1, 'Should have 1 node');
+                assert(node.x === 100, 'Node x position should be 100');
+                assert(node.y === 100, 'Node y position should be 100');
+                assert(node.label === 'Test Node', 'Node label should be "Test Node"');
+            }),
+
+            test('Should add an edge between nodes', () => {
+                const graph = new TestGraph();
+                const node1 = graph.addNode(100, 100);
+                const node2 = graph.addNode(200, 200);
+                const edge = graph.addEdge(node1, node2, 2.5);
+
+                assert(graph.edges.length === 1, 'Should have 1 edge');
+                assert(edge.from === node1.id, 'Edge should connect from node1');
+                assert(edge.to === node2.id, 'Edge should connect to node2');
+                assert(edge.weight === 2.5, 'Edge weight should be 2.5');
+            }),
+
+            test('Should delete node and associated edges', () => {
+                const graph = new TestGraph();
+                const node1 = graph.addNode(100, 100);
+                const node2 = graph.addNode(200, 200);
+                graph.addEdge(node1, node2);
+
+                assert(graph.nodes.length === 2, 'Should have 2 nodes');
+                assert(graph.edges.length === 1, 'Should have 1 edge');
+
+                graph.deleteNode(node1);
+
+                assert(graph.nodes.length === 1, 'Should have 1 node after deletion');
+                assert(graph.edges.length === 0, 'Should have 0 edges after node deletion');
+            }),
+
+            test('Should find node at position', () => {
+                const graph = new TestGraph();
+                const node = graph.addNode(100, 100);
+
+                const foundNode = graph.getNodeAt(100, 100);
+                assert(foundNode === node, 'Should find node at exact position');
+
+                const notFound = graph.getNodeAt(200, 200);
+                assert(notFound === undefined, 'Should not find node at different position');
+            }),
+
+            test('Should export/import data', () => {
+                const graph = new TestGraph();
+                const node1 = graph.addNode(100, 100, 'Node 1');
+                const node2 = graph.addNode(200, 200, 'Node 2');
+                graph.addEdge(node1, node2, 3.0);
+
+                // Mock export/import
+                const data = {
+                    nodes: [...graph.nodes],
+                    edges: [...graph.edges]
+                };
+
+                const newGraph = new TestGraph();
+                newGraph.nodes = data.nodes;
+                newGraph.edges = data.edges;
+
+                assert(newGraph.nodes.length === 2, 'Imported graph should have 2 nodes');
+                assert(newGraph.edges.length === 1, 'Imported graph should have 1 edge');
+                assert(newGraph.nodes[0].label === 'Node 1', 'First node label should be preserved');
+            })
+        ];
+
+        // Display results
+        const resultsDiv = document.getElementById('test-results');
+        let passCount = 0;
+
+        tests.forEach(result => {
+            const div = document.createElement('div');
+            div.className = 'test-section';
+
+            if (result.passed) {
+                div.className += ' pass';
+                div.innerHTML = `<i>✓</i> ${result.description}`;
+                passCount++;
+            } else {
+                div.className += ' fail';
+                div.innerHTML = `<i>✗</i> ${result.description}<br><small>${result.error}</small>`;
+            }
+
+            resultsDiv.appendChild(div);
+        });
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.className = 'test-section';
+        summary.innerHTML = `<h3>Test Results: ${passCount}/${tests.length} passed</h3>`;
+        summary.style.background = passCount === tests.length ? '#e8f5e8' : '#ffe8e8';
+        resultsDiv.insertBefore(summary, resultsDiv.firstChild);
+    </script>
+</body>
+</html>

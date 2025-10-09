@@ -2,6 +2,29 @@
 
 A simple, interactive desktop application for manually drawing graphs using Node.js, Express, and Electron. Perfect for creating, editing, and managing graphs with an intuitive drag-and-drop interface.
 
+## Alternative Versions
+
+### 🎯 Minimal Graph (`minimal-graph/`)
+Ultra-lightweight version with core functionality only. Pure HTML5 Canvas + JavaScript, zero dependencies. Perfect for simple graph drawing without the complexity.
+
+**Key Features:**
+- Basic node/edge creation and editing
+- Three interaction modes (Select, Add Node, Add Edge)
+- Save/load JSON files
+- Right-click context menu
+- 95% code reduction from main version
+
+### 🌐 Web App (`web-app/`)
+Modern web-based version with enhanced performance and features. Built with vanilla JavaScript, works in any browser.
+
+**Key Features:**
+- Performance optimized for 1000+ nodes
+- Undo/redo functionality
+- Auto-save to localStorage
+- SVG export capability
+- Modern responsive design
+- Keyboard shortcuts
+
 ## Features
 
 ### Core Functionality
