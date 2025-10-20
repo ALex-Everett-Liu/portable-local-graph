@@ -15,6 +15,7 @@ function setupEventListeners() {
     document.getElementById('node-mode').addEventListener('click', () => setMode('node'));
     document.getElementById('edge-mode').addEventListener('click', () => setMode('edge'));
     document.getElementById('select-mode').addEventListener('click', () => setMode('select'));
+    document.getElementById('search-dialog-btn').addEventListener('click', showSearchDialog);
     
     document.getElementById('undo-btn').addEventListener('click', undo);
     document.getElementById('redo-btn').addEventListener('click', redo);

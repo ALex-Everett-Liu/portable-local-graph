@@ -106,6 +106,13 @@ class CommandPalette {
                 }
             },
             {
+                id: 'search-nodes-dialog',
+                name: 'Search Nodes (Dialog)',
+                description: 'Open dedicated search dialog for nodes',
+                keywords: ['search', 'find', 'nodes', 'dialog', 'advanced'],
+                action: () => window.showSearchDialog && window.showSearchDialog()
+            },
+            {
                 id: 'calculate-centralities',
                 name: 'Calculate Centralities',
                 description: 'Calculate all centrality measures',

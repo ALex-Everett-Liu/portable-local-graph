@@ -2,6 +2,43 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.9] - 2025-10-21
+
+### 🔍 Enhanced Node Search with Dedicated Dialog
+- **Dedicated Search Dialog**: Replaced cramped sidebar search with spacious, professional search dialog
+- **Advanced Search Interface**: Large search input with real-time dropdown results and detailed result list
+- **Enhanced Result Display**: Shows node name, ID, position, category, color, and size in organized layout
+- **Interactive Result Navigation**: Click to select, keyboard navigation with arrow keys, Enter to confirm
+- **Node Selection & Navigation**: Select nodes directly from search results or navigate canvas to center on them
+
+### 🎛️ User Interface Improvements
+- **Toolbar Integration**: Added 🔍 "Search" button to main toolbar for instant access
+- **Command Palette Support**: Added "Search Nodes (Dialog)" command with keywords: search, find, nodes, dialog, advanced
+- **Keyboard Navigation**: Full keyboard support with arrow keys, Enter confirmation, Escape to close
+- **Professional Dialog Design**: Consistent with existing layer management dialog styling and behavior
+- **Real-time Search Feedback**: Live result count and clear visual indicators for selected/highlighted items
+
+### 💡 Search Functionality Enhancements
+- **Comprehensive Node Information**: Displays full node details including position coordinates
+- **Visual Result Highlighting**: Selected and highlighted nodes clearly indicated with color coding
+- **Search Result Limiting**: Limits to 20 results for performance while maintaining usability
+- **Case-insensitive Search**: Searches node labels regardless of case for better user experience
+- **Instant Clear Function**: One-click clear button to reset search and start fresh
+
+### 🔧 Technical Implementation
+- **Dedicated Module**: Created `search-dialog.js` module following existing dialog patterns
+- **State Management**: Proper search dialog state handling with selection and highlighting
+- **Event Handling**: Comprehensive keyboard and mouse event support
+- **Graph Integration**: Seamless integration with existing graph selection and navigation systems
+- **Cross-browser Compatibility**: Works with all modern browsers and input methods
+
+### 🎯 User Experience Benefits
+- **More Screen Space**: Dedicated dialog provides much more room for search interface
+- **Better Visual Hierarchy**: Clear separation between search input, results, and selected node details
+- **Improved Workflow**: Faster node finding with professional search interface
+- **Backward Compatibility**: Original sidebar search still available for quick access
+- **Professional Polish**: Consistent with application's design language and interaction patterns
+
 ## [0.6.8] - 2025-10-21
 
 ### 💾 Database Backup Functionality
