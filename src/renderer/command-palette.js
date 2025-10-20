@@ -238,6 +238,13 @@ class CommandPalette {
                         window.showEdgeSearchDialog();
                     }
                 }
+            },
+            {
+                id: 'merge-database',
+                name: 'Merge Database',
+                description: 'Merge data from another database file into current graph',
+                keywords: ['merge', 'database', 'import', 'combine', 'db'],
+                action: () => window.mergeDatabase && window.mergeDatabase()
             }
         ];
     }

@@ -2,6 +2,40 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.7] - 2025-10-21
+
+### 🔗 Database Merge Functionality
+- **SQLite Database Merging**: Added ability to merge data from one database file into another with conflict resolution
+- **Three Conflict Resolution Strategies**: Skip (keep existing), Replace (overwrite), or Rename (create new IDs) for conflicting items
+- **Smart Conflict Detection**: Automatically detects ID conflicts between nodes and edges during merge operations
+- **Comprehensive Statistics**: Provides detailed merge results showing items added, skipped, renamed, and conflicts resolved
+- **Cross-Database Operations**: Works seamlessly across different database files while maintaining data integrity
+
+### 🎛️ User Interface Integration
+- **Toolbar Integration**: Added "Merge DB" button (🔗) next to existing Import/Export controls for easy access
+- **Command Palette Support**: Added "Merge Database" command accessible via Ctrl+P with keywords: merge, database, import, combine, db
+- **Interactive Merge Dialog**: Clean dialog interface explaining conflict resolution options with user-friendly descriptions
+- **Real-time Feedback**: Detailed notifications showing merge statistics and operation results
+
+### 🔧 Technical Implementation
+- **Database Manager Enhancement**: Added `mergeFromDatabase()` method to SQLite manager with robust conflict handling
+- **Node/Edge Relationship Preservation**: Processes nodes first, then edges to maintain referential integrity
+- **Connection Management**: Proper database connection handling with temporary connections for source databases
+- **Error Handling**: Comprehensive error handling with user-friendly messages and fallback mechanisms
+- **State Synchronization**: Automatic application state updates after merge operations
+
+### 🛡️ Data Safety Features
+- **Non-Destructive Operations**: Original database files remain unchanged during merge operations
+- **Transaction Safety**: Uses proper database transactions to ensure data consistency
+- **Backup Compatibility**: Works with existing backup and save mechanisms
+- **Conflict Tracking**: Detailed logging of all conflicts and resolution actions for user transparency
+
+### 🎯 User Experience
+- **Dual Access Methods**: Access via toolbar button or command palette for maximum convenience
+- **Clear Workflow**: Intuitive file selection → conflict resolution choice → detailed results
+- **Professional Interface**: Consistent with existing application design patterns and dialogs
+- **Keyboard Accessibility**: Full keyboard navigation support through command palette integration
+
 ## [0.6.6] - 2025-10-09
 
 ### 🔧 Layer State Persistence

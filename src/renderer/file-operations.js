@@ -173,18 +173,18 @@ function fallbackToJSONLoad() {
             reader.onload = async (e) => {
                 try {
                     const jsonString = e.target.result;
-                    
+
                     // Show import mode dialog
                     const result = await showImportModeDialog(jsonString);
                     if (!result) return; // User cancelled
-                    
+
                     const { mode, conflictResolution } = result;
-                    
+
                     if (mode === 'replace') {
                         // Original behavior: replace all data
                         const data = JSON.parse(jsonString);
-                        const dbInstanceManager = (typeof require !== 'undefined') 
-                            ? require('./db-instance-manager').dbInstanceManager 
+                        const dbInstanceManager = (typeof require !== 'undefined')
+                            ? require('./db-instance-manager').dbInstanceManager
                             : window.dbInstanceManager;
                         if (dbInstanceManager) {
                             await dbInstanceManager.importFromJSON(data);
@@ -199,15 +199,15 @@ function fallbackToJSONLoad() {
                             showNotification('Export manager not available', 'error');
                             return;
                         }
-                        
+
                         const importResult = window.exportManager.importJSON(jsonString, {
                             merge: true,
                             conflictResolution: conflictResolution
                         });
-                        
+
                         if (importResult.success) {
                             const mergeResult = importResult.mergeResult;
-                            const message = this.formatImportNotification(mergeResult);
+                            const message = formatImportNotification(mergeResult);
                             showNotification(message);
                             updateGraphInfo();
                             graph.render();
@@ -224,6 +224,174 @@ function fallbackToJSONLoad() {
         }
     };
     input.click();
+}
+
+// Merge database functionality
+async function mergeDatabase() {
+    const dbInstanceManager = (typeof require !== 'undefined')
+        ? require('./db-instance-manager').dbInstanceManager
+        : window.dbInstanceManager;
+
+    if (!dbInstanceManager || !dbInstanceManager.getCurrentDb()) {
+        showNotification('No database available for merge', 'error');
+        return;
+    }
+
+    // Create file input for database selection
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.db';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                // Show merge options dialog
+                const result = await showDatabaseMergeDialog();
+                if (!result) return; // User cancelled
+
+                const { conflictResolution } = result;
+
+                // Perform the merge
+                showNotification('Merging databases...', 'info');
+                const mergeResult = await dbInstanceManager.mergeFromDatabase(file.path, {
+                    conflictResolution: conflictResolution
+                });
+
+                // Reload the current graph to show merged data
+                await loadGraphFromDatabase();
+
+                // Show result notification
+                const message = formatDatabaseMergeNotification(mergeResult);
+                showNotification(message);
+
+            } catch (error) {
+                console.error('Error merging databases:', error);
+                showNotification('Error merging databases: ' + error.message, 'error');
+            }
+        }
+    };
+    input.click();
+}
+
+/**
+ * Show database merge options dialog
+ * @returns {Promise<Object|null>} Merge options or null if cancelled
+ */
+function showDatabaseMergeDialog() {
+    return new Promise((resolve) => {
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'merge-dialog';
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            height: auto;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: block;
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'merge-dialog-content';
+        content.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin: 0;
+        `;
+
+        content.innerHTML = `
+            <h3>Database Merge Options</h3>
+            <p>Select how to handle conflicts when merging databases:</p>
+
+            <div style="margin: 15px 0;">
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="conflict-resolution" value="skip" checked style="margin-right: 8px;">
+                    <strong>Skip Conflicts</strong><br>
+                    <small style="color: #666;">Keep existing data, ignore conflicting items</small>
+                </label>
+
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="conflict-resolution" value="replace" style="margin-right: 8px;">
+                    <strong>Replace Conflicts</strong><br>
+                    <small style="color: #666;">Overwrite existing data with imported data</small>
+                </label>
+
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="conflict-resolution" value="rename" style="margin-right: 8px;">
+                    <strong>Rename Conflicts</strong><br>
+                    <small style="color: #666;">Create new items for conflicting data</small>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button id="merge-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="merge-confirm" class="btn btn-primary">Merge</button>
+            </div>
+        `;
+
+        // Remove any existing merge dialogs first
+        const existingDialog = document.querySelector('.merge-dialog');
+        if (existingDialog && existingDialog.parentNode) {
+            existingDialog.parentNode.removeChild(existingDialog);
+        }
+
+        dialog.appendChild(content);
+        document.body.appendChild(dialog);
+
+        // Handle buttons
+        content.querySelector('#merge-cancel').onclick = () => {
+            document.body.removeChild(dialog);
+            resolve(null);
+        };
+
+        content.querySelector('#merge-confirm').onclick = () => {
+            const conflictResolution = content.querySelector('input[name="conflict-resolution"]:checked').value;
+
+            document.body.removeChild(dialog);
+            resolve({ conflictResolution });
+        };
+
+        // Handle escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(dialog);
+                document.removeEventListener('keydown', handleEscape);
+                resolve(null);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    });
+}
+
+/**
+ * Format database merge result notification
+ * @param {Object} result - Merge result from databaseManager
+ * @returns {string} Formatted notification message
+ */
+function formatDatabaseMergeNotification(result) {
+    const parts = [];
+
+    if (result.nodesAdded > 0) parts.push(`${result.nodesAdded} nodes added`);
+    if (result.nodesSkipped > 0) parts.push(`${result.nodesSkipped} nodes skipped`);
+    if (result.nodesRenamed > 0) parts.push(`${result.nodesRenamed} nodes renamed`);
+    if (result.edgesAdded > 0) parts.push(`${result.edgesAdded} edges added`);
+    if (result.edgesSkipped > 0) parts.push(`${result.edgesSkipped} edges skipped`);
+    if (result.edgesRenamed > 0) parts.push(`${result.edgesRenamed} edges renamed`);
+
+    const conflictCount = result.conflicts?.length || 0;
+    if (conflictCount > 0) parts.push(`${conflictCount} conflicts resolved`);
+
+    return parts.length > 0 ? `Database merge completed: ${parts.join(', ')}` : 'Database merge completed';
 }
 
 /**
@@ -512,7 +680,10 @@ if (typeof module !== 'undefined' && module.exports) {
         openFromDatabase,
         loadGraphFromDatabase,
         loadGraphData,
-        formatImportNotification
+        formatImportNotification,
+        mergeDatabase,
+        showDatabaseMergeDialog,
+        formatDatabaseMergeNotification
     };
 } else {
     Object.assign(window, {
@@ -524,6 +695,9 @@ if (typeof module !== 'undefined' && module.exports) {
         openFromDatabase,
         loadGraphFromDatabase,
         loadGraphData,
-        formatImportNotification
+        formatImportNotification,
+        mergeDatabase,
+        showDatabaseMergeDialog,
+        formatDatabaseMergeNotification
     });
 }

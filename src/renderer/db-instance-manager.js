@@ -83,6 +83,32 @@ class DatabaseInstanceManager {
     getCurrentFilePath() {
         return this.currentFilePath;
     }
+
+    /**
+     * Merge data from another database file into the current database
+     * @param {string} sourceDbPath - Path to the source database file
+     * @param {Object} options - Merge options
+     * @param {string} options.conflictResolution - How to handle conflicts: 'replace', 'skip', or 'rename'
+     * @returns {Promise<Object>} Merge result with statistics
+     */
+    async mergeFromDatabase(sourceDbPath, options = {}) {
+        if (!this.dbManager) {
+            throw new Error('No database connection available');
+        }
+
+        console.log('[DatabaseInstanceManager] Merging from database:', sourceDbPath);
+        const result = await this.dbManager.mergeFromDatabase(sourceDbPath, options);
+        console.log('[DatabaseInstanceManager] Merge completed:', result);
+
+        // Mark as modified since we've added data
+        if (typeof appState !== 'undefined' && appState) {
+            appState.isModified = true;
+        } else if (typeof window !== 'undefined' && window.appState) {
+            window.appState.isModified = true;
+        }
+
+        return result;
+    }
 }
 
 // Singleton instance
