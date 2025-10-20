@@ -532,17 +532,75 @@ function showImportModeDialog(jsonString) {
  */
 function formatImportNotification(result) {
     const parts = [];
-    
+
     if (result.nodesAdded > 0) parts.push(`${result.nodesAdded} nodes added`);
     if (result.nodesSkipped > 0) parts.push(`${result.nodesSkipped} nodes skipped`);
     if (result.nodesRenamed > 0) parts.push(`${result.nodesRenamed} nodes renamed`);
     if (result.edgesAdded > 0) parts.push(`${result.edgesAdded} edges added`);
     if (result.edgesSkipped > 0) parts.push(`${result.edgesSkipped} edges skipped`);
-    
+
     const conflictCount = result.conflicts?.length || 0;
     if (conflictCount > 0) parts.push(`${conflictCount} conflicts resolved`);
-    
+
     return parts.length > 0 ? parts.join(', ') : 'Import completed';
+}
+
+/**
+ * Backup current database with timestamp
+ */
+async function backupDatabase() {
+    const dbInstanceManager = (typeof require !== 'undefined')
+        ? require('./db-instance-manager').dbInstanceManager
+        : window.dbInstanceManager;
+
+    if (!dbInstanceManager || !dbInstanceManager.getCurrentDb()) {
+        showNotification('No database available for backup', 'error');
+        return;
+    }
+
+    try {
+        const currentDb = dbInstanceManager.getCurrentDb();
+        const currentPath = currentDb.dbPath;
+
+        // Generate timestamp for backup filename
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5); // Remove milliseconds and replace colons
+
+        let backupFileName;
+        let backupPath;
+
+        if (typeof require !== 'undefined') {
+            // Electron mode - use Node.js path and fs modules
+            const path = require('path');
+            const fs = require('fs');
+
+            const originalName = path.basename(currentPath, '.db');
+            backupFileName = `${originalName}-backup-${timestamp}.db`;
+
+            // Determine backup directory (same as current database)
+            const backupDir = path.dirname(currentPath);
+            backupPath = path.join(backupDir, backupFileName);
+
+            // Copy the database file
+            fs.copyFileSync(currentPath, backupPath);
+        } else {
+            // Web mode - use simple filename generation (may not work in all browsers)
+            const fileName = currentPath.split('/').pop() || currentPath.split('\\').pop() || 'graph';
+            const originalName = fileName.replace('.db', '');
+            backupFileName = `${originalName}-backup-${timestamp}.db`;
+
+            // In web mode, we can't easily copy files, so show a message
+            showNotification('Backup feature requires Electron mode for file operations', 'info');
+            return;
+        }
+
+        showNotification(`Database backed up to: ${backupFileName}`);
+        console.log(`Database backup created: ${backupPath}`);
+
+    } catch (error) {
+        console.error('Error creating database backup:', error);
+        showNotification('Error creating backup: ' + error.message, 'error');
+    }
 }
 
 // Open from database selector
@@ -683,7 +741,8 @@ if (typeof module !== 'undefined' && module.exports) {
         formatImportNotification,
         mergeDatabase,
         showDatabaseMergeDialog,
-        formatDatabaseMergeNotification
+        formatDatabaseMergeNotification,
+        backupDatabase
     };
 } else {
     Object.assign(window, {
@@ -698,6 +757,7 @@ if (typeof module !== 'undefined' && module.exports) {
         formatImportNotification,
         mergeDatabase,
         showDatabaseMergeDialog,
-        formatDatabaseMergeNotification
+        formatDatabaseMergeNotification,
+        backupDatabase
     });
 }

@@ -245,6 +245,13 @@ class CommandPalette {
                 description: 'Merge data from another database file into current graph',
                 keywords: ['merge', 'database', 'import', 'combine', 'db'],
                 action: () => window.mergeDatabase && window.mergeDatabase()
+            },
+            {
+                id: 'backup-database',
+                name: 'Backup Database',
+                description: 'Create a timestamped backup of the current database',
+                keywords: ['backup', 'database', 'save', 'copy', 'archive'],
+                action: () => window.backupDatabase && window.backupDatabase()
             }
         ];
     }

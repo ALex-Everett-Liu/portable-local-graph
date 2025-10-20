@@ -26,6 +26,7 @@ function setupEventListeners() {
     
     document.getElementById('import-json-btn').addEventListener('click', importJSON);
     document.getElementById('merge-db-btn').addEventListener('click', mergeDatabase);
+    document.getElementById('backup-db-btn').addEventListener('click', backupDatabase);
     document.getElementById('export-svg-btn').addEventListener('click', exportSVG);
     document.getElementById('export-json-btn').addEventListener('click', exportJSON);
     

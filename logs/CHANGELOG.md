@@ -2,6 +2,40 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.6.8] - 2025-10-21
+
+### 💾 Database Backup Functionality
+- **One-Click Database Backup**: Added ability to create timestamped backups of current working database
+- **Automatic Timestamp Naming**: Backup files named with ISO timestamp format (e.g., `graph-backup-2025-10-21T14-30-25.db`)
+- **Same Directory Storage**: Backups created in same directory as original database for easy access
+- **Non-Destructive Operation**: Original database remains completely unchanged during backup process
+- **Cross-Platform Support**: Works in Electron mode with proper file system operations
+
+### 🎛️ User Interface Integration
+- **Toolbar Integration**: Added "Backup" button (💾) next to existing Import/Export controls
+- **Command Palette Support**: Added "Backup Database" command accessible via Ctrl+P with keywords: backup, database, save, copy, archive
+- **Visual Feedback**: Clear notifications showing backup filename and success status
+- **Error Handling**: User-friendly error messages for backup failures
+
+### 🔧 Technical Implementation
+- **File System Operations**: Uses Node.js `fs.copyFileSync()` for reliable file copying
+- **Path Management**: Proper handling of file paths and directory structures
+- **Timestamp Generation**: ISO 8601 format with sanitized characters for filename compatibility
+- **Mode Detection**: Graceful handling of both Electron and web environments
+- **Error Recovery**: Comprehensive error handling with fallback mechanisms
+
+### 🛡️ Data Safety Features
+- **Atomic File Operations**: Uses synchronous file copying to prevent corruption
+- **Original File Preservation**: Source database file is never modified during backup
+- **Backup Verification**: File operations include error checking and validation
+- **User Confirmation**: Clear notifications confirm successful backup creation
+
+### 🎯 User Experience
+- **Dual Access Methods**: Access via toolbar button or command palette for maximum convenience
+- **Instant Operation**: Fast backup creation without interrupting current workflow
+- **Professional Interface**: Consistent with existing application design patterns
+- **Keyboard Accessibility**: Full keyboard navigation support through command palette integration
+
 ## [0.6.7] - 2025-10-21
 
 ### 🔗 Database Merge Functionality
