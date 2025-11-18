@@ -93,6 +93,7 @@ class DatabaseManager {
           reject(err);
         } else {
           this.createTables()
+            .then(() => this.populateSequenceIds())
             .then(() => resolve(this))
             .catch(reject);
         }
@@ -126,6 +127,7 @@ class DatabaseManager {
                 radius REAL DEFAULT 20,
                 category TEXT,
                 layers TEXT,
+                sequence_id INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -138,6 +140,7 @@ class DatabaseManager {
                 to_node_id BLOB NOT NULL,
                 weight REAL DEFAULT 1,
                 category TEXT,
+                sequence_id INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (from_node_id) REFERENCES nodes(id),
@@ -177,8 +180,10 @@ class DatabaseManager {
         // Create indexes for performance optimization
         const createIndexes = [
           "CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at)",
+          "CREATE INDEX IF NOT EXISTS idx_nodes_sequence_id ON nodes(sequence_id)",
           "CREATE INDEX IF NOT EXISTS idx_edges_from_to ON edges(from_node_id, to_node_id)",
           "CREATE INDEX IF NOT EXISTS idx_edges_created ON edges(created_at)",
+          "CREATE INDEX IF NOT EXISTS idx_edges_sequence_id ON edges(sequence_id)",
         ];
 
         // Handle migration from old schema
@@ -235,6 +240,43 @@ class DatabaseManager {
                 },
               );
             }
+
+            const hasSequenceId = columns.some(
+              (col) => col.name === "sequence_id",
+            );
+            if (!hasSequenceId) {
+              this.db.run(
+                "ALTER TABLE nodes ADD COLUMN sequence_id INTEGER",
+                (err) => {
+                  if (err)
+                    console.warn(
+                      "Could not add sequence_id column to nodes:",
+                      err.message,
+                    );
+                },
+              );
+            }
+          }
+        });
+
+        // Add sequence_id column to edges table if needed
+        this.db.all("PRAGMA table_info(edges)", (err, columns) => {
+          if (!err && columns.length > 0) {
+            const hasSequenceId = columns.some(
+              (col) => col.name === "sequence_id",
+            );
+            if (!hasSequenceId) {
+              this.db.run(
+                "ALTER TABLE edges ADD COLUMN sequence_id INTEGER",
+                (err) => {
+                  if (err)
+                    console.warn(
+                      "Could not add sequence_id column to edges:",
+                      err.message,
+                    );
+                },
+              );
+            }
           }
         });
 
@@ -255,6 +297,156 @@ class DatabaseManager {
     } catch {
       await fs.mkdir(dataDir, { recursive: true });
     }
+  }
+
+  /**
+   * Populate sequence IDs for existing records that have NULL values
+   * Orders by created_at to maintain chronological sequence
+   */
+  async populateSequenceIds() {
+    console.log("[DatabaseManager.populateSequenceIds] Starting sequence ID population...");
+    
+    return new Promise((resolve, reject) => {
+      this.db.serialize(() => {
+        this.db.run("BEGIN TRANSACTION", (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          const tables = ["nodes", "edges"];
+          let completedTables = 0;
+          let hasError = false;
+
+          tables.forEach((table) => {
+            // Check if we need to populate sequence IDs for this table
+            this.db.get(
+              `SELECT COUNT(*) as count FROM ${table} WHERE sequence_id IS NULL`,
+              (err, unpopulatedResult) => {
+                if (hasError) return;
+                
+                if (err) {
+                  console.error(`[DatabaseManager.populateSequenceIds] Error checking ${table}:`, err);
+                  hasError = true;
+                  this.db.run("ROLLBACK");
+                  reject(err);
+                  return;
+                }
+
+                const unpopulatedCount = unpopulatedResult?.count || 0;
+
+                if (unpopulatedCount > 0) {
+                  console.log(
+                    `[DatabaseManager.populateSequenceIds] Found ${unpopulatedCount} records in ${table} without sequence IDs. Populating...`
+                  );
+
+                  // Get the maximum existing sequence_id to avoid conflicts
+                  this.db.get(
+                    `SELECT MAX(sequence_id) as max_seq FROM ${table} WHERE sequence_id IS NOT NULL`,
+                    (err, maxResult) => {
+                      if (hasError) return;
+                      
+                      if (err) {
+                        console.error(`[DatabaseManager.populateSequenceIds] Error getting max sequence_id for ${table}:`, err);
+                        hasError = true;
+                        this.db.run("ROLLBACK");
+                        reject(err);
+                        return;
+                      }
+
+                      const startSequenceId = (maxResult?.max_seq || 0) + 1;
+
+                      // Get records ordered by created_at timestamp
+                      this.db.all(
+                        `SELECT id FROM ${table} WHERE sequence_id IS NULL ORDER BY created_at ASC`,
+                        (err, records) => {
+                          if (hasError) return;
+                          
+                          if (err) {
+                            console.error(`[DatabaseManager.populateSequenceIds] Error fetching records from ${table}:`, err);
+                            hasError = true;
+                            this.db.run("ROLLBACK");
+                            reject(err);
+                            return;
+                          }
+
+                          if (records.length === 0) {
+                            completedTables++;
+                            if (completedTables === tables.length) {
+                              this.db.run("COMMIT", (commitErr) => {
+                                if (commitErr) {
+                                  reject(commitErr);
+                                } else {
+                                  console.log(`[DatabaseManager.populateSequenceIds] All sequence IDs populated successfully`);
+                                  resolve();
+                                }
+                              });
+                            }
+                            return;
+                          }
+
+                          // Assign sequence IDs sequentially
+                          let updateCount = 0;
+                          records.forEach((record, index) => {
+                            this.db.run(
+                              `UPDATE ${table} SET sequence_id = ? WHERE id = ?`,
+                              [startSequenceId + index, record.id],
+                              (updateErr) => {
+                                if (hasError) return;
+                                
+                                if (updateErr) {
+                                  console.error(`[DatabaseManager.populateSequenceIds] Error updating ${table}:`, updateErr);
+                                  hasError = true;
+                                  this.db.run("ROLLBACK");
+                                  reject(updateErr);
+                                  return;
+                                }
+
+                                updateCount++;
+                                if (updateCount === records.length) {
+                                  console.log(
+                                    `[DatabaseManager.populateSequenceIds] Successfully populated sequence IDs for ${records.length} records in ${table} (starting from ${startSequenceId})`
+                                  );
+                                  
+                                  completedTables++;
+                                  if (completedTables === tables.length) {
+                                    this.db.run("COMMIT", (commitErr) => {
+                                      if (commitErr) {
+                                        reject(commitErr);
+                                      } else {
+                                        console.log(`[DatabaseManager.populateSequenceIds] All sequence IDs populated successfully`);
+                                        resolve();
+                                      }
+                                    });
+                                  }
+                                }
+                              }
+                            );
+                          });
+                        }
+                      );
+                    }
+                  );
+                } else {
+                  console.log(`[DatabaseManager.populateSequenceIds] All records in ${table} already have sequence IDs`);
+                  completedTables++;
+                  if (completedTables === tables.length) {
+                    this.db.run("COMMIT", (commitErr) => {
+                      if (commitErr) {
+                        reject(commitErr);
+                      } else {
+                        console.log(`[DatabaseManager.populateSequenceIds] All sequence IDs populated successfully`);
+                        resolve();
+                      }
+                    });
+                  }
+                }
+              }
+            );
+          });
+        });
+      });
+    });
   }
 
   async saveGraph(data) {
@@ -291,13 +483,35 @@ class DatabaseManager {
           );
           this.db.run("BEGIN TRANSACTION");
 
-          try {
-            const graphId = Buffer.from(
-              "00000000-0000-0000-0000-000000000000",
-              "hex",
-            );
+          // Get max sequence IDs for nodes and edges before processing
+          this.db.get(
+            "SELECT MAX(sequence_id) as max_seq FROM nodes WHERE sequence_id IS NOT NULL",
+            (err, nodeMaxResult) => {
+              if (err) {
+                this.db.run("ROLLBACK");
+                reject(err);
+                return;
+              }
 
-            // UPSERT graph metadata with change detection
+              this.db.get(
+                "SELECT MAX(sequence_id) as max_seq FROM edges WHERE sequence_id IS NOT NULL",
+                (err, edgeMaxResult) => {
+                  if (err) {
+                    this.db.run("ROLLBACK");
+                    reject(err);
+                    return;
+                  }
+
+                  let nextNodeSequenceId = (nodeMaxResult?.max_seq || 0) + 1;
+                  let nextEdgeSequenceId = (edgeMaxResult?.max_seq || 0) + 1;
+
+                  try {
+                    const graphId = Buffer.from(
+                      "00000000-0000-0000-0000-000000000000",
+                      "hex",
+                    );
+
+                    // UPSERT graph metadata with change detection
             this.db.run(
               `
                         INSERT INTO graphs (id, name, description, scale, offset_x, offset_y, metadata, created_at, modified_at)
@@ -349,30 +563,31 @@ class DatabaseManager {
               ],
             );
 
-            // Process nodes with UPSERT - always use same logic
-            for (const node of nodes) {
-              const nodeId = node.id
-                ? uuidToBuffer(node.id)
-                : uuidToBuffer(uuidv7());
+                    // Process nodes with UPSERT - assign sequence IDs to new nodes
+                    for (const node of nodes) {
+                      const nodeId = node.id
+                        ? uuidToBuffer(node.id)
+                        : uuidToBuffer(uuidv7());
 
-              // Check if this node exists to preserve created_at
-              this.db.get(
-                "SELECT created_at FROM nodes WHERE id = ?",
-                [nodeId],
-                (err, existingRow) => {
-                  // Use COALESCE to preserve existing timestamp, or use current local time for new records
-                  const createdAtSQL = existingRow
-                    ? "COALESCE((SELECT created_at FROM nodes WHERE id = ?), datetime('now', 'localtime'))"
-                    : "datetime('now', 'localtime')";
+                      // Check if this node exists to preserve created_at and sequence_id
+                      this.db.get(
+                        "SELECT created_at, sequence_id FROM nodes WHERE id = ?",
+                        [nodeId],
+                        (err, existingRow) => {
+                          // Use COALESCE to preserve existing timestamp, or use current local time for new records
+                          const createdAtSQL = existingRow
+                            ? "COALESCE((SELECT created_at FROM nodes WHERE id = ?), datetime('now', 'localtime'))"
+                            : "datetime('now', 'localtime')";
 
-                  // console.log(`[DEBUG] Node ${bufferToUuid(nodeId)} - existing created_at:`, existingRow?.created_at);
+                          // Preserve existing sequence_id or assign new one
+                          const sequenceId = existingRow?.sequence_id || (nextNodeSequenceId++);
 
-                  // Build parameter list based on whether we have existing row
-                  let params, sql;
-                  if (existingRow) {
-                    sql = `
-                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${createdAtSQL}, datetime('now', 'localtime'))
+                          // Build parameter list based on whether we have existing row
+                          let params, sql;
+                          if (existingRow) {
+                            sql = `
+                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, sequence_id, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${createdAtSQL}, datetime('now', 'localtime'))
                                 ON CONFLICT(id) DO UPDATE SET
                                     x = CASE
                                         WHEN nodes.x != excluded.x THEN excluded.x
@@ -406,6 +621,7 @@ class DatabaseManager {
                                         WHEN nodes.layers != excluded.layers THEN excluded.layers
                                         ELSE nodes.layers
                                     END,
+                                    sequence_id = COALESCE(nodes.sequence_id, excluded.sequence_id),
                                     modified_at = CASE
                                         WHEN nodes.x != excluded.x OR
                                              nodes.y != excluded.y OR
@@ -419,22 +635,23 @@ class DatabaseManager {
                                         ELSE nodes.modified_at
                                     END
                             `;
-                    params = [
-                      nodeId,
-                      node.x,
-                      node.y,
-                      node.label || "",
-                      node.chineseLabel || "",
-                      node.color || "#3b82f6",
-                      node.radius || 20,
-                      node.category || null,
-                      (node.layers || []).join(","),
-                      nodeId, // For the COALESCE subquery
-                    ];
-                  } else {
-                    sql = `
-                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, created_at, modified_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
+                            params = [
+                              nodeId,
+                              node.x,
+                              node.y,
+                              node.label || "",
+                              node.chineseLabel || "",
+                              node.color || "#3b82f6",
+                              node.radius || 20,
+                              node.category || null,
+                              (node.layers || []).join(","),
+                              sequenceId,
+                              nodeId, // For the COALESCE subquery
+                            ];
+                          } else {
+                            sql = `
+                                INSERT INTO nodes (id, x, y, label, chinese_label, color, radius, category, layers, sequence_id, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
                                 ON CONFLICT(id) DO UPDATE SET
                                     x = CASE
                                         WHEN nodes.x != excluded.x THEN excluded.x
@@ -468,6 +685,7 @@ class DatabaseManager {
                                         WHEN nodes.layers != excluded.layers THEN excluded.layers
                                         ELSE nodes.layers
                                     END,
+                                    sequence_id = COALESCE(nodes.sequence_id, excluded.sequence_id),
                                     modified_at = CASE
                                         WHEN nodes.x != excluded.x OR
                                              nodes.y != excluded.y OR
@@ -481,47 +699,49 @@ class DatabaseManager {
                                         ELSE nodes.modified_at
                                     END
                             `;
-                    params = [
-                      nodeId,
-                      node.x,
-                      node.y,
-                      node.label || "",
-                      node.chineseLabel || "",
-                      node.color || "#3b82f6",
-                      node.radius || 20,
-                      node.category || null,
-                      (node.layers || []).join(","),
-                    ];
-                  }
+                            params = [
+                              nodeId,
+                              node.x,
+                              node.y,
+                              node.label || "",
+                              node.chineseLabel || "",
+                              node.color || "#3b82f6",
+                              node.radius || 20,
+                              node.category || null,
+                              (node.layers || []).join(","),
+                              sequenceId,
+                            ];
+                          }
 
-                  this.db.run(sql, params);
-                },
-              );
-            }
+                          this.db.run(sql, params);
+                        },
+                      );
+                    }
 
-            // Process edges with UPSERT - same logic
-            for (const edge of edges) {
-              const edgeId = edge.id
-                ? uuidToBuffer(edge.id)
-                : uuidToBuffer(uuidv7());
+                    // Process edges with UPSERT - assign sequence IDs to new edges
+                    for (const edge of edges) {
+                      const edgeId = edge.id
+                        ? uuidToBuffer(edge.id)
+                        : uuidToBuffer(uuidv7());
 
-              this.db.get(
-                "SELECT created_at FROM edges WHERE id = ?",
-                [edgeId],
-                (err, existingRow) => {
-                  // Use COALESCE to preserve existing timestamp, or use current local time for new records
-                  const createdAtSQL = existingRow
-                    ? "COALESCE((SELECT created_at FROM edges WHERE id = ?), datetime('now', 'localtime'))"
-                    : "datetime('now', 'localtime')";
+                      this.db.get(
+                        "SELECT created_at, sequence_id FROM edges WHERE id = ?",
+                        [edgeId],
+                        (err, existingRow) => {
+                          // Use COALESCE to preserve existing timestamp, or use current local time for new records
+                          const createdAtSQL = existingRow
+                            ? "COALESCE((SELECT created_at FROM edges WHERE id = ?), datetime('now', 'localtime'))"
+                            : "datetime('now', 'localtime')";
 
-                  // console.log(`[DEBUG] Edge ${bufferToUuid(edgeId)} - existing created_at:`, existingRow?.created_at);
+                          // Preserve existing sequence_id or assign new one
+                          const sequenceId = existingRow?.sequence_id || (nextEdgeSequenceId++);
 
-                  // Build parameter list based on whether we have existing row
-                  let params, sql;
-                  if (existingRow) {
-                    sql = `
-                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
-                                VALUES (?, ?, ?, ?, ?, ${createdAtSQL}, datetime('now', 'localtime'))
+                          // Build parameter list based on whether we have existing row
+                          let params, sql;
+                          if (existingRow) {
+                            sql = `
+                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, sequence_id, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ${createdAtSQL}, datetime('now', 'localtime'))
                                 ON CONFLICT(id) DO UPDATE SET
                                     from_node_id = CASE
                                         WHEN edges.from_node_id != excluded.from_node_id THEN excluded.from_node_id
@@ -539,6 +759,7 @@ class DatabaseManager {
                                         WHEN edges.category != excluded.category THEN excluded.category
                                         ELSE edges.category
                                     END,
+                                    sequence_id = COALESCE(edges.sequence_id, excluded.sequence_id),
                                     modified_at = CASE
                                         WHEN edges.from_node_id != excluded.from_node_id OR
                                              edges.to_node_id != excluded.to_node_id OR
@@ -548,18 +769,19 @@ class DatabaseManager {
                                         ELSE edges.modified_at
                                     END
                             `;
-                    params = [
-                      edgeId,
-                      uuidToBuffer(String(edge.from)),
-                      uuidToBuffer(String(edge.to)),
-                      edge.weight || 1,
-                      edge.category || null,
-                      edgeId, // For the COALESCE subquery
-                    ];
-                  } else {
-                    sql = `
-                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, created_at, modified_at)
-                                VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
+                            params = [
+                              edgeId,
+                              uuidToBuffer(String(edge.from)),
+                              uuidToBuffer(String(edge.to)),
+                              edge.weight || 1,
+                              edge.category || null,
+                              sequenceId,
+                              edgeId, // For the COALESCE subquery
+                            ];
+                          } else {
+                            sql = `
+                                INSERT INTO edges (id, from_node_id, to_node_id, weight, category, sequence_id, created_at, modified_at)
+                                VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
                                 ON CONFLICT(id) DO UPDATE SET
                                     from_node_id = CASE
                                         WHEN edges.from_node_id != excluded.from_node_id THEN excluded.from_node_id
@@ -577,6 +799,7 @@ class DatabaseManager {
                                         WHEN edges.category != excluded.category THEN excluded.category
                                         ELSE edges.category
                                     END,
+                                    sequence_id = COALESCE(edges.sequence_id, excluded.sequence_id),
                                     modified_at = CASE
                                         WHEN edges.from_node_id != excluded.from_node_id OR
                                              edges.to_node_id != excluded.to_node_id OR
@@ -586,107 +809,112 @@ class DatabaseManager {
                                         ELSE edges.modified_at
                                     END
                             `;
-                    params = [
-                      edgeId,
-                      uuidToBuffer(String(edge.from)),
-                      uuidToBuffer(String(edge.to)),
-                      edge.weight || 1,
-                      edge.category || null,
-                    ];
+                            params = [
+                              edgeId,
+                              uuidToBuffer(String(edge.from)),
+                              uuidToBuffer(String(edge.to)),
+                              edge.weight || 1,
+                              edge.category || null,
+                              sequenceId,
+                            ];
+                          }
+
+                          this.db.run(sql, params);
+                        },
+                      );
+                    }
+
+                    // Clean up deleted nodes and edges - always do this
+                    const currentNodeIds = nodes
+                      .map((n) => uuidToBuffer(n.id))
+                      .filter((id) => id !== null);
+                    const currentEdgeIds = edges
+                      .map((e) => uuidToBuffer(e.id))
+                      .filter((id) => id !== null);
+
+                    if (currentNodeIds.length > 0) {
+                      const placeholders = currentNodeIds.map(() => "?").join(",");
+                      this.db.run(
+                        `DELETE FROM nodes WHERE id NOT IN (${placeholders})`,
+                        currentNodeIds,
+                      );
+                    } else {
+                      this.db.run("DELETE FROM nodes");
+                    }
+
+                    if (currentEdgeIds.length > 0) {
+                      const placeholders = currentEdgeIds.map(() => "?").join(",");
+                      this.db.run(
+                        `DELETE FROM edges WHERE id NOT IN (${placeholders})`,
+                        currentEdgeIds,
+                      );
+                    } else {
+                      this.db.run("DELETE FROM edges");
+                    }
+
+                    // Save filter state if provided
+                    if (data.filterState) {
+                      const { layerFilter, distanceFilter } = data.filterState;
+
+                      // Convert active layers array to JSON string
+                      const activeLayersJson = JSON.stringify(layerFilter?.activeLayers || []);
+                      const centerNodeId = distanceFilter?.centerNodeId ? uuidToBuffer(distanceFilter.centerNodeId) : null;
+
+                      this.db.run(`
+                        INSERT OR REPLACE INTO filter_state (
+                          id, layer_filter_enabled, layer_filter_active_layers, layer_filter_mode,
+                          distance_filter_center_node_id, distance_filter_max_distance, distance_filter_max_depth,
+                          modified_at
+                        ) VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+                      `, [
+                        layerFilter?.enabled ? 1 : 0,
+                        activeLayersJson,
+                        layerFilter?.mode || 'include',
+                        centerNodeId,
+                        distanceFilter?.maxDistance || 10,
+                        distanceFilter?.maxDepth || 5
+                      ]);
+                    }
+
+                    this.db.run("COMMIT", (err) => {
+                      if (err) {
+                        this.db.run("ROLLBACK");
+                        reject(err);
+                      } else {
+                        // Debug: Verify actual saved times
+                        this.db.all(
+                          "SELECT id, created_at, modified_at FROM nodes LIMIT 5",
+                          (err, rows) => {
+                            if (!err) {
+                              console.log(
+                                "[DEBUG] Nodes after save - actual timestamps:",
+                                rows,
+                              );
+                            }
+                          },
+                        );
+                        this.db.all(
+                          "SELECT id, created_at, modified_at FROM edges LIMIT 5",
+                          (err, rows) => {
+                            if (!err) {
+                              console.log(
+                                "[DEBUG] Edges after save - actual timestamps:",
+                                rows,
+                              );
+                            }
+                          },
+                        );
+                        resolve();
+                      }
+                    });
+                  } catch (error) {
+                    this.db.run("ROLLBACK");
+                    reject(error);
                   }
-
-                  this.db.run(sql, params);
-                },
+                }
               );
             }
-
-            // Clean up deleted nodes and edges - always do this
-            const currentNodeIds = nodes
-              .map((n) => uuidToBuffer(n.id))
-              .filter((id) => id !== null);
-            const currentEdgeIds = edges
-              .map((e) => uuidToBuffer(e.id))
-              .filter((id) => id !== null);
-
-            if (currentNodeIds.length > 0) {
-              const placeholders = currentNodeIds.map(() => "?").join(",");
-              this.db.run(
-                `DELETE FROM nodes WHERE id NOT IN (${placeholders})`,
-                currentNodeIds,
-              );
-            } else {
-              this.db.run("DELETE FROM nodes");
-            }
-
-            if (currentEdgeIds.length > 0) {
-              const placeholders = currentEdgeIds.map(() => "?").join(",");
-              this.db.run(
-                `DELETE FROM edges WHERE id NOT IN (${placeholders})`,
-                currentEdgeIds,
-              );
-            } else {
-              this.db.run("DELETE FROM edges");
-            }
-
-            // Save filter state if provided
-            if (data.filterState) {
-              const { layerFilter, distanceFilter } = data.filterState;
-
-              // Convert active layers array to JSON string
-              const activeLayersJson = JSON.stringify(layerFilter?.activeLayers || []);
-              const centerNodeId = distanceFilter?.centerNodeId ? uuidToBuffer(distanceFilter.centerNodeId) : null;
-
-              this.db.run(`
-                INSERT OR REPLACE INTO filter_state (
-                  id, layer_filter_enabled, layer_filter_active_layers, layer_filter_mode,
-                  distance_filter_center_node_id, distance_filter_max_distance, distance_filter_max_depth,
-                  modified_at
-                ) VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
-              `, [
-                layerFilter?.enabled ? 1 : 0,
-                activeLayersJson,
-                layerFilter?.mode || 'include',
-                centerNodeId,
-                distanceFilter?.maxDistance || 10,
-                distanceFilter?.maxDepth || 5
-              ]);
-            }
-
-            this.db.run("COMMIT", (err) => {
-              if (err) {
-                this.db.run("ROLLBACK");
-                reject(err);
-              } else {
-                // Debug: Verify actual saved times
-                this.db.all(
-                  "SELECT id, created_at, modified_at FROM nodes LIMIT 5",
-                  (err, rows) => {
-                    if (!err) {
-                      console.log(
-                        "[DEBUG] Nodes after save - actual timestamps:",
-                        rows,
-                      );
-                    }
-                  },
-                );
-                this.db.all(
-                  "SELECT id, created_at, modified_at FROM edges LIMIT 5",
-                  (err, rows) => {
-                    if (!err) {
-                      console.log(
-                        "[DEBUG] Edges after save - actual timestamps:",
-                        rows,
-                      );
-                    }
-                  },
-                );
-                resolve();
-              }
-            });
-          } catch (error) {
-            this.db.run("ROLLBACK");
-            reject(error);
-          }
+          );
         });
       });
     } catch (error) {
@@ -788,6 +1016,7 @@ class DatabaseManager {
                         .map((l) => l.trim())
                         .filter((l) => l)
                     : [],
+                  sequence_id: row.sequence_id,
                   created_at: row.created_at,
                   modified_at: row.modified_at
                 };
@@ -805,6 +1034,7 @@ class DatabaseManager {
                   to: bufferToUuid(row.to_node_id),
                   weight: row.weight,
                   category: row.category,
+                  sequence_id: row.sequence_id,
                   created_at: row.created_at,
                   modified_at: row.modified_at
                 };
