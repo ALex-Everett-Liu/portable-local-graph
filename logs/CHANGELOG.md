@@ -2,7 +2,7 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
-## [0.7.1] - 2025-01-XX
+## [0.7.1] - 2025-11-18
 
 ### 🗑️ Local Graph Filtering Removal
 - **Feature Removal**: Removed all local graph filtering functionality for future redesign
@@ -35,7 +35,7 @@
 - **Consistent Behavior**: All remaining features continue to work as expected
 - **No Data Loss**: Existing graphs and database files remain fully compatible
 
-## [0.7.0] - 2025-01-XX
+## [0.7.0] - 2025-11-18
 
 ### 🎯 Project Simplification - JSON Export/Import Removal
 - **Streamlined Feature Set**: Removed all JSON export/import functionality to focus exclusively on database operations
