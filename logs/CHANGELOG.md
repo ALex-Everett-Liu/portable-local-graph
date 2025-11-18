@@ -15,15 +15,19 @@
 - **Layer JSON Export**: Removed ability to export selected layers as JSON files
 - **Migration Tools**: Removed JSON file migration endpoints and utilities
 - **Import Dialogs**: Removed JSON import mode selection dialogs and conflict resolution UI
+- **SVG Export**: Removed all SVG export endpoints, UI buttons, IPC handlers, and functionality
+- **SVG Generation**: Removed SVG generation utilities and export methods from export manager
 
 ### 🔧 Technical Changes
-- **Server Endpoints**: Removed `/api/graph/export/json`, `/api/graph/import`, `/api/graph/load-file`, and `/api/migrate` endpoints
-- **UI Components**: Removed Import JSON and Export JSON buttons from toolbar and layer management dialogs
-- **IPC Handlers**: Removed `import-json-file` and `export-json` IPC handlers from main process
-- **Export Manager**: Removed `exportJSON()`, `exportLayersJSON()`, and `importJSON()` methods
+- **Server Endpoints**: Removed `/api/graph/export/json`, `/api/graph/import`, `/api/graph/load-file`, `/api/migrate`, and `/api/graph/export/svg` endpoints
+- **UI Components**: Removed Import JSON, Export JSON, and Export SVG buttons from toolbar and layer management dialogs
+- **IPC Handlers**: Removed `import-json-file`, `export-json`, and `export-svg` IPC handlers from main process
+- **Export Manager**: Removed `exportJSON()`, `exportLayersJSON()`, `importJSON()`, and `exportSVG()` methods
 - **File Operations**: Removed `fallbackToJSONLoad()`, `showImportModeDialog()`, and `formatImportNotification()` functions
 - **Database Manager**: Removed `importFromJSON()`, `exportToJSON()`, and `migrateFromJSONFiles()` methods
-- **Module Deletion**: Deleted `json-import-export.js` module entirely
+- **Server Utilities**: Removed `generateSVG()` utility function from server
+- **Command Palette**: Removed "Export as SVG" command
+- **Module Deletion**: Deleted `json-import-export.js` and `svg-export.js` modules entirely
 
 ### 💾 Database Functionality Preserved
 - **Save/Load**: All database save and load operations remain fully functional
@@ -38,10 +42,11 @@
 - **Backward Compatibility**: Existing database files continue to work without changes
 
 ### 📊 Codebase Impact
-- **Reduced File Count**: Removed one entire module (`json-import-export.js`)
+- **Reduced File Count**: Removed two entire modules (`json-import-export.js` and `svg-export.js`)
 - **Cleaner Architecture**: Simplified codebase with fewer code paths to maintain
 - **Better Maintainability**: Reduced complexity makes future development easier
 - **Consistent Patterns**: All data operations now follow same database-first pattern
+- **Focused Feature Set**: Project now exclusively focuses on database operations without export format distractions
 
 ## [0.6.9] - 2025-10-21
 

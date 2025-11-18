@@ -217,13 +217,6 @@ class CommandPalette {
                 }
             },
             {
-                id: 'export-svg',
-                name: 'Export as SVG',
-                description: 'Export current graph as SVG image',
-                keywords: ['export', 'svg', 'image', 'save'],
-                action: () => window.exportAsSVG && window.exportAsSVG()
-            },
-            {
                 id: 'toggle-hotkey-mode',
                 name: 'Toggle Hotkey Mode',
                 description: 'Enter or exit hotkey mode',

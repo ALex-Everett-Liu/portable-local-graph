@@ -116,13 +116,6 @@ function createWindow() {
                 },
                 { type: 'separator' },
                 {
-                    label: 'Export SVG',
-                    click: () => {
-                        mainWindow.webContents.send('export-svg-request');
-                    }
-                },
-                { type: 'separator' },
-                {
                     label: 'Exit',
                     accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
                     click: () => {
@@ -319,23 +312,6 @@ ipcMain.handle('save-graph-file-request', async (event, filePath, data) => {
     }
 });
 
-ipcMain.handle('export-svg', async (event, svgData) => {
-    try {
-        const result = await dialog.showSaveDialog(mainWindow, {
-            filters: [
-                { name: 'SVG Files', extensions: ['svg'] }
-            ]
-        });
-        
-        if (!result.canceled) {
-            fs.writeFileSync(result.filePath, svgData);
-            return { success: true, filePath: result.filePath };
-        }
-        return { success: false, cancelled: true };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-});
 
 
 app.whenReady().then(createWindow);

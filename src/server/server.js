@@ -114,20 +114,6 @@ app.post('/api/graph/load', async (req, res) => {
 });
 
 
-// Export graph as SVG
-app.post('/api/graph/export/svg', async (req, res) => {
-    try {
-        const { graph } = req.body;
-        const svg = generateSVG(graph);
-        
-        res.json({ 
-            success: true, 
-            svg: svg 
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // List all saved graphs
 app.get('/api/graphs', async (req, res) => {
@@ -238,72 +224,6 @@ app.get('/api/health', async (req, res) => {
 
 // Utility functions
 
-function generateSVG(graph) {
-    const width = 800;
-    const height = 600;
-    const margin = 50;
-    
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-        <defs>
-            <style>
-                .node { fill: #3b82f6; stroke: #2563eb; stroke-width: 2; }
-                .node-text { font-family: Arial, sans-serif; font-size: 12px; fill: white; text-anchor: middle; }
-                .edge { stroke: #64748b; stroke-width: 2; }
-                .edge-text { font-family: Arial, sans-serif; font-size: 10px; fill: #475569; text-anchor: middle; }
-                .background { fill: #f8f9fa; }
-            </style>
-        </defs>
-        <rect class="background" width="${width}" height="${height}"/>
-    `;
-
-    // Calculate bounds
-    if (graph.nodes.length > 0) {
-        const minX = Math.min(...graph.nodes.map(n => n.x)) - 50;
-        const maxX = Math.max(...graph.nodes.map(n => n.x)) + 50;
-        const minY = Math.min(...graph.nodes.map(n => n.y)) - 50;
-        const maxY = Math.max(...graph.nodes.map(n => n.y)) + 50;
-        
-        const scale = Math.min(
-            (width - 2 * margin) / (maxX - minX),
-            (height - 2 * margin) / (maxY - minY)
-        );
-        
-        const offsetX = margin - minX * scale;
-        const offsetY = margin - minY * scale;
-
-        // Render edges
-        graph.edges.forEach(edge => {
-            const from = graph.nodes.find(n => n.id === edge.from);
-            const to = graph.nodes.find(n => n.id === edge.to);
-            
-            if (from && to) {
-                const x1 = from.x * scale + offsetX;
-                const y1 = from.y * scale + offsetY;
-                const x2 = to.x * scale + offsetX;
-                const y2 = to.y * scale + offsetY;
-                
-                svg += `<line class="edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"></line>`;
-                
-                const midX = (x1 + x2) / 2;
-                const midY = (y1 + y2) / 2;
-                svg += `<text class="edge-text" x="${midX}" y="${midY - 5}">${edge.weight}</text>`;
-            }
-        });
-
-        // Render nodes
-        graph.nodes.forEach(node => {
-            const cx = node.x * scale + offsetX;
-            const cy = node.y * scale + offsetY;
-            const r = (node.radius || 20) * scale;
-            
-            svg += `<circle class="node" cx="${cx}" cy="${cy}" r="${r}"></circle>`;
-            svg += `<text class="node-text" x="${cx}" y="${cy + 4}">${node.label}</text>`;
-        });
-    }
-
-    svg += '</svg>';
-    return svg;
-}
 
 // Error handling middleware
 app.use((error, req, res, next) => {

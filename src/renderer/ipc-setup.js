@@ -100,15 +100,6 @@ function setupIPC() {
                 }
             });
             
-            ipcRenderer.on('export-svg-request', async () => {
-                const svgData = generateSVG();
-                const result = await ipcRenderer.invoke('export-svg', svgData);
-                if (result.success) {
-                    showNotification('SVG exported successfully!');
-                } else if (!result.cancelled) {
-                    showNotification('Error exporting SVG: ' + result.error);
-                }
-            });
 
         } catch (error) {
             console.log('Electron IPC not available, running in web mode');

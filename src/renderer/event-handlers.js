@@ -27,7 +27,6 @@ function setupEventListeners() {
     
     document.getElementById('merge-db-btn').addEventListener('click', mergeDatabase);
     document.getElementById('backup-db-btn').addEventListener('click', backupDatabase);
-    document.getElementById('export-svg-btn').addEventListener('click', exportSVG);
     
     // Dialog buttons
     document.getElementById('weight-ok').addEventListener('click', handleWeightOK);
