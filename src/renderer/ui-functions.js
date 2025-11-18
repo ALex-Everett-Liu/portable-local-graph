@@ -154,7 +154,6 @@ function handleNodeOK() {
 
         graph.render();
         appState.isModified = true;
-        updateLayerList(); // Refresh layer list
     }
 
     dialog.classList.add('hidden');

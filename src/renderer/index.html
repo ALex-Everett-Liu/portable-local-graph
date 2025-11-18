@@ -259,29 +259,6 @@
                         
 
                         <div class="sidebar-section">
-                            <h4>Layer Management</h4>
-                            <div class="filter-controls">
-                                <div style="margin-bottom: 8px;">
-                                    <label style="font-size: 12px; margin-right: 8px;">Mode:</label>
-                                    <label style="font-size: 11px; margin-right: 8px;">
-                                        <input type="radio" name="layer-filter-mode" value="include" checked style="margin-right: 3px;">
-                                        Include
-                                    </label>
-                                    <label style="font-size: 11px;">
-                                        <input type="radio" name="layer-filter-mode" value="exclude" style="margin-right: 3px;">
-                                        Exclude
-                                    </label>
-                                </div>
-                                <div id="layer-summary" style="font-size: 11px; color: #666; margin-bottom: 8px;">
-                                    No layers defined
-                                </div>
-                                <button id="manage-layers-btn" class="tool-btn">Manage Layers</button>
-                                <button id="apply-layer-filter-btn" class="tool-btn">Apply Filter</button>
-                                <button id="reset-layer-filter-btn" class="tool-btn">Reset</button>
-                            </div>
-                        </div>
-
-                        <div class="sidebar-section">
                             <h4>Display Options</h4>
                             <div class="filter-controls">
                                 <div style="margin-bottom: 8px;">
@@ -299,39 +276,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Layer Rename Dialog -->
-    <div id="layer-rename-dialog" class="dialog hidden" style="width: 400px;">
-        <div class="dialog-content">
-            <h3>Rename Layer</h3>
-            
-            <div style="margin-bottom: 15px;">
-                <label>Current Layer Name:</label>
-                <input type="text" id="rename-old-layer" readonly style="background: #f5f5f5; cursor: not-allowed;">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>New Layer Name:</label>
-                <input type="text" id="rename-new-layer" placeholder="Enter new layer name..." maxlength="50">
-                <div style="font-size: 11px; color: #666; margin-top: 4px;">
-                    Layer names cannot contain commas or be empty
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 15px; font-size: 12px; color: #666;">
-                <div id="rename-usage-info">
-                    This layer is used by 0 node(s)
-                </div>
-            </div>
-            
-            <div id="rename-error" style="display: none; color: #d32f2f; font-size: 12px; margin-bottom: 15px; padding: 8px; background: #ffebee; border-radius: 4px;"></div>
-            
-            <div class="dialog-buttons">
-                <button id="rename-ok" onclick="applyLayerRename()">Rename</button>
-                <button id="rename-cancel" onclick="closeLayerRenameDialog()">Cancel</button>
             </div>
         </div>
     </div>
@@ -421,54 +365,6 @@
         </div>
     </div>
 
-    <!-- Layer Management Dialog -->
-    <div id="layer-management-dialog" class="dialog hidden" style="width: 600px; max-height: 80vh;">
-        <div class="dialog-content" style="max-height: 75vh; overflow-y: auto;">
-            <h3>Layer Management</h3>
-            
-            <div style="margin-bottom: 15px;">
-                <label>Filtering Mode:</label>
-                <div style="margin: 8px 0;">
-                    <label style="margin-right: 15px;">
-                        <input type="radio" name="dialog-layer-filter-mode" value="include" checked style="margin-right: 5px;">
-                        Include Mode (Show selected layers only)
-                    </label>
-                    <label>
-                        <input type="radio" name="dialog-layer-filter-mode" value="exclude" style="margin-right: 5px;">
-                        Exclude Mode (Hide selected layers)
-                    </label>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="layer-search-input" placeholder="Search layers..." style="flex: 1;">
-                <button id="select-all-layers-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Select All</button>
-                <button id="select-none-layers-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Select None</button>
-                <button id="invert-selection-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Invert</button>
-            </div>
-
-            <div id="layer-grid" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
-                <div style="text-align: center; color: #666; padding: 20px;">
-                    Loading layers...
-                </div>
-            </div>
-
-            <div style="margin-top: 15px; font-size: 11px; color: #666;">
-                <div id="layer-stats">
-                    <span id="total-layers-count">0</span> total layers, 
-                    <span id="selected-layers-count">0</span> selected
-                </div>
-            </div>
-
-            <div class="dialog-buttons">
-                <button id="save-layer-view-btn">Save View</button>
-                <button id="apply-layers-btn">Apply Filter</button>
-                <button id="cancel-layers-btn">Cancel</button>
-                <button id="reset-layers-btn">Reset All</button>
-            </div>
-        </div>
-    </div>
-    
     <!-- Modular Architecture - Load Graph first -->
     <script type="module">
         import { Graph } from './core/graph-compatibility.js';
@@ -487,13 +383,11 @@
     <script src="event-handlers.js"></script>
     <script src="ui-functions.js"></script>
     <script src="search-filter.js"></script>
-    <script src="layer-management.js"></script>
     <script src="file-operations.js"></script>
     <script src="ipc-setup.js"></script>
     <script src="edge-search.js"></script>
     <script src="quick-access.js"></script>
     <script src="sidebar-resize.js"></script>
-    <script src="layer-dialog.js"></script>
     <script src="node-connections.js"></script>
     <script src="search-dialog.js"></script>
     

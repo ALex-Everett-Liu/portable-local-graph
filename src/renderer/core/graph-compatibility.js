@@ -286,7 +286,6 @@ export class Graph {
                 if (!node) {
                     const newNode = this.addNode(pos.x, pos.y);
                     this.onGraphUpdate();
-                    if (window.updateLayerList) window.updateLayerList();
                 }
             } else if (this.mode === 'select') {
                 if (node) {

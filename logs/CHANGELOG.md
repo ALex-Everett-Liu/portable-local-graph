@@ -2,6 +2,42 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.5] - 2025-01-XX
+
+### 🗑️ Layer Management UI Removal
+- **Feature Removal**: Removed all layer management UI functionality for future redesign
+- **Layer Filtering UI**: Removed layer filtering controls, dialogs, and management interface
+- **UI Cleanup**: Removed layer management buttons, dialogs, and sidebar controls
+- **Code Cleanup**: Removed all layer management UI modules and related event handlers
+
+### 🔧 Removed Components
+- **Layer Management Module**: Deleted `layer-management.js` with all layer filtering and management functionality
+- **Layer Dialog Module**: Deleted `layer-dialog.js` with layer selection dialog and rename functionality
+- **UI Elements**: Removed "Layer Management" sidebar section with filter mode radio buttons, apply/reset buttons, and layer summary
+- **Dialogs**: Removed layer management dialog and layer rename dialog from HTML
+- **Event Handlers**: Removed all layer management event listeners (apply filter, reset filter, manage layers buttons)
+- **Quick Access**: Cleaned up quick-access.js to remove layer-view type handling
+
+### 🔧 Technical Changes
+- **Script Loading**: Removed script tags for layer-management.js and layer-dialog.js from index.html
+- **Event Handlers**: Removed layer filtering event listeners from event-handlers.js
+- **UI Functions**: Removed updateLayerList() call from ui-functions.js
+- **Graph Compatibility**: Removed updateLayerList() call from graph-compatibility.js after node creation
+- **CSS Cleanup**: Removed layer-management-dialog and layer-rename-dialog CSS styles
+- **Quick Access**: Simplified quick-access.js to only handle filter views, removed layer-view type
+
+### 📊 Codebase Impact
+- **Reduced Complexity**: Removed ~600+ lines of layer management UI code
+- **Cleaner Architecture**: Simplified codebase by removing layer management dependencies
+- **Future Ready**: Codebase prepared for redesigned layer management functionality
+- **Preserved Features**: Core graph filtering engine remains intact (internal functionality preserved)
+
+### 🎯 User Experience
+- **Temporary Limitation**: Layer filtering UI temporarily unavailable until redesign is complete
+- **No Data Loss**: Existing graphs and database files remain fully compatible
+- **Node Layers Preserved**: Nodes can still have layers assigned (data layer), only UI management removed
+- **Redesign Opportunity**: Clean slate for implementing improved layer management system
+
 ## [0.7.4] - 2025-01-XX
 
 ### 🗑️ Graph Analysis Modules Removal

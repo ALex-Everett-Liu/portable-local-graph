@@ -42,23 +42,14 @@ function renderQuickAccess() {
         const item = document.createElement('div');
         item.className = 'quick-access-item';
         
-        let onclickHandler = '';
-        let typeIndicator = '';
-        
-        if (config.type === 'layer-view') {
-            onclickHandler = `loadLayerView('${config.id}')`;
-            typeIndicator = '📊';
-        } else {
-            onclickHandler = `loadViewConfig('${config.id}')`;
-            typeIndicator = '🎯';
-        }
+        const onclickHandler = `loadViewConfig('${config.id}')`;
         
         item.innerHTML = `
             <div style="flex: 1; cursor: pointer; display: flex; align-items: center;" onclick="${onclickHandler}">
-                <span style="margin-right: 8px;">${typeIndicator}</span>
+                <span style="margin-right: 8px;">🎯</span>
                 <div>
                     <div style="font-weight: bold; font-size: 12px;">${config.customName || config.name}</div>
-                    <div style="font-size: 10px; color: #666;">${config.type === 'layer-view' ? 'Layer View' : 'Filter View'}</div>
+                    <div style="font-size: 10px; color: #666;">Filter View</div>
                 </div>
             </div>
             <div style="display: flex; gap: 4px;">
@@ -78,25 +69,8 @@ function loadViewConfig(configId) {
         return;
     }
     
-    if (config.type === 'layer-view') {
-        // Load layer view
-        const modeText = config.mode === 'include' ? 'Showing' : 'Excluding';
-        graph.setLayerFilterMode(config.mode);
-        graph.setActiveLayers(config.layers);
-        
-        // Update sidebar radio buttons
-        const sidebarRadio = document.querySelector(`input[name="layer-filter-mode"][value="${config.mode}"]`);
-        if (sidebarRadio) sidebarRadio.checked = true;
-        
-        // Update UI elements
-        if (typeof updateLayerSummary === 'function') updateLayerSummary();
-        if (typeof updateGraphInfo === 'function') updateGraphInfo();
-        
-        showNotification(`${modeText} ${config.layers.length} layer(s): ${config.layers.join(', ')}`);
-    } else {
-        // Filter view loading has been removed (local graph filtering functionality removed)
-        showNotification('Local graph filtering has been removed. This feature will be redesigned later.', 'info');
-    }
+    // Filter view loading has been removed (local graph filtering functionality removed)
+    showNotification('Local graph filtering has been removed. This feature will be redesigned later.', 'info');
 }
 
 // Rename view configuration
