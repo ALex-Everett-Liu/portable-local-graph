@@ -3,29 +3,28 @@
 // Setup search components
 function setupSearchComponents() {
     const nodeSearchInput = document.getElementById('node-search');
-    const centerNodeSearchInput = document.getElementById('center-node-search');
     const searchResults = document.getElementById('search-results');
-    const centerNodeDropdown = document.getElementById('center-node-dropdown');
     const clearSearchBtn = document.getElementById('clear-search-btn');
     
     // Node search functionality
-    nodeSearchInput.addEventListener('input', (e) => handleNodeSearch(e.target.value, searchResults, 'search'));
-    nodeSearchInput.addEventListener('keydown', (e) => handleSearchKeydown(e, searchResults, 'search'));
-    
-    // Center node search functionality
-    centerNodeSearchInput.addEventListener('input', (e) => handleNodeSearch(e.target.value, centerNodeDropdown, 'filter'));
-    centerNodeSearchInput.addEventListener('keydown', (e) => handleSearchKeydown(e, centerNodeDropdown, 'filter'));
+    if (nodeSearchInput && searchResults) {
+        nodeSearchInput.addEventListener('input', (e) => handleNodeSearch(e.target.value, searchResults, 'search'));
+        nodeSearchInput.addEventListener('keydown', (e) => handleSearchKeydown(e, searchResults, 'search'));
+    }
     
     // Clear search
-    clearSearchBtn.addEventListener('click', clearNodeSearch);
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', clearNodeSearch);
+    }
     
     // Close dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.search-container')) {
-            searchResults.classList.add('hidden');
-            centerNodeDropdown.classList.add('hidden');
-        }
-    });
+    if (searchResults) {
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                searchResults.classList.add('hidden');
+            }
+        });
+    }
 }
 
 // Handle node search

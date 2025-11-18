@@ -2,6 +2,39 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.1] - 2025-01-XX
+
+### 🗑️ Local Graph Filtering Removal
+- **Feature Removal**: Removed all local graph filtering functionality for future redesign
+- **Distance-Based Filtering**: Removed distance and depth-based graph filtering features
+- **UI Cleanup**: Removed filter controls, sliders, and analysis buttons from sidebar
+- **Code Cleanup**: Removed all filtering methods, state management, and related utilities
+
+### 🔧 Removed Components
+- **Filter Methods**: Removed `applyLocalGraphFilter()`, `filterLocalGraph()`, `analyzeDistancesTable()`, `calculateDistances()`, and `calculateDepths()` methods
+- **UI Elements**: Removed center node search, max distance/depth sliders, filter condition selector, Apply/Reset/Analyze buttons
+- **State Management**: Removed distance filter state from FilterStateManager and GraphFilter classes
+- **Event Handlers**: Removed all filter-related event listeners and handlers
+- **File Operations**: Removed distance filter restoration from database load operations
+- **Quick Access**: Updated quick access to handle removed filter view configurations gracefully
+
+### 🐛 Bug Fixes
+- **Missing Functions**: Fixed `calculateCentralities` undefined error by creating inline event handler
+- **Export Function**: Removed undefined `exportSelectedLayers` from layer-management.js exports
+- **CSV Export**: Removed remaining CSV export functionality from layer dialog (consistent with v0.7.0 removal)
+- **Null References**: Fixed null reference errors in `setupSearchComponents()` for removed center node search elements
+
+### 📊 Codebase Impact
+- **Reduced Complexity**: Simplified filtering architecture by removing distance-based filtering
+- **Cleaner Code**: Removed ~500+ lines of filtering-related code across multiple modules
+- **Preserved Features**: Layer filtering functionality remains intact and fully functional
+- **Future Ready**: Codebase prepared for redesigned local graph filtering feature
+
+### 🎯 User Experience
+- **Simplified Interface**: Cleaner sidebar without filter controls
+- **Consistent Behavior**: All remaining features continue to work as expected
+- **No Data Loss**: Existing graphs and database files remain fully compatible
+
 ## [0.7.0] - 2025-01-XX
 
 ### 🎯 Project Simplification - JSON Export/Import Removal
