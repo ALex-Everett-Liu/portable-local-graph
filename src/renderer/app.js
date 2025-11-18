@@ -46,7 +46,6 @@ function initializeApplication() {
         initializeGraph();
         setupEventListeners();
         setupIPC();
-        setupSearchComponents();
         setupSidebarResize();
         
         // Load initial data

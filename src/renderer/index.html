@@ -22,10 +22,6 @@
                     <span class="icon">👆</span>
                     <span>Select</span>
                 </button>
-                <button id="search-dialog-btn" class="tool-btn" title="Search Nodes">
-                    <span class="icon">🔍</span>
-                    <span>Search</span>
-                </button>
             </div>
             
             <div class="toolbar-section">
@@ -121,46 +117,6 @@
                     </div>
                 </div>
                 
-                <!-- Node Search Dialog -->
-                <div id="node-search-dialog" class="dialog hidden" style="width: 500px; max-height: 70vh;">
-                    <div class="dialog-content" style="max-height: 65vh; overflow-y: auto;">
-                        <h3>🔍 Node Search</h3>
-                        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-                            Search for nodes by label, then click to select or navigate
-                        </p>
-
-                        <div style="margin-bottom: 15px;">
-                            <div class="search-container">
-                                <input type="text" id="dialog-node-search" placeholder="Type to search nodes by label..." autocomplete="off">
-                                <div id="dialog-search-results" class="search-dropdown hidden" style="max-height: 200px; overflow-y: auto;"></div>
-                            </div>
-                            <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <span id="dialog-search-count" style="font-size: 11px; color: #666;"></span>
-                                <div>
-                                    <button id="dialog-clear-search-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px; margin-right: 8px;">Clear</button>
-                                    <button id="dialog-select-node-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px; background: #28a745; color: white;" disabled>Select Node</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="selected-node-info" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
-                            <h4>Selected Node</h4>
-                            <div id="selected-node-details" style="font-size: 12px; color: #333;"></div>
-                        </div>
-
-                        <div style="margin-bottom: 15px;">
-                            <h4>Search Results</h4>
-                            <div id="search-results-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
-                                <p style="text-align: center; color: #666; font-size: 12px; margin: 20px 0;">Start typing to search for nodes...</p>
-                            </div>
-                        </div>
-
-                        <div class="dialog-buttons">
-                            <button id="dialog-search-navigate" disabled>Navigate to Selected</button>
-                            <button id="dialog-search-cancel">Close</button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="sidebar" id="local-graph-sidebar">
@@ -194,21 +150,6 @@
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>Search & Filter</h3>
-                    
-                    <div class="sidebar-section">
-                        <h4>Node Search</h4>
-                        <div class="search-container">
-                            <input type="text" id="node-search" placeholder="Search nodes by label..." autocomplete="off">
-                            <div id="search-results" class="search-dropdown hidden"></div>
-                        </div>
-                        <div class="search-controls" style="margin-top: 8px;">
-                            <button id="clear-search-btn" class="tool-btn" style="font-size: 11px; padding: 4px 8px;">Clear</button>
-                            <span id="search-count" style="font-size: 11px; color: #666; margin-left: 8px;"></span>
-                        </div>
-                    </div>
-
-                        <div class="sidebar-section">
                             <h4>Display Options</h4>
                             <div class="filter-controls">
                                 <div style="margin-bottom: 8px;">
@@ -332,13 +273,11 @@
     <script src="graph-operations.js"></script>
     <script src="event-handlers.js"></script>
     <script src="ui-functions.js"></script>
-    <script src="search-filter.js"></script>
     <script src="file-operations.js"></script>
     <script src="ipc-setup.js"></script>
     <script src="quick-access.js"></script>
     <script src="sidebar-resize.js"></script>
     <script src="node-connections.js"></script>
-    <script src="search-dialog.js"></script>
     
     <!-- Main Application -->
     <script src="app.js"></script>

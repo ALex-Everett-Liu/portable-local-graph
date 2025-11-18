@@ -200,12 +200,13 @@ function applyFilter() {
     const maxDepth = parseInt(document.getElementById('max-depth').value);
     const condition = document.getElementById('filter-condition').value;
 
-    graph.applyLocalGraphFilter(
-        appState.filterParams.centerNodeId,
-        maxDistance,
-        maxDepth,
-        condition
-    );
+    // Local graph filtering removed - will be redesigned later
+    // graph.applyLocalGraphFilter(
+    //     appState.filterParams.centerNodeId,
+    //     maxDistance,
+    //     maxDepth,
+    //     condition
+    // );
     
     updateGraphInfo();
     appState.isModified = true;

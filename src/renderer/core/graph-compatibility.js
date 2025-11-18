@@ -11,7 +11,6 @@
  * ✅ Add new features to:
  *   - js/core/graph-data.js (data management)
  *   - js/rendering/graph-renderer.js (rendering)
- *   - js/filtering/graph-filter.js (filtering)
  *   - js/analysis/pathfinding-engine.js (pathfinding algorithms)
  * 
  * This file will be removed in future versions. Use modular components directly.
@@ -20,8 +19,6 @@
  * Each module: 45-96 lines max - maintainable and testable
  */
 import { GraphData } from './graph-data.js';
-import { GraphFilter } from '../filtering/graph-filter.js';
-import { FilterStateManager } from '../filtering/filter-state-manager.js';
 import { GraphRenderer } from '../rendering/graph-renderer.js';
 import { calculateDistance, distanceToLineSegment } from '../utils/geometry.js';
 import { dijkstra } from '../utils/algorithms.js';
@@ -32,8 +29,6 @@ export class Graph {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.graphData = new GraphData();
-        this.graphFilter = new GraphFilter();
-        this.filterStateManager = new FilterStateManager(this.graphFilter);
         this.renderer = null;
 
         // State management
@@ -83,8 +78,7 @@ export class Graph {
      * Synchronize data between components
      */
     syncData() {
-        const data = this.graphData.exportData();
-        this.graphFilter.updateOriginalData(data.nodes, data.edges);
+        // Data synchronization - filtering removed
     }
 
     /**
@@ -265,11 +259,7 @@ export class Graph {
                     selectedEdge: this.selectedEdge, 
                     highlightedNodes: this.highlightedNodes || []
                 },
-                {
-                    layerFilterEnabled: this.graphFilter.layerFilterEnabled,
-                    activeLayers: this.graphFilter.activeLayers,
-                    layerFilterMode: this.graphFilter.layerFilterMode
-                }
+                {}
             );
         }
     }
@@ -459,182 +449,47 @@ export class Graph {
 
 
     resetFilter() {
-        console.log('[resetFilter] Starting distance filter reset...');
-        const result = this.filterStateManager.resetFilters();
-        
-        if (result.success && this.originalNodes && this.originalEdges) {
-            console.log('[resetFilter] Merging original data with new additions...');
-            
-            // Get current filtered data (may contain new nodes/edges)
-            const currentData = this.graphData.exportData();
-            const originalNodeMap = new Map(this.originalNodes.map(n => [n.id, n]));
-            const originalEdgeMap = new Map(this.originalEdges.map(e => [e.id, e]));
-            
-            // Identify new nodes/edges created after filtering
-            const newNodes = currentData.nodes.filter(node => !originalNodeMap.has(node.id));
-            const newEdges = currentData.edges.filter(edge => !originalEdgeMap.has(edge.id));
-            
-            console.log('[resetFilter] New nodes to preserve:', newNodes.length);
-            console.log('[resetFilter] New edges to preserve:', newEdges.length);
-            
-            // Merge: original data + new additions
-            const mergedNodes = [...this.originalNodes, ...newNodes];
-            const mergedEdges = [...this.originalEdges, ...newEdges];
-            
-            this.graphData.loadData({
-                nodes: mergedNodes,
-                edges: mergedEdges
-            });
-            this.syncData();
-            this.originalNodes = null;
-            this.originalEdges = null;
-            this.render();
-            console.log('[resetFilter] Data merged and restored successfully');
-            return true;
-        }
+        // Filtering functionality removed - will be redesigned later
         return false;
     }
 
-    // Layer filtering methods
+    // Layer filtering methods - stubbed out for redesign
     getAllLayers() {
         return this.graphData.getAllLayers();
     }
 
     setActiveLayers(layers) {
-        console.log('[setActiveLayers] Setting active layers:', layers);
-        
-        // Check if we need to save original data
-        if (!this.originalNodes || !this.originalEdges) {
-            const data = this.graphData.exportData();
-            this.originalNodes = [...data.nodes];
-            this.originalEdges = [...data.edges];
-            console.log('[setActiveLayers] Saved original data:', {
-                nodes: this.originalNodes.length,
-                edges: this.originalEdges.length
-            });
-        }
-        
-        const result = this.filterStateManager.applyLayerFilter(layers, this.graphFilter.layerFilterMode);
-        console.log('[setActiveLayers] applyLayerFilter result:', result);
-        
-        if (result.success) {
-            this.graphData.loadData({
-                nodes: result.nodes,
-                edges: result.edges
-            });
-            this.syncData();
-            this.render();
-            console.log('[setActiveLayers] Layer filter applied successfully');
-        } else {
-            console.error('[setActiveLayers] Layer filter failed:', result.error);
-        }
+        // Layer filtering functionality removed - will be redesigned later
+        console.log('[setActiveLayers] Layer filtering removed for redesign');
     }
 
     setLayerFilterMode(mode) {
-        if (mode === 'include' || mode === 'exclude') {
-            this.graphFilter.layerFilterMode = mode;
-            this.render();
-        }
+        // Layer filtering functionality removed - will be redesigned later
     }
 
     getLayerFilterMode() {
-        return this.graphFilter.layerFilterMode;
+        return 'include'; // Default mode
     }
 
     addActiveLayer(layer) {
-        const activeLayers = Array.from(this.filterStateManager.state.layerFilter.activeLayers || []);
-        activeLayers.push(layer.trim());
-        this.setActiveLayers(activeLayers);
+        // Layer filtering functionality removed - will be redesigned later
     }
 
     removeActiveLayer(layer) {
-        const activeLayers = Array.from(this.filterStateManager.state.layerFilter.activeLayers || []);
-        const index = activeLayers.indexOf(layer.trim());
-        if (index > -1) {
-            activeLayers.splice(index, 1);
-            this.setActiveLayers(activeLayers);
-        }
+        // Layer filtering functionality removed - will be redesigned later
     }
 
     clearLayerFilter() {
-        console.log('[clearLayerFilter] Starting layer filter reset...');
-        console.log('[clearLayerFilter] originalNodes:', this.originalNodes?.length || 0);
-        console.log('[clearLayerFilter] originalEdges:', this.originalEdges?.length || 0);
-        
-        const result = this.filterStateManager.resetFilters();
-        console.log('[clearLayerFilter] resetFilters result:', result);
-        
-        if (result.success) {
-            console.log('[clearLayerFilter] Reset successful');
-            
-            if (this.originalNodes && this.originalEdges) {
-                console.log('[clearLayerFilter] Merging original data with new additions...');
-                
-                // Get current filtered data (may contain new nodes/edges)
-                const currentData = this.graphData.exportData();
-                const originalNodeMap = new Map(this.originalNodes.map(n => [n.id, n]));
-                const originalEdgeMap = new Map(this.originalEdges.map(e => [e.id, e]));
-                
-                // Identify new nodes/edges created after filtering
-                const newNodes = currentData.nodes.filter(node => !originalNodeMap.has(node.id));
-                const newEdges = currentData.edges.filter(edge => !originalEdgeMap.has(edge.id));
-                
-                console.log('[clearLayerFilter] New nodes to preserve:', newNodes.length);
-                console.log('[clearLayerFilter] New edges to preserve:', newEdges.length);
-                
-                // Merge: original data + new additions
-                const mergedNodes = [...this.originalNodes, ...newNodes];
-                const mergedEdges = [...this.originalEdges, ...newEdges];
-                
-                console.log('[clearLayerFilter] Final merged data:', {
-                    originalNodes: this.originalNodes.length,
-                    newNodes: newNodes.length,
-                    totalNodes: mergedNodes.length,
-                    originalEdges: this.originalEdges.length,
-                    newEdges: newEdges.length,
-                    totalEdges: mergedEdges.length
-                });
-                
-                this.graphData.loadData({
-                    nodes: mergedNodes,
-                    edges: mergedEdges
-                });
-                this.syncData();
-                this.originalNodes = null;
-                this.originalEdges = null;
-                console.log('[clearLayerFilter] Data merged and restored successfully');
-            } else {
-                console.log('[clearLayerFilter] No original data to restore');
-            }
-        } else {
-            console.error('[clearLayerFilter] Reset failed:', result.error);
-        }
-        
-        console.log('[clearLayerFilter] Current graph state:', {
-            nodes: this.graphData.exportData().nodes.length,
-            edges: this.graphData.exportData().edges.length
-        });
-        
-        this.render();
+        // Layer filtering functionality removed - will be redesigned later
         return true;
     }
 
     toggleLayer(layer) {
-        const activeLayers = Array.from(this.filterStateManager.state.layerFilter.activeLayers || []);
-        const trimmedLayer = layer.trim();
-        const index = activeLayers.indexOf(trimmedLayer);
-        
-        if (index > -1) {
-            activeLayers.splice(index, 1);
-        } else {
-            activeLayers.push(trimmedLayer);
-        }
-        
-        this.setActiveLayers(activeLayers);
+        // Layer filtering functionality removed - will be redesigned later
     }
 
     isLayerActive(layer) {
-        return this.filterStateManager.state.layerFilter.activeLayers?.has(layer.trim()) || false;
+        return false; // No layers active
     }
 
 

@@ -61,20 +61,12 @@ async function saveGraphToDatabase() {
     try {
         const graphData = graph.exportData();
 
-        // Include filter state from FilterStateManager
-        let filterState = null;
-        if (graph.filterStateManager) {
-            filterState = graph.filterStateManager.getState();
-            console.log('[saveGraphToDatabase] Including filter state:', filterState);
-        }
-
         const data = {
             ...graphData,
             metadata: {
                 name: 'Graph ' + new Date().toLocaleString(),
                 lastModified: new Date().toISOString()
-            },
-            filterState: filterState
+            }
         };
 
         await currentDb.saveGraph(data);
@@ -431,37 +423,11 @@ async function loadGraphFromDatabase(graphId = null) {
         
         if (data && data.nodes && data.nodes.length > 0) {
             console.log('[loadGraphFromDatabase] Loading complete graph with', data.nodes.length, 'nodes and', data.edges.length, 'edges');
-            console.log('[loadGraphFromDatabase] Filter state:', data.filterState);
 
             // Load ALL data first (preserve complete graph)
             loadGraphData(data);
 
-            // Apply filter state AFTER loading complete data
-            if (data.filterState && graph.filterStateManager) {
-                console.log('[loadGraphFromDatabase] Applying filter state to loaded graph:', data.filterState);
-                try {
-                    // Restore layer filter
-                    if (data.filterState.layerFilter) {
-                        const { activeLayers, mode, enabled } = data.filterState.layerFilter;
-
-                        // Set the filter mode regardless
-                        graph.setLayerFilterMode(mode);
-
-                        if (enabled && activeLayers && activeLayers.length > 0) {
-                            // Apply the layer filter to the loaded complete graph
-                            graph.setActiveLayers(activeLayers);
-                            console.log('[loadGraphFromDatabase] Layer filter applied to complete graph:', activeLayers, 'mode:', mode);
-                        } else {
-                            // Clear the filter if no active layers or disabled
-                            graph.clearLayerFilter();
-                            console.log('[loadGraphFromDatabase] Layer filter cleared (no active layers or disabled)');
-                        }
-                    }
-
-                } catch (error) {
-                    console.warn('[loadGraphFromDatabase] Error restoring filter state:', error);
-                }
-            }
+            // Filter state loading removed - will be redesigned later
 
             appState.isModified = false;
             showNotification('Graph loaded from database!');

@@ -19,9 +19,5 @@ export * from './rendering/styles.js';
 // Analysis modules
 export { PathfindingEngine } from './analysis/pathfinding-engine.js';
 
-// Filtering modules
-export { GraphFilter } from './filtering/graph-filter.js';
-export { FilterStateManager } from './filtering/filter-state-manager.js';
-
 // Legacy compatibility
 export { Graph as LegacyGraph } from '../graph.js';

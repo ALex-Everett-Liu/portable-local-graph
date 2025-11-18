@@ -15,8 +15,6 @@ function setupEventListeners() {
     document.getElementById('node-mode').addEventListener('click', () => setMode('node'));
     document.getElementById('edge-mode').addEventListener('click', () => setMode('edge'));
     document.getElementById('select-mode').addEventListener('click', () => setMode('select'));
-    document.getElementById('search-dialog-btn').addEventListener('click', showSearchDialog);
-    
     document.getElementById('undo-btn').addEventListener('click', undo);
     document.getElementById('redo-btn').addEventListener('click', redo);
     document.getElementById('clear-btn').addEventListener('click', clearGraph);
@@ -67,9 +65,6 @@ function setupEventListeners() {
     } else {
         console.warn("Edge arrows checkbox not found");
     }
-    
-    // Search functionality
-    setupSearchComponents();
     
     // Load saved quick access
     loadQuickAccess();
