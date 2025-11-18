@@ -45,10 +45,6 @@ function setupEventListeners() {
         }
     });
     
-    document.getElementById('edge-search-ok').addEventListener('click', handleEdgeSearchOK);
-    document.getElementById('edge-search-cancel').addEventListener('click', closeEdgeSearchDialog);
-    
-    
     // Display options
     const arrowCheckbox = document.getElementById('show-edge-arrows');
     if (arrowCheckbox) {
@@ -71,10 +67,6 @@ function setupEventListeners() {
     } else {
         console.warn("Edge arrows checkbox not found");
     }
-    
-    // Edge creation via search
-    document.getElementById('create-edge-search-btn').addEventListener('click', showEdgeSearchDialog);
-    
     
     // Search functionality
     setupSearchComponents();
