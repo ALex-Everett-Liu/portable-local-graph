@@ -51,7 +51,6 @@ function initializeApplication() {
         
         // Initialize new modules
         initializeCommandPalette();
-        initializeHotkeyMode();
         
         // Load initial data
         updateGraphInfo();

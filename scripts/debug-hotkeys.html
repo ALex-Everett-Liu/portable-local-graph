@@ -20,11 +20,8 @@
     </div>
     
     <div style="margin: 20px 0;">
-        <button onclick="simulateHotkeyMode()" class="tool-btn">Test Hotkey Mode</button>
         <button onclick="clearLog()" class="tool-btn">Clear Log</button>
     </div>
-    
-    <script src="js/hotkey-mode.js"></script>
     
     <script>
         function log(message, type = 'info') {
@@ -38,19 +35,6 @@
             document.getElementById('debug-log').innerHTML = 'Log cleared...\n';
         }
         
-        function simulateHotkeyMode() {
-            if (!window.hotkeyMode) {
-                log('Initializing hotkey mode...', 'info');
-                initializeHotkeyMode();
-            }
-            
-            log('Hotkey mode object:', 'info');
-            log(`- isActive: ${hotkeyMode.isActive}`, 'info');
-            
-            hotkeyMode.activate();
-            log('Hotkey mode activated manually', 'success');
-        }
-        
         // Add debug listeners
         document.addEventListener('keydown', (e) => {
             log(`Keydown: ${e.key} (Alt: ${e.altKey}, Ctrl: ${e.ctrlKey})`, 'info');
@@ -62,8 +46,7 @@
         
         // Initialize
         window.addEventListener('load', () => {
-            initializeHotkeyMode();
-            log('Hotkey mode initialized', 'success');
+            log('Keyboard debug initialized', 'success');
         });
     </script>
 </body>

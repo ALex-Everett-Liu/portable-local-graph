@@ -4,11 +4,6 @@ function handleKeyDown(e) {
     // Ignore if input is focused
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     
-    // Handle Alt key for hotkey mode (let hotkey-mode.js handle it)
-    if (e.key === 'Alt' && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
-        // Let hotkey-mode handle this
-        return;
-    }
     
     // Handle Ctrl+P for command palette
     if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
@@ -77,69 +72,62 @@ function handleKeyDown(e) {
         }
     }
     
-    // Single key shortcuts (only when not in hotkey mode)
-    if (!window.hotkeyMode || !window.hotkeyMode.isActive) {
-        console.log("Processing single key shortcuts (hotkey mode not active)", e.key.toLowerCase());
-        switch (e.key.toLowerCase()) {
-            case 'n':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    console.log("Setting node mode");
-                    setMode('node');
+    // Single key shortcuts
+    console.log("Processing single key shortcuts", e.key.toLowerCase());
+    switch (e.key.toLowerCase()) {
+        case 'n':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                console.log("Setting node mode");
+                setMode('node');
+            }
+            break;
+        case 'e':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                console.log("Setting edge mode");
+                setMode('edge');
+            }
+            break;
+        case 't':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                console.log("Setting select mode");
+                setMode('select');
+            }
+            break;
+        case 'f':
+        case 'F':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input')) {
+                console.log("Focusing search input");
+                e.preventDefault();
+                const searchInput = document.getElementById('node-search');
+                if (searchInput) searchInput.focus();
+            }
+            break;
+        case 'c':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                console.log("Calculating centralities");
+                if (graph && graph.calculateCentralities) {
+                    graph.calculateCentralities();
                 }
-                break;
-            case 'e':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    console.log("Setting edge mode");
-                    setMode('edge');
+            }
+            break;
+        case 'l':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                console.log("Opening layer dialog");
+                if (window.openLayerDialog) {
+                    window.openLayerDialog();
                 }
-                break;
-            case 't':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    console.log("Setting select mode");
-                    setMode('select');
-                }
-                break;
-            case 'f':
-            case 'F':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input')) {
-                    console.log("Focusing search input");
-                    e.preventDefault();
-                    const searchInput = document.getElementById('node-search');
-                    if (searchInput) searchInput.focus();
-                }
-                break;
-            case 'c':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    console.log("Calculating centralities");
-                    if (graph && graph.calculateCentralities) {
-                        graph.calculateCentralities();
-                    }
-                }
-                break;
-            case 'l':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    console.log("Opening layer dialog");
-                    if (window.openLayerDialog) {
-                        window.openLayerDialog();
-                    }
-                }
-                break;
-            case 's':
-                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-                    console.log("S key pressed - should be handled by hotkey mode");
-                }
-                break;
-        }
+            }
+            break;
+        case 's':
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                // S key shortcut can be implemented here if needed
+            }
+            break;
     }
     
     switch (e.key) {
         case 'Escape':
-            // If hotkey mode is active, let it handle Escape
-            if (window.hotkeyMode && window.hotkeyMode.isActive) {
-                return; // hotkey-mode.js will handle this
-            }
-            
-            // Otherwise, handle Escape normally
+            // Handle Escape normally
             if (!window.commandPalette || !window.commandPalette.isOpen) {
                 setMode('select');
                 clearNodeSearch();

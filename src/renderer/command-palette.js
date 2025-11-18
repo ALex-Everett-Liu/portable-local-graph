@@ -217,14 +217,6 @@ class CommandPalette {
                 }
             },
             {
-                id: 'toggle-hotkey-mode',
-                name: 'Toggle Hotkey Mode',
-                description: 'Enter or exit hotkey mode',
-                keywords: ['hotkey', 'mode', 'keyboard', 'help'],
-                shortcut: 'Alt',
-                action: () => window.hotkeyMode && window.hotkeyMode.toggle()
-            },
-            {
                 id: 'create-edge-search',
                 name: 'Create Edge via Search',
                 description: 'Create edge between nodes using search',
