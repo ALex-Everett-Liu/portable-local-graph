@@ -2,42 +2,8 @@
 
 // Save view configuration
 function saveViewConfig() {
-    if (!appState.filterParams.centerNodeId) {
-        showNotification('Please apply a filter first before saving', 'error');
-        return;
-    }
-    
-    const centerNode = graph.nodes.find(n => n.id === appState.filterParams.centerNodeId);
-    if (!centerNode) {
-        showNotification('Center node not found', 'error');
-        return;
-    }
-    
-    const defaultName = `${centerNode.label} (D:${appState.filterParams.maxDistance}, H:${appState.filterParams.maxDepth})`;
-    
-    // Use a simple approach - just use the default name since we can't use prompt
-    // Users can rename later via the rename button
-    const config = {
-        id: 'view-' + Date.now(),
-        name: defaultName,
-        customName: defaultName, // Default to the generated name for now
-        centerNodeId: appState.filterParams.centerNodeId,
-        maxDistance: appState.filterParams.maxDistance,
-        maxDepth: appState.filterParams.maxDepth,
-        centerNodeLabel: centerNode.label,
-        timestamp: new Date().toISOString()
-    };
-    
-    appState.quickAccess.push(config);
-    
-    // Keep only the 10 most recent configurations
-    if (appState.quickAccess.length > 10) {
-        appState.quickAccess = appState.quickAccess.slice(-10);
-    }
-    
-    saveQuickAccess();
-    renderQuickAccess();
-    showNotification('View configuration saved');
+    // Local graph filtering functionality has been removed
+    showNotification('Local graph filtering has been removed. This feature will be redesigned later.', 'info');
 }
 
 // Load quick access from localStorage
@@ -128,23 +94,8 @@ function loadViewConfig(configId) {
         
         showNotification(`${modeText} ${config.layers.length} layer(s): ${config.layers.join(', ')}`);
     } else {
-        // Load filter view
-        // Update UI controls
-        document.getElementById('center-node-select').value = config.centerNodeId;
-        document.getElementById('max-distance').value = config.maxDistance;
-        document.getElementById('max-depth').value = config.maxDepth;
-        
-        // Update app state
-        appState.filterParams.centerNodeId = config.centerNodeId;
-        appState.filterParams.maxDistance = config.maxDistance;
-        appState.filterParams.maxDepth = config.maxDepth;
-        
-        // Update displays
-        updateDistanceDisplay();
-        updateDepthDisplay();
-        
-        // Apply the filter
-        applyFilter();
+        // Filter view loading has been removed (local graph filtering functionality removed)
+        showNotification('Local graph filtering has been removed. This feature will be redesigned later.', 'info');
     }
 }
 

@@ -14,11 +14,6 @@ export class FilterStateManager {
                 activeLayers: [],
                 mode: 'include'
             },
-            distanceFilter: {
-                centerNodeId: null,
-                maxDistance: 10,
-                maxDepth: 5
-            }
         };
         
         this.history = [];
@@ -70,38 +65,6 @@ export class FilterStateManager {
         }
     }
 
-    /**
-     * Apply local graph filter with state management
-     * @param {string} centerNodeId - Center node ID
-     * @param {number} maxDistance - Maximum distance
-     * @param {number} maxDepth - Maximum depth
-     * @returns {Object} Filter result
-     */
-    applyLocalGraphFilter(centerNodeId, maxDistance = 10, maxDepth = 5) {
-        const result = this.filter.applyLocalGraphFilter(centerNodeId, maxDistance, maxDepth);
-        
-        if (result.success) {
-            this.updateState({
-                isFiltered: true,
-                filterType: 'distance',
-                filterParams: { centerNodeId, maxDistance, maxDepth },
-                distanceFilter: { centerNodeId, maxDistance, maxDepth }
-            });
-            
-            this.addToHistory({
-                type: 'distance',
-                params: { centerNodeId, maxDistance, maxDepth }
-            });
-            
-            this.emit('filterChanged', {
-                type: 'distance',
-                data: result,
-                state: this.getState()
-            });
-        }
-        
-        return result;
-    }
 
     /**
      * Apply layer filter with state management
@@ -190,11 +153,6 @@ export class FilterStateManager {
                 activeLayers: [],
                 mode: 'include'
             },
-            distanceFilter: {
-                centerNodeId: null,
-                maxDistance: 10,
-                maxDepth: 5
-            }
         });
         
         this.addToHistory({ type: 'reset' });
@@ -313,12 +271,6 @@ export class FilterStateManager {
      */
     replayHistoryEntry(entry) {
         switch (entry.type) {
-            case 'distance':
-                return this.applyLocalGraphFilter(
-                    entry.params.centerNodeId,
-                    entry.params.maxDistance,
-                    entry.params.maxDepth
-                );
             case 'layer':
                 return this.applyLayerFilter(
                     entry.params.activeLayers,
@@ -407,14 +359,6 @@ export class FilterStateManager {
             return this.applyLayerFilter(
                 preset.state.layerFilter.activeLayers,
                 preset.state.layerFilter.mode
-            );
-        }
-        
-        if (preset.state.filterType === 'distance') {
-            return this.applyLocalGraphFilter(
-                preset.state.distanceFilter.centerNodeId,
-                preset.state.distanceFilter.maxDistance,
-                preset.state.distanceFilter.maxDepth
             );
         }
         

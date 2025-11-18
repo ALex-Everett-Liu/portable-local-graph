@@ -458,12 +458,6 @@ async function loadGraphFromDatabase(graphId = null) {
                         }
                     }
 
-                    // Restore distance filter
-                    if (data.filterState.distanceFilter && data.filterState.distanceFilter.centerNodeId) {
-                        const { centerNodeId, maxDistance, maxDepth } = data.filterState.distanceFilter;
-                        graph.filterStateManager.applyLocalGraphFilter(centerNodeId, maxDistance, maxDepth);
-                        console.log('[loadGraphFromDatabase] Distance filter restored for node:', centerNodeId);
-                    }
                 } catch (error) {
                     console.warn('[loadGraphFromDatabase] Error restoring filter state:', error);
                 }

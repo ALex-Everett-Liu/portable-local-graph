@@ -48,13 +48,6 @@ function setupEventListeners() {
     document.getElementById('edge-search-ok').addEventListener('click', handleEdgeSearchOK);
     document.getElementById('edge-search-cancel').addEventListener('click', closeEdgeSearchDialog);
     
-    // Filter controls
-    document.getElementById('max-distance').addEventListener('input', updateDistanceDisplay);
-    document.getElementById('max-depth').addEventListener('input', updateDepthDisplay);
-    document.getElementById('apply-filter-btn').addEventListener('click', applyFilter);
-    document.getElementById('reset-filter-btn').addEventListener('click', resetFilter);
-    document.getElementById('save-view-btn').addEventListener('click', saveViewConfig);
-    document.getElementById('analyze-distances-btn').addEventListener('click', showDistanceAnalysis);
     
     // Display options
     const arrowCheckbox = document.getElementById('show-edge-arrows');

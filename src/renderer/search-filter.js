@@ -166,11 +166,10 @@ function selectAndCenterNode(nodeId) {
     showNotification(`Selected: ${node.label}`);
 }
 
-// Select center node for filter
+// Select center node for filter (removed - local graph filtering functionality removed)
 function selectCenterNodeForFilter(nodeId, label) {
-    appState.filterParams.centerNodeId = nodeId;
-    document.getElementById('center-node-search').value = label;
-    document.getElementById('center-node-dropdown').classList.add('hidden');
+    // Local graph filtering functionality has been removed
+    // This function is kept for compatibility but does nothing
 }
 
 // Highlight search results

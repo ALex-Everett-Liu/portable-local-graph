@@ -20,124 +20,8 @@ export class GraphFilter {
         this.layerFilterEnabled = false;
         this.layerFilterMode = 'include'; // 'include' or 'exclude'
         
-        // Distance filtering state
-        this.distanceFilterParams = {
-            centerNodeId: null,
-            maxDistance: 10,
-            maxDepth: 5
-        };
     }
 
-    /**
-     * Apply local graph filter (distance-based)
-     * @param {string} centerNodeId - Center node ID
-     * @param {number} maxDistance - Maximum distance from center
-     * @param {number} maxDepth - Maximum depth from center
-     * @returns {Object} Filtered data and metadata
-     */
-    applyLocalGraphFilter(centerNodeId, maxDistance = 10, maxDepth = 5) {
-        if (!this.originalNodes.find(n => n.id === centerNodeId)) {
-            return { success: false, error: 'Center node not found' };
-        }
-
-        const filteredData = this.filterLocalGraph(centerNodeId, maxDistance, maxDepth);
-        
-        if (filteredData.nodes.length === 0) {
-            return { success: false, error: 'No nodes within specified distance' };
-        }
-
-        this.currentNodes = filteredData.nodes;
-        this.currentEdges = filteredData.edges;
-        this.isFiltered = true;
-        this.filterType = 'distance';
-        this.filterParams = { centerNodeId, maxDistance, maxDepth };
-
-        return {
-            success: true,
-            nodes: filteredData.nodes,
-            edges: filteredData.edges,
-            centerNode: filteredData.centerNode,
-            distances: filteredData.distances,
-            depths: filteredData.depths,
-            metadata: {
-                nodeCount: filteredData.nodes.length,
-                edgeCount: filteredData.edges.length,
-                originalNodeCount: this.originalNodes.length,
-                originalEdgeCount: this.originalEdges.length
-            }
-        };
-    }
-
-    /**
-     * Filter local graph based on distance and depth
-     * @param {string} centerNodeId - Center node ID
-     * @param {number} maxDistance - Maximum distance
-     * @param {number} maxDepth - Maximum depth
-     * @returns {Object} Filtered data
-     */
-    filterLocalGraph(centerNodeId, maxDistance, maxDepth) {
-        const centerNode = this.originalNodes.find(n => n.id === centerNodeId);
-        if (!centerNode) {
-            return { nodes: [], edges: [], centerNode: null, distances: {}, depths: {} };
-        }
-
-        // Use BFS for weighted shortest paths
-        const distances = new Map();
-        const depths = new Map();
-        const queue = [{ nodeId: centerNodeId, distance: 0, depth: 0 }];
-        const visited = new Set();
-
-        distances.set(centerNodeId, 0);
-        depths.set(centerNodeId, 0);
-
-        const filteredNodes = [centerNode];
-        const filteredNodeIds = new Set([centerNodeId]);
-
-        while (queue.length > 0) {
-            queue.sort((a, b) => a.distance - b.distance);
-            const current = queue.shift();
-
-            if (visited.has(current.nodeId)) continue;
-            visited.add(current.nodeId);
-
-            const connections = this.getNodeConnections(current.nodeId);
-            connections.forEach(conn => {
-                const newDistance = current.distance + conn.weight;
-                const newDepth = current.depth + 1;
-
-                if (newDistance <= maxDistance && newDepth <= maxDepth) {
-                    if (!filteredNodeIds.has(conn.to)) {
-                        const node = this.originalNodes.find(n => n.id === conn.to);
-                        if (node) {
-                            filteredNodes.push(node);
-                            filteredNodeIds.add(conn.to);
-                        }
-                    }
-
-                    if (!distances.has(conn.to) || newDistance < distances.get(conn.to)) {
-                        distances.set(conn.to, newDistance);
-                        depths.set(conn.to, newDepth);
-                        queue.push({ nodeId: conn.to, distance: newDistance, depth: newDepth });
-                    }
-                }
-            });
-        }
-
-        // Filter edges between filtered nodes
-        const filteredEdges = this.originalEdges.filter(edge => {
-            const fromIncluded = filteredNodeIds.has(edge.from);
-            const toIncluded = filteredNodeIds.has(edge.to);
-            return fromIncluded && toIncluded;
-        });
-
-        return {
-            nodes: filteredNodes,
-            edges: filteredEdges,
-            centerNode,
-            distances: Object.fromEntries(distances),
-            depths: Object.fromEntries(depths)
-        };
-    }
 
     /**
      * Apply layer-based filtering
@@ -268,12 +152,6 @@ export class GraphFilter {
         this.layerFilterEnabled = false;
         this.layerFilterMode = 'include';
         
-        // Reset distance filter state
-        this.distanceFilterParams = {
-            centerNodeId: null,
-            maxDistance: 10,
-            maxDepth: 5
-        };
 
         const result = {
             success: true,
@@ -303,7 +181,6 @@ export class GraphFilter {
                 activeLayers: Array.from(this.activeLayers),
                 mode: this.layerFilterMode
             },
-            distanceFilter: { ...this.distanceFilterParams }
         };
     }
 
@@ -417,7 +294,6 @@ export class GraphFilter {
                 activeLayers: Array.from(this.activeLayers),
                 mode: this.layerFilterMode
             },
-            distanceFilter: this.distanceFilterParams
         };
     }
 
@@ -437,13 +313,6 @@ export class GraphFilter {
                 );
             }
             
-            if (config.filterType === 'distance' && config.distanceFilter) {
-                return this.applyLocalGraphFilter(
-                    config.distanceFilter.centerNodeId,
-                    config.distanceFilter.maxDistance,
-                    config.distanceFilter.maxDepth
-                );
-            }
             
             return { success: true };
         } catch (error) {
