@@ -17,8 +17,6 @@ export { GraphRenderer } from './rendering/graph-renderer.js';
 export * from './rendering/styles.js';
 
 // Analysis modules
-export { GraphAnalysis } from './analysis/graph-analysis.js';
-export { CentralityCalculator } from './analysis/centrality-calculator.js';
 export { PathfindingEngine } from './analysis/pathfinding-engine.js';
 
 // Filtering modules

@@ -102,38 +102,6 @@ export class FilterStateManager {
         return result;
     }
 
-    /**
-     * Apply centrality filter with state management
-     * @param {string} centralityType - Type of centrality
-     * @param {number} minValue - Minimum value
-     * @param {number} maxValue - Maximum value
-     * @param {Object} centralities - Centrality data
-     * @returns {Object} Filter result
-     */
-    applyCentralityFilter(centralityType, minValue, maxValue, centralities) {
-        const result = this.filter.applyCentralityFilter(centralityType, minValue, maxValue, centralities);
-        
-        if (result.success) {
-            this.updateState({
-                isFiltered: true,
-                filterType: 'centrality',
-                filterParams: { centralityType, minValue, maxValue }
-            });
-            
-            this.addToHistory({
-                type: 'centrality',
-                params: { centralityType, minValue, maxValue }
-            });
-            
-            this.emit('filterChanged', {
-                type: 'centrality',
-                data: result,
-                state: this.getState()
-            });
-        }
-        
-        return result;
-    }
 
     /**
      * Reset all filters with state management
@@ -275,13 +243,6 @@ export class FilterStateManager {
                 return this.applyLayerFilter(
                     entry.params.activeLayers,
                     entry.params.mode
-                );
-            case 'centrality':
-                return this.applyCentralityFilter(
-                    entry.params.centralityType,
-                    entry.params.minValue,
-                    entry.params.maxValue,
-                    {} // Would need to pass actual centralities
                 );
             case 'reset':
                 return this.resetFilters();

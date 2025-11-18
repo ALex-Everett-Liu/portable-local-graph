@@ -226,28 +226,6 @@ function loadDefaultGraph() {
     showNotification('New empty graph loaded');
 }
 
-// Calculate centralities for all nodes
-function calculateCentralities() {
-    if (!graph || graph.nodes.length === 0) {
-        showNotification('No nodes to analyze', 'error');
-        return;
-    }
-    
-    graph.calculateCentralities();
-    
-    // Display results
-    const centralityInfo = document.getElementById('centrality-info');
-    if (centralityInfo) {
-        centralityInfo.style.display = 'block';
-        centralityInfo.innerHTML = `
-            <p style="font-size: 11px; color: #666; margin-top: 8px;">
-                Centralities calculated for ${graph.nodes.length} nodes
-            </p>
-        `;
-    }
-    
-    showNotification('Centralities calculated successfully');
-}
 
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
@@ -260,8 +238,7 @@ if (typeof module !== 'undefined' && module.exports) {
         updateDepthDisplay,
         applyFilter,
         resetFilter,
-        loadDefaultGraph,
-        calculateCentralities
+        loadDefaultGraph
     };
 } else {
     Object.assign(window, {
@@ -273,7 +250,6 @@ if (typeof module !== 'undefined' && module.exports) {
         updateDepthDisplay,
         applyFilter,
         resetFilter,
-        loadDefaultGraph,
-        calculateCentralities
+        loadDefaultGraph
     });
 }

@@ -12,7 +12,7 @@
  *   - js/core/graph-data.js (data management)
  *   - js/rendering/graph-renderer.js (rendering)
  *   - js/filtering/graph-filter.js (filtering)
- *   - js/analysis/graph-analysis.js (algorithms)
+ *   - js/analysis/pathfinding-engine.js (pathfinding algorithms)
  * 
  * This file will be removed in future versions. Use modular components directly.
  * 
@@ -22,7 +22,6 @@
 import { GraphData } from './graph-data.js';
 import { GraphFilter } from '../filtering/graph-filter.js';
 import { FilterStateManager } from '../filtering/filter-state-manager.js';
-import { GraphAnalysis } from '../analysis/graph-analysis.js';
 import { GraphRenderer } from '../rendering/graph-renderer.js';
 import { calculateDistance, distanceToLineSegment } from '../utils/geometry.js';
 import { dijkstra } from '../utils/algorithms.js';
@@ -35,7 +34,6 @@ export class Graph {
         this.graphData = new GraphData();
         this.graphFilter = new GraphFilter();
         this.filterStateManager = new FilterStateManager(this.graphFilter);
-        this.graphAnalysis = new GraphAnalysis();
         this.renderer = null;
 
         // State management
@@ -87,7 +85,6 @@ export class Graph {
     syncData() {
         const data = this.graphData.exportData();
         this.graphFilter.updateOriginalData(data.nodes, data.edges);
-        this.graphAnalysis.updateGraph(data.nodes, data.edges);
     }
 
     /**
@@ -641,54 +638,6 @@ export class Graph {
         return this.filterStateManager.state.layerFilter.activeLayers?.has(layer.trim()) || false;
     }
 
-    // Centrality calculations
-    calculateCentralities() {
-        const data = this.graphData.exportData();
-        this.graphAnalysis.updateGraph(data.nodes, data.edges);
-        
-        const centralities = this.graphAnalysis.calculateCentralities();
-        
-        // Update nodes with centrality data
-        data.nodes.forEach(node => {
-            if (!node.centrality) node.centrality = {};
-            Object.keys(centralities).forEach(type => {
-                node.centrality[type] = centralities[type][node.id];
-            });
-        });
-        
-        this.calculateCentralityRankings();
-    }
-
-    calculateCentralityRankings() {
-        const data = this.graphData.exportData();
-        if (data.nodes.length === 0) return;
-
-        this.centralityRankings = {};
-        const centralityTypes = ['degree', 'betweenness', 'closeness', 'eigenvector', 'pagerank'];
-
-        centralityTypes.forEach(type => {
-            const values = data.nodes.map(node => ({
-                nodeId: node.id,
-                value: parseFloat(node.centrality?.[type]) || 0
-            }));
-
-            values.sort((a, b) => b.value - a.value);
-
-            const rankings = new Map();
-            values.forEach((item, index) => {
-                rankings.set(item.nodeId, index + 1);
-            });
-
-            this.centralityRankings[type] = rankings;
-        });
-    }
-
-    getCentralityRank(nodeId, centralityType) {
-        if (!this.centralityRankings || !this.centralityRankings[centralityType]) {
-            return null;
-        }
-        return this.centralityRankings[centralityType].get(nodeId);
-    }
 
     // Utility methods
     getAllNodes() {

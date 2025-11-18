@@ -12,7 +12,7 @@ export class GraphFilter {
         
         // Filter state
         this.isFiltered = false;
-        this.filterType = null; // 'distance', 'layer', 'centrality', etc.
+        this.filterType = null; // 'distance', 'layer', etc.
         this.filterParams = {};
         
         // Layer filtering state
@@ -75,51 +75,6 @@ export class GraphFilter {
         };
     }
 
-    /**
-     * Apply centrality-based filtering
-     * @param {string} centralityType - Type of centrality ('degree', 'betweenness', etc.)
-     * @param {number} minValue - Minimum centrality value
-     * @param {number} maxValue - Maximum centrality value
-     * @param {Object} centralities - Pre-calculated centrality values
-     * @returns {Object} Filtered data and metadata
-     */
-    applyCentralityFilter(centralityType, minValue, maxValue, centralities) {
-        if (!centralities || !centralities[centralityType]) {
-            return { success: false, error: 'Invalid centrality data' };
-        }
-
-        const centralityData = centralities[centralityType];
-        const filteredNodes = this.originalNodes.filter(node => {
-            const value = parseFloat(centralityData[node.id]) || 0;
-            return value >= minValue && value <= maxValue;
-        });
-
-        const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-        const filteredEdges = this.originalEdges.filter(edge => {
-            return filteredNodeIds.has(edge.from) && filteredNodeIds.has(edge.to);
-        });
-
-        this.currentNodes = filteredNodes;
-        this.currentEdges = filteredEdges;
-        this.isFiltered = true;
-        this.filterType = 'centrality';
-        this.filterParams = { centralityType, minValue, maxValue };
-
-        return {
-            success: true,
-            nodes: filteredNodes,
-            edges: filteredEdges,
-            metadata: {
-                centralityType,
-                minValue,
-                maxValue,
-                nodeCount: filteredNodes.length,
-                edgeCount: filteredEdges.length,
-                originalNodeCount: this.originalNodes.length,
-                originalEdgeCount: this.originalEdges.length
-            }
-        };
-    }
 
     /**
      * Reset all filters (backward compatibility)

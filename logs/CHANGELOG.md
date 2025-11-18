@@ -2,6 +2,43 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.4] - 2025-01-XX
+
+### 🗑️ Graph Analysis Modules Removal
+- **Feature Removal**: Removed all graph analysis modules and centrality calculation functionality for future redesign
+- **Centrality Calculations**: Removed all centrality calculation algorithms (degree, betweenness, closeness, eigenvector, PageRank)
+- **Graph Analysis**: Removed GraphAnalysis class and all analysis coordination functionality
+- **UI Cleanup**: Removed centrality calculation button and analysis display from sidebar
+
+### 🔧 Removed Components
+- **Graph Analysis Module**: Deleted `graph-analysis.js` with all analysis coordination and caching functionality
+- **Centrality Calculator Module**: Deleted `centrality-calculator.js` with all centrality calculation algorithms
+- **Centrality Methods**: Removed `calculateCentralities()`, `calculateCentralityRankings()`, and `getCentralityRank()` from Graph class
+- **Centrality Display**: Removed centrality analysis display from node selection info panel
+- **Centrality Filtering**: Removed centrality-based filtering from GraphFilter and FilterStateManager classes
+- **UI Elements**: Removed "Graph Analysis" section with "Calculate Centralities" button from sidebar
+
+### 🔧 Technical Changes
+- **Module Exports**: Removed GraphAnalysis and CentralityCalculator exports from index.js
+- **Import Cleanup**: Removed GraphAnalysis import and instance from graph-compatibility.js
+- **Event Handlers**: Removed calculateCentralities button event handler from event-handlers.js
+- **Distance Analysis**: Removed calculateCentralities function from distance-analysis.js
+- **Graph Operations**: Removed centrality display code from graph-operations.js
+- **Filter Modules**: Removed applyCentralityFilter methods from graph-filter.js and filter-state-manager.js
+- **HTML Cleanup**: Removed centrality calculation UI elements from index.html
+
+### 📊 Codebase Impact
+- **Reduced Complexity**: Removed ~800+ lines of graph analysis and centrality calculation code
+- **Cleaner Architecture**: Simplified codebase by removing analysis dependencies
+- **Future Ready**: Codebase prepared for redesigned graph analysis functionality with thorough algorithm understanding
+- **Preserved Features**: Pathfinding engine remains intact and fully functional
+
+### 🎯 User Experience
+- **Temporary Limitation**: Centrality calculations temporarily unavailable until redesign is complete
+- **No Data Loss**: Existing graphs and database files remain fully compatible
+- **Redesign Opportunity**: Clean slate for implementing improved graph analysis system with better algorithm understanding
+- **Pathfinding Preserved**: Pathfinding functionality (shortest path, k-shortest paths, etc.) remains available
+
 ## [0.7.3] - 2025-01-XX
 
 ### ⌨️ Keyboard Shortcuts System Removal
