@@ -110,11 +110,16 @@ function setupEventListeners() {
     // Load saved quick access
     loadQuickAccess();
     
-    // Keyboard shortcuts
-    document.addEventListener('keydown', handleKeyDown);
+    // Keyboard shortcuts - removed for redesign
+    // TODO: Implement new keyboard shortcuts system
     
     // Window events
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', (e) => {
+        if (appState && appState.isModified) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
     
     // Sidebar resize functionality
     setupSidebarResize();

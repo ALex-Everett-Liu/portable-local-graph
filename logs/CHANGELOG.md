@@ -2,6 +2,39 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.3] - 2025-01-XX
+
+### ⌨️ Keyboard Shortcuts System Removal
+- **Feature Removal**: Removed all keyboard shortcuts and command palette functionality for future redesign
+- **Hotkey Mode**: Removed hotkey-mode.js module and all related hotkey mode functionality
+- **Keyboard Shortcuts**: Removed keyboard-shortcuts.js module and all keyboard event handling
+- **Command Palette**: Removed command-palette.js module and Ctrl+P command palette interface
+
+### 🗑️ Removed Components
+- **Hotkey Mode Module**: Deleted `hotkey-mode.js` with all hotkey registration, activation, and hint display functionality
+- **Keyboard Shortcuts Module**: Deleted `keyboard-shortcuts.js` with all keyboard event handlers and shortcut mappings
+- **Command Palette Module**: Deleted `command-palette.js` with command registration, filtering, and execution system
+- **Debug Tools**: Cleaned up `debug-hotkeys.html` to remove hotkey-mode references
+
+### 🔧 Technical Changes
+- **Script Loading**: Removed script tags for hotkey-mode.js, keyboard-shortcuts.js, and command-palette.js from index.html
+- **Initialization**: Removed `initializeHotkeyMode()` and `initializeCommandPalette()` calls from app.js
+- **Event Handlers**: Removed keyboard event listener registrations from event-handlers.js
+- **Before Unload**: Preserved window beforeunload handler with inline implementation
+- **Command Palette References**: Removed "Toggle Hotkey Mode" command from command palette (before deletion)
+
+### 📊 Codebase Impact
+- **Reduced Complexity**: Removed ~1,500+ lines of keyboard shortcut and command palette code
+- **Cleaner Architecture**: Simplified event handling system without keyboard shortcut dependencies
+- **Future Ready**: Codebase prepared for redesigned keyboard shortcuts and command palette system
+- **No Breaking Changes**: All UI functionality remains accessible via mouse/touch interactions
+
+### 🎯 User Experience
+- **Temporary Limitation**: Keyboard shortcuts temporarily unavailable until redesign is complete
+- **UI Access**: All features remain accessible through toolbar buttons and UI controls
+- **No Data Loss**: Existing graphs and database files remain fully compatible
+- **Redesign Opportunity**: Clean slate for implementing improved keyboard shortcut system
+
 ## [0.7.2] - 2025-11-18
 
 ### 🔢 Sequence ID System Implementation

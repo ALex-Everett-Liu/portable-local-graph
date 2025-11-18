@@ -49,9 +49,6 @@ function initializeApplication() {
         setupSearchComponents();
         setupSidebarResize();
         
-        // Initialize new modules
-        initializeCommandPalette();
-        
         // Load initial data
         updateGraphInfo();
         loadQuickAccess();
