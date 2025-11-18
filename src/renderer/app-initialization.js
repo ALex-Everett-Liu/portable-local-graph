@@ -37,9 +37,6 @@ function initializeGraph() {
         onSelectionChange: updateGraphInfo
     });
     
-    // Make exportManager globally available
-    window.exportManager = window.graph.exportManager;
-    
     console.log('Graph initialized successfully');
     console.log('appState.showEdgeArrows:', appState.showEdgeArrows);
     

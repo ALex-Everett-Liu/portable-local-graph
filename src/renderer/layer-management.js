@@ -135,38 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkGraph();
 });
 
-// Export selected layers to CSV
-
-// Export selected layers to CSV
-function exportSelectedLayersCSV() {
-    if (typeof graph === 'undefined' || !window.exportManager) {
-        showNotification('Export manager not available', 'error');
-        return;
-    }
-
-    const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
-    const selectedLayers = Array.from(checkboxes).map(cb => cb.dataset.layer);
-    
-    if (selectedLayers.length === 0) {
-        showNotification('Please select at least one layer to export', 'warning');
-        return;
-    }
-
-    try {
-        const csv = window.exportManager.exportLayersNodesCSV(selectedLayers);
-        if (!csv) {
-            showNotification('No nodes found in selected layers', 'warning');
-            return;
-        }
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.csv`;
-        window.exportManager.downloadFile(csv, filename, 'text/csv');
-        showNotification(`Exported ${selectedLayers.length} layer(s) to CSV`);
-    } catch (error) {
-        console.error('Error exporting layers to CSV:', error);
-        showNotification('Error exporting layers: ' + error.message, 'error');
-    }
-}
 
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
@@ -176,8 +144,7 @@ if (typeof module !== 'undefined' && module.exports) {
         resetLayerFilter,
         showAllLayers,
         updateLayerFilter,
-        exportSelectedLayers,
-        exportSelectedLayersCSV
+        exportSelectedLayers
     };
 } else {
     Object.assign(window, {
@@ -186,7 +153,6 @@ if (typeof module !== 'undefined' && module.exports) {
         resetLayerFilter,
         showAllLayers,
         updateLayerFilter,
-        exportSelectedLayers,
-        exportSelectedLayersCSV
+        exportSelectedLayers
     });
 }

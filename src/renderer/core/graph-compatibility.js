@@ -20,7 +20,6 @@
  * Each module: 45-96 lines max - maintainable and testable
  */
 import { GraphData } from './graph-data.js';
-import { ExportManager } from './export-manager.js';
 import { GraphFilter } from '../filtering/graph-filter.js';
 import { FilterStateManager } from '../filtering/filter-state-manager.js';
 import { GraphAnalysis } from '../analysis/graph-analysis.js';
@@ -34,7 +33,6 @@ export class Graph {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.graphData = new GraphData();
-        this.exportManager = new ExportManager(this.graphData);
         this.graphFilter = new GraphFilter();
         this.filterStateManager = new FilterStateManager(this.graphFilter);
         this.graphAnalysis = new GraphAnalysis();
@@ -81,7 +79,6 @@ export class Graph {
      */
     initializeRenderer() {
         this.renderer = new GraphRenderer(this.canvas, this.graphData);
-        this.exportManager.setRenderer(this.renderer);
     }
 
     /**
