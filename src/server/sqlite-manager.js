@@ -164,6 +164,64 @@ class DatabaseManager {
 
     return new Promise((resolve, reject) => {
       this.db.serialize(() => {
+        // Helper function to create all indexes
+        const createAllIndexes = () => {
+          const createIndexes = [
+            "CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_nodes_sequence_id ON nodes(sequence_id)",
+            "CREATE INDEX IF NOT EXISTS idx_edges_from_to ON edges(from_node_id, to_node_id)",
+            "CREATE INDEX IF NOT EXISTS idx_edges_created ON edges(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_edges_sequence_id ON edges(sequence_id)",
+          ];
+
+          let completedIndexes = 0;
+          createIndexes.forEach((sql, index) => {
+            this.db.run(sql, (err) => {
+              if (err) {
+                console.error(`Error creating index: ${sql}`, err);
+                reject(err);
+              } else {
+                completedIndexes++;
+                if (completedIndexes === createIndexes.length) {
+                  resolve();
+                }
+              }
+            });
+          });
+        };
+
+        // Helper function to add sequence_id to edges and then create indexes
+        const addSequenceIdToEdgesAndCreateIndexes = () => {
+          this.db.all("PRAGMA table_info(edges)", (err, columns) => {
+            if (!err && columns.length > 0) {
+              const hasSequenceId = columns.some(
+                (col) => col.name === "sequence_id",
+              );
+              if (!hasSequenceId) {
+                this.db.run(
+                  "ALTER TABLE edges ADD COLUMN sequence_id INTEGER",
+                  (err) => {
+                    if (err) {
+                      console.warn(
+                        "Could not add sequence_id column to edges:",
+                        err.message,
+                      );
+                    }
+                    // After adding sequence_id to edges, create indexes
+                    createAllIndexes();
+                  },
+                );
+              } else {
+                // Column already exists, create indexes
+                createAllIndexes();
+              }
+            } else {
+              // No columns found, create indexes directly
+              createAllIndexes();
+            }
+          });
+        };
+
         this.db.run(createGraphsTable, (err) => {
           if (err) reject(err);
         });
@@ -177,16 +235,7 @@ class DatabaseManager {
           if (err) reject(err);
         });
 
-        // Create indexes for performance optimization
-        const createIndexes = [
-          "CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at)",
-          "CREATE INDEX IF NOT EXISTS idx_nodes_sequence_id ON nodes(sequence_id)",
-          "CREATE INDEX IF NOT EXISTS idx_edges_from_to ON edges(from_node_id, to_node_id)",
-          "CREATE INDEX IF NOT EXISTS idx_edges_created ON edges(created_at)",
-          "CREATE INDEX IF NOT EXISTS idx_edges_sequence_id ON edges(sequence_id)",
-        ];
-
-        // Handle migration from old schema
+        // Handle migration from old schema and add columns
         this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
           if (!err && columns.length > 0) {
             const hasGraphId = columns.some((col) => col.name === "graph_id");
@@ -204,86 +253,67 @@ class DatabaseManager {
               });
             }
           }
-        });
 
-        // Add chinese_label column to existing nodes table if needed
-        this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
-          if (!err && columns.length > 0) {
-            const hasChineseLabel = columns.some(
-              (col) => col.name === "chinese_label",
-            );
-            if (!hasChineseLabel) {
-              this.db.run(
-                "ALTER TABLE nodes ADD COLUMN chinese_label TEXT",
-                (err) => {
-                  if (err)
-                    console.warn(
-                      "Could not add chinese_label column:",
-                      err.message,
-                    );
-                },
+          // Add chinese_label column to existing nodes table if needed
+          this.db.all("PRAGMA table_info(nodes)", (err, columns) => {
+            if (!err && columns.length > 0) {
+              const hasChineseLabel = columns.some(
+                (col) => col.name === "chinese_label",
               );
-            }
+              if (!hasChineseLabel) {
+                this.db.run(
+                  "ALTER TABLE nodes ADD COLUMN chinese_label TEXT",
+                  (err) => {
+                    if (err)
+                      console.warn(
+                        "Could not add chinese_label column:",
+                        err.message,
+                      );
+                  },
+                );
+              }
 
-            const hasLayers = columns.some(
-              (col) => col.name === "layers",
-            );
-            if (!hasLayers) {
-              this.db.run(
-                "ALTER TABLE nodes ADD COLUMN layers TEXT",
-                (err) => {
-                  if (err)
-                    console.warn(
-                      "Could not add layers column:",
-                      err.message,
-                    );
-                },
+              const hasLayers = columns.some(
+                (col) => col.name === "layers",
               );
-            }
+              if (!hasLayers) {
+                this.db.run(
+                  "ALTER TABLE nodes ADD COLUMN layers TEXT",
+                  (err) => {
+                    if (err)
+                      console.warn(
+                        "Could not add layers column:",
+                        err.message,
+                      );
+                  },
+                );
+              }
 
-            const hasSequenceId = columns.some(
-              (col) => col.name === "sequence_id",
-            );
-            if (!hasSequenceId) {
-              this.db.run(
-                "ALTER TABLE nodes ADD COLUMN sequence_id INTEGER",
-                (err) => {
-                  if (err)
-                    console.warn(
-                      "Could not add sequence_id column to nodes:",
-                      err.message,
-                    );
-                },
+              const hasSequenceId = columns.some(
+                (col) => col.name === "sequence_id",
               );
+              if (!hasSequenceId) {
+                this.db.run(
+                  "ALTER TABLE nodes ADD COLUMN sequence_id INTEGER",
+                  (err) => {
+                    if (err) {
+                      console.warn(
+                        "Could not add sequence_id column to nodes:",
+                        err.message,
+                      );
+                    }
+                    // After adding sequence_id to nodes, add it to edges, then create indexes
+                    addSequenceIdToEdgesAndCreateIndexes();
+                  },
+                );
+              } else {
+                // Column already exists, check edges and create indexes
+                addSequenceIdToEdgesAndCreateIndexes();
+              }
+            } else {
+              // No columns found (tables just created), create indexes directly
+              createAllIndexes();
             }
-          }
-        });
-
-        // Add sequence_id column to edges table if needed
-        this.db.all("PRAGMA table_info(edges)", (err, columns) => {
-          if (!err && columns.length > 0) {
-            const hasSequenceId = columns.some(
-              (col) => col.name === "sequence_id",
-            );
-            if (!hasSequenceId) {
-              this.db.run(
-                "ALTER TABLE edges ADD COLUMN sequence_id INTEGER",
-                (err) => {
-                  if (err)
-                    console.warn(
-                      "Could not add sequence_id column to edges:",
-                      err.message,
-                    );
-                },
-              );
-            }
-          }
-        });
-
-        createIndexes.forEach((sql, index) => {
-          this.db.run(sql, (err) => {
-            if (err) reject(err);
-            else if (index === createIndexes.length - 1) resolve();
           });
         });
       });

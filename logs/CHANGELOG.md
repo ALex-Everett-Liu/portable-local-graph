@@ -2,6 +2,40 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.2] - 2025-11-18
+
+### 🔢 Sequence ID System Implementation
+- **Stable Sequential Identifiers**: Added sequence ID system to nodes and edges tables for human-readable, stable sequential numbering
+- **Automatic Assignment**: New nodes and edges automatically receive sequential IDs (1, 2, 3, ...) based on creation order
+- **Existing Data Population**: Existing records without sequence IDs are automatically populated on database initialization
+- **Chronological Ordering**: Sequence IDs assigned based on `created_at` timestamp to maintain chronological sequence
+- **Persistent Identifiers**: Sequence IDs remain stable across save/load operations and don't change when records are modified
+
+### 💾 Database Schema Enhancement
+- **New Columns**: Added `sequence_id INTEGER` column to both `nodes` and `edges` tables
+- **Migration Support**: Automatic migration adds sequence_id columns to existing databases without data loss
+- **Index Optimization**: Created indexes on sequence_id columns for improved query performance
+- **Backward Compatibility**: Existing databases seamlessly upgraded with sequence ID support
+
+### 🔧 Technical Implementation
+- **Database Manager Enhancement**: Added `populateSequenceIds()` method to automatically populate existing records
+- **Save Logic Update**: Modified `saveGraph()` to assign sequence IDs to new nodes and edges during save operations
+- **Load Integration**: Updated `loadGraph()` to include sequence_id in returned node and edge objects
+- **Initialization Flow**: Sequence ID population runs automatically after table creation during database initialization
+- **Transaction Safety**: All sequence ID operations wrapped in transactions for data consistency
+
+### 🎯 User Experience Benefits
+- **Human-Readable References**: Nodes and edges can now be referenced by sequential numbers (e.g., "Node #123")
+- **Consistent Ordering**: Records maintain consistent ordering based on creation time
+- **Stable Identifiers**: Sequence IDs provide stable references that don't change with modifications
+- **Automatic Management**: No manual intervention required - sequence IDs managed automatically
+
+### 📊 Implementation Details
+- **Conflict-Free Generation**: Sequence IDs calculated from maximum existing ID + 1 to prevent conflicts
+- **NULL Handling**: Gracefully handles NULL sequence_ids and populates them on initialization
+- **Idempotent Operations**: Population function safe to run multiple times without side effects
+- **Error Handling**: Comprehensive error handling with transaction rollback on failures
+
 ## [0.7.1] - 2025-11-18
 
 ### 🗑️ Local Graph Filtering Removal
