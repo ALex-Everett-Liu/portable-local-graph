@@ -42,7 +42,6 @@ function setupLayerDialogEvents() {
     const selectNoneBtn = document.getElementById('select-none-layers-btn');
     const invertBtn = document.getElementById('invert-selection-btn');
     const searchInput = document.getElementById('layer-search-input');
-    const exportCsvBtn = document.getElementById('export-layers-csv-btn');
     
     if (applyBtn) applyBtn.addEventListener('click', applyLayerDialogSelection);
     if (cancelBtn) cancelBtn.addEventListener('click', closeLayerDialog);
@@ -52,7 +51,6 @@ function setupLayerDialogEvents() {
     if (selectNoneBtn) selectNoneBtn.addEventListener('click', selectNoneLayers);
     if (invertBtn) invertBtn.addEventListener('click', invertLayerSelection);
     if (searchInput) searchInput.addEventListener('input', handleLayerSearch);
-    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportSelectedLayersCSVFromDialog);
 
 
     // Mode radio buttons
@@ -589,67 +587,6 @@ function renderLayerGrid() {
 
 // Export functions for dialog
 
-function exportSelectedLayersCSVFromDialog() {
-    const selectedLayers = Array.from(layerDialogState.selectedLayers);
-    
-    if (selectedLayers.length === 0) {
-        showNotification('Please select at least one layer to export', 'warning');
-        return;
-    }
-
-    try {
-        // Get nodes from selected layers
-        const allNodes = graph.nodes;
-        const layerNodes = allNodes.filter(node => 
-            selectedLayers.some(layer => 
-                (node.layers || []).includes(layer)
-            )
-        );
-        
-        if (layerNodes.length === 0) {
-            showNotification('No nodes found in selected layers', 'warning');
-            return;
-        }
-        
-        // Create CSV
-        const headers = ['id', 'x', 'y', 'label', 'chinese', 'color', 'radius', 'category', 'layers'];
-        const csvRows = [headers.join(',')];
-        
-        layerNodes.forEach(node => {
-            const row = [
-                node.id,
-                node.x,
-                node.y,
-                `"${(node.label || '').replace(/"/g, '""')}"`,
-                `"${(node.chinese || '').replace(/"/g, '""')}"`,
-                `"${(node.color || '').replace(/"/g, '""')}"`,
-                node.radius || 20,
-                `"${(node.category || '').replace(/"/g, '""')}"`,
-                `"${(node.layers || []).join(';').replace(/"/g, '""')}"`
-            ];
-            csvRows.push(row.join(','));
-        });
-        
-        const csv = csvRows.join('\n');
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.csv`;
-        
-        // Create download link
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showNotification(`Exported ${selectedLayers.length} layer(s) with ${layerNodes.length} nodes as CSV`);
-    } catch (error) {
-        console.error('Error exporting layers to CSV:', error);
-        showNotification('Error exporting layers: ' + error.message, 'error');
-    }
-}
-
 // Export functions for global access
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -658,8 +595,7 @@ if (typeof module !== 'undefined' && module.exports) {
         updateLayerSummary,
         openLayerRenameDialog,
         closeLayerRenameDialog,
-        applyLayerRename,
-        exportSelectedLayersCSVFromDialog
+        applyLayerRename
     };
 } else {
     Object.assign(window, {
@@ -675,7 +611,6 @@ if (typeof module !== 'undefined' && module.exports) {
         applyLayerRename,
         handleLayerRenameKeydown,
         saveLayerView,
-        loadLayerView,
-        exportSelectedLayersCSVFromDialog
+        loadLayerView
     });
 }

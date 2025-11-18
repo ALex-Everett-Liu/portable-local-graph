@@ -74,7 +74,19 @@ function setupEventListeners() {
     
     // Edge creation via search
     document.getElementById('create-edge-search-btn').addEventListener('click', showEdgeSearchDialog);
-    document.getElementById('calculate-centrality-btn').addEventListener('click', calculateCentralities);
+    
+    // Calculate centralities - wrapper function
+    const calculateCentralitiesBtn = document.getElementById('calculate-centrality-btn');
+    if (calculateCentralitiesBtn) {
+        calculateCentralitiesBtn.addEventListener('click', () => {
+            if (graph && graph.calculateCentralities) {
+                graph.calculateCentralities();
+                showNotification('Centralities calculated successfully');
+            } else {
+                showNotification('Graph not available', 'error');
+            }
+        });
+    }
     
     // Layer filtering controls - with null checks
     const applyLayerFilterBtn = document.getElementById('apply-layer-filter-btn');

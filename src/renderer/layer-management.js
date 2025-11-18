@@ -143,8 +143,7 @@ if (typeof module !== 'undefined' && module.exports) {
         applyLayerFilter,
         resetLayerFilter,
         showAllLayers,
-        updateLayerFilter,
-        exportSelectedLayers
+        updateLayerFilter
     };
 } else {
     Object.assign(window, {
@@ -152,7 +151,6 @@ if (typeof module !== 'undefined' && module.exports) {
         applyLayerFilter,
         resetLayerFilter,
         showAllLayers,
-        updateLayerFilter,
-        exportSelectedLayers
+        updateLayerFilter
     });
 }
