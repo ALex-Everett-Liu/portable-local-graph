@@ -113,60 +113,6 @@ app.post('/api/graph/load', async (req, res) => {
     }
 });
 
-// Load graph from JSON file (backward compatibility)
-app.post('/api/graph/load-file', async (req, res) => {
-    try {
-        const { filename } = req.body;
-        
-        if (!filename) {
-            return res.status(400).json({ error: 'Filename is required' });
-        }
-
-        // Import JSON file to database
-        const fs = require('fs');
-        const path = require('path');
-        const filePath = path.join(__dirname, filename);
-        
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ error: 'File not found' });
-        }
-
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        const id = filename.replace('.json', '');
-        
-        await dbManager.saveGraph(id, data);
-        currentGraph = data;
-        
-        res.json({ 
-            success: true, 
-            message: 'Graph loaded from file and saved to database',
-            graph: data,
-            id: id
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Export graph as JSON
-app.get('/api/graph/export/json', async (req, res) => {
-    try {
-        const graphId = req.query.id || 'current';
-        const graph = await dbManager.loadGraph(graphId);
-        
-        if (!graph) {
-            return res.status(404).json({ error: 'Graph not found' });
-        }
-
-        const filename = `${graphId}_${Date.now()}.json`;
-        
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-Type', 'application/json');
-        res.json(graph);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Export graph as SVG
 app.post('/api/graph/export/svg', async (req, res) => {
@@ -209,26 +155,6 @@ app.delete('/api/graph/:id', async (req, res) => {
     }
 });
 
-// Import JSON file to database
-app.post('/api/graph/import', async (req, res) => {
-    try {
-        const { data, id = null } = req.body;
-        
-        if (!data) {
-            return res.status(400).json({ error: 'Graph data is required' });
-        }
-
-        const importedId = await dbManager.importFromJSON(data, id);
-        
-        res.json({ 
-            success: true, 
-            message: 'Graph imported successfully',
-            id: importedId
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Graph validation
 app.post('/api/graph/validate', async (req, res) => {
@@ -294,15 +220,6 @@ app.post('/api/graph/stats', async (req, res) => {
     }
 });
 
-// Migration endpoint
-app.post('/api/migrate', async (req, res) => {
-    try {
-        await dbManager.migrateFromJSONFiles();
-        res.json({ success: true, message: 'Migration completed' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Health check
 app.get('/api/health', async (req, res) => {

@@ -135,32 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkGraph();
 });
 
-// Export selected layers to JSON/CSV
-function exportSelectedLayers() {
-    if (typeof graph === 'undefined' || !window.exportManager) {
-        showNotification('Export manager not available', 'error');
-        return;
-    }
-
-    const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
-    const selectedLayers = Array.from(checkboxes).map(cb => cb.dataset.layer);
-    
-    if (selectedLayers.length === 0) {
-        showNotification('Please select at least one layer to export', 'warning');
-        return;
-    }
-
-    try {
-        const json = window.exportManager.exportLayersJSON(selectedLayers);
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.json`;
-        window.exportManager.downloadFile(json, filename, 'application/json');
-        showNotification(`Exported ${selectedLayers.length} layer(s) with ${JSON.parse(json).nodes.length} nodes`);
-    } catch (error) {
-        console.error('Error exporting layers:', error);
-        showNotification('Error exporting layers: ' + error.message, 'error');
-    }
-}
+// Export selected layers to CSV
 
 // Export selected layers to CSV
 function exportSelectedLayersCSV() {

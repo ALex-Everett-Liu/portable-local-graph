@@ -25,11 +25,9 @@ function setupEventListeners() {
     document.getElementById('save-btn').addEventListener('click', handleSaveClick);
     document.getElementById('load-btn').addEventListener('click', handleLoadClick);
     
-    document.getElementById('import-json-btn').addEventListener('click', importJSON);
     document.getElementById('merge-db-btn').addEventListener('click', mergeDatabase);
     document.getElementById('backup-db-btn').addEventListener('click', backupDatabase);
     document.getElementById('export-svg-btn').addEventListener('click', exportSVG);
-    document.getElementById('export-json-btn').addEventListener('click', exportJSON);
     
     // Dialog buttons
     document.getElementById('weight-ok').addEventListener('click', handleWeightOK);

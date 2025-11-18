@@ -42,7 +42,6 @@ function setupLayerDialogEvents() {
     const selectNoneBtn = document.getElementById('select-none-layers-btn');
     const invertBtn = document.getElementById('invert-selection-btn');
     const searchInput = document.getElementById('layer-search-input');
-    const exportJsonBtn = document.getElementById('export-layers-json-btn');
     const exportCsvBtn = document.getElementById('export-layers-csv-btn');
     
     if (applyBtn) applyBtn.addEventListener('click', applyLayerDialogSelection);
@@ -53,7 +52,6 @@ function setupLayerDialogEvents() {
     if (selectNoneBtn) selectNoneBtn.addEventListener('click', selectNoneLayers);
     if (invertBtn) invertBtn.addEventListener('click', invertLayerSelection);
     if (searchInput) searchInput.addEventListener('input', handleLayerSearch);
-    if (exportJsonBtn) exportJsonBtn.addEventListener('click', exportSelectedLayersFromDialog);
     if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportSelectedLayersCSVFromDialog);
 
 
@@ -590,49 +588,6 @@ function renderLayerGrid() {
 }
 
 // Export functions for dialog
-function exportSelectedLayersFromDialog() {
-    const selectedLayers = Array.from(layerDialogState.selectedLayers);
-    
-    if (selectedLayers.length === 0) {
-        showNotification('Please select at least one layer to export', 'warning');
-        return;
-    }
-
-    try {
-        // Get nodes from selected layers
-        const allNodes = graph.nodes;
-        const layerNodes = allNodes.filter(node => 
-            selectedLayers.some(layer => 
-                (node.layers || []).includes(layer)
-            )
-        );
-        
-        const exportData = {
-            nodes: layerNodes,
-            edges: [], // Exclude edges to avoid cross-layer connections
-            scale: graph.scale,
-            offset: graph.offset
-        };
-        
-        const json = JSON.stringify(exportData, null, 2);
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `graph-layers-${selectedLayers.join('-')}-${timestamp}.json`;
-        
-        // Create download link
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showNotification(`Exported ${selectedLayers.length} layer(s) with ${layerNodes.length} nodes as JSON (edges excluded)`);
-    } catch (error) {
-        console.error('Error exporting layers to JSON:', error);
-        showNotification('Error exporting layers: ' + error.message, 'error');
-    }
-}
 
 function exportSelectedLayersCSVFromDialog() {
     const selectedLayers = Array.from(layerDialogState.selectedLayers);
@@ -704,7 +659,6 @@ if (typeof module !== 'undefined' && module.exports) {
         openLayerRenameDialog,
         closeLayerRenameDialog,
         applyLayerRename,
-        exportSelectedLayersFromDialog,
         exportSelectedLayersCSVFromDialog
     };
 } else {
@@ -722,7 +676,6 @@ if (typeof module !== 'undefined' && module.exports) {
         handleLayerRenameKeydown,
         saveLayerView,
         loadLayerView,
-        exportSelectedLayersFromDialog,
         exportSelectedLayersCSVFromDialog
     });
 }

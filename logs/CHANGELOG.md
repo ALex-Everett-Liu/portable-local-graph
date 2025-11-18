@@ -2,6 +2,47 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.0] - 2025-01-XX
+
+### 🎯 Project Simplification - JSON Export/Import Removal
+- **Streamlined Feature Set**: Removed all JSON export/import functionality to focus exclusively on database operations
+- **Database-First Approach**: Project now exclusively uses SQLite database save/load/merge for all data persistence
+- **Reduced Complexity**: Eliminated redundant file format support to simplify codebase and maintenance
+
+### 🗑️ Removed Features
+- **JSON Export**: Removed all JSON export endpoints, UI buttons, and functionality
+- **JSON Import**: Removed all JSON import endpoints, file dialogs, and merge import features
+- **Layer JSON Export**: Removed ability to export selected layers as JSON files
+- **Migration Tools**: Removed JSON file migration endpoints and utilities
+- **Import Dialogs**: Removed JSON import mode selection dialogs and conflict resolution UI
+
+### 🔧 Technical Changes
+- **Server Endpoints**: Removed `/api/graph/export/json`, `/api/graph/import`, `/api/graph/load-file`, and `/api/migrate` endpoints
+- **UI Components**: Removed Import JSON and Export JSON buttons from toolbar and layer management dialogs
+- **IPC Handlers**: Removed `import-json-file` and `export-json` IPC handlers from main process
+- **Export Manager**: Removed `exportJSON()`, `exportLayersJSON()`, and `importJSON()` methods
+- **File Operations**: Removed `fallbackToJSONLoad()`, `showImportModeDialog()`, and `formatImportNotification()` functions
+- **Database Manager**: Removed `importFromJSON()`, `exportToJSON()`, and `migrateFromJSONFiles()` methods
+- **Module Deletion**: Deleted `json-import-export.js` module entirely
+
+### 💾 Database Functionality Preserved
+- **Save/Load**: All database save and load operations remain fully functional
+- **Merge**: Database merge functionality with conflict resolution continues to work
+- **Backup**: Database backup functionality remains available
+- **Data Integrity**: All existing database features and data remain unaffected
+
+### 🎯 User Experience
+- **Simplified Workflow**: Users now have a single, consistent data persistence method
+- **Reduced Confusion**: Eliminates choice between JSON and database formats
+- **Focus on Core Features**: Streamlined interface emphasizes database operations
+- **Backward Compatibility**: Existing database files continue to work without changes
+
+### 📊 Codebase Impact
+- **Reduced File Count**: Removed one entire module (`json-import-export.js`)
+- **Cleaner Architecture**: Simplified codebase with fewer code paths to maintain
+- **Better Maintainability**: Reduced complexity makes future development easier
+- **Consistent Patterns**: All data operations now follow same database-first pattern
+
 ## [0.6.9] - 2025-10-21
 
 ### 🔍 Enhanced Node Search with Dedicated Dialog

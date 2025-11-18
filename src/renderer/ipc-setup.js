@@ -110,26 +110,6 @@ function setupIPC() {
                 }
             });
 
-            ipcRenderer.on('import-json-request', async () => {
-                const result = await ipcRenderer.invoke('import-json-file');
-                if (result.success) {
-                    loadGraphData(result.graphData);
-                    currentGraphId = 'import-' + Date.now();
-                    showNotification(`JSON imported from ${result.fileName}`);
-                } else if (!result.cancelled) {
-                    showNotification('Error importing JSON: ' + result.error);
-                }
-            });
-
-            ipcRenderer.on('export-json-request', async () => {
-                const data = graph.exportData();
-                const result = await ipcRenderer.invoke('export-json', data);
-                if (result.success) {
-                    showNotification('JSON exported successfully!');
-                } else if (!result.cancelled) {
-                    showNotification('Error exporting JSON: ' + result.error);
-                }
-            });
         } catch (error) {
             console.log('Electron IPC not available, running in web mode');
         }

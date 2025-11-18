@@ -121,18 +121,6 @@ function createWindow() {
                         mainWindow.webContents.send('export-svg-request');
                     }
                 },
-                {
-                    label: 'Import JSON...',
-                    click: () => {
-                        mainWindow.webContents.send('import-json-request');
-                    }
-                },
-                {
-                    label: 'Export JSON...',
-                    click: () => {
-                        mainWindow.webContents.send('export-json-request');
-                    }
-                },
                 { type: 'separator' },
                 {
                     label: 'Exit',
@@ -349,51 +337,6 @@ ipcMain.handle('export-svg', async (event, svgData) => {
     }
 });
 
-ipcMain.handle('export-json', async (event, data) => {
-    try {
-        const result = await dialog.showSaveDialog(mainWindow, {
-            filters: [
-                { name: 'JSON Files', extensions: ['json'] }
-            ],
-            defaultPath: 'graph.json'
-        });
-        
-        if (!result.canceled) {
-            fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2));
-            return { success: true, filePath: result.filePath };
-        }
-        return { success: false, cancelled: true };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-});
-
-ipcMain.handle('import-json-file', async () => {
-    try {
-        const result = await dialog.showOpenDialog(mainWindow, {
-            filters: [
-                { name: 'JSON Files', extensions: ['json'] }
-            ],
-            properties: ['openFile']
-        });
-        
-        if (result.canceled || result.filePaths.length === 0) {
-            return { success: false, cancelled: true };
-        }
-        
-        const filePath = result.filePaths[0];
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        
-        return { 
-            success: true, 
-            graphData: data,
-            fileName: path.basename(filePath),
-            filePath
-        };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-});
 
 app.whenReady().then(createWindow);
 

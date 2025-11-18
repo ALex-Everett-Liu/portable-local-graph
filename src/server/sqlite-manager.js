@@ -923,66 +923,6 @@ class DatabaseManager {
     });
   }
 
-  async importFromJSON(data, id = null) {
-    // Use provided ID or generate one
-    const finalId = id || uuidv7();
-
-    // Ensure the data has the expected structure
-    const normalizedData = {
-      nodes: data.nodes || [],
-      edges: data.edges || [],
-      scale: data.scale || 1,
-      offset: data.offset || { x: 0, y: 0 },
-      metadata: {
-        name: data.name || data.metadata?.name || "Imported Graph",
-        description:
-          data.description ||
-          data.metadata?.description ||
-          "Imported from JSON",
-        importedAt: new Date().toISOString(),
-        ...data.metadata,
-      },
-    };
-
-    await this.saveGraph(finalId, normalizedData);
-    return finalId;
-  }
-
-  async exportToJSON(id) {
-    return await this.loadGraph(id);
-  }
-
-  async migrateFromJSONFiles() {
-    try {
-      const files = await fs.readdir(".");
-      const jsonFiles = files.filter(
-        (file) =>
-          (file.endsWith(".json") && file.includes("-graph-")) ||
-          file.includes("-test-"),
-      );
-
-      for (const filename of jsonFiles) {
-        try {
-          const content = await fs.readFile(filename, "utf8");
-          const data = JSON.parse(content);
-
-          // Skip if it's not a valid graph format
-          if (!data.nodes || !Array.isArray(data.nodes)) continue;
-
-          const id = filename.replace(".json", "");
-          await this.saveGraph(id, data);
-          console.log(`Migrated ${filename}`);
-        } catch (err) {
-          console.error(`Error migrating ${filename}:`, err.message);
-        }
-      }
-
-      console.log("Migration completed");
-    } catch (err) {
-      console.error("Error during migration:", err.message);
-    }
-  }
-
   /**
    * Merge data from another database file into this database
    * @param {string} sourceDbPath - Path to the source database file
