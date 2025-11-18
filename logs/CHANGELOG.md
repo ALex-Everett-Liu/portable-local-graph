@@ -2,6 +2,49 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
+## [0.7.6] - 2025-01-XX
+
+### 🗑️ Search & Filter System Removal
+- **Feature Removal**: Removed all search and filter functionality for future redesign
+- **Search Functionality**: Removed node search UI, search dialog, and search components
+- **Filter System**: Removed graph filtering engine, filter state management, and all filtering logic
+- **UI Cleanup**: Removed search button, search dialog, and search sidebar section
+- **Code Cleanup**: Removed all search and filter modules and related functionality
+
+### 🔧 Removed Components
+- **Search Filter Module**: Deleted `search-filter.js` with all node search and highlighting functionality
+- **Search Dialog Module**: Deleted `search-dialog.js` with dedicated search dialog interface
+- **Graph Filter Module**: Deleted `filtering/graph-filter.js` with layer filtering engine
+- **Filter State Manager**: Deleted `filtering/filter-state-manager.js` with filter state management
+- **UI Elements**: Removed search button from toolbar, search dialog from HTML, and "Search & Filter" sidebar section
+- **Event Handlers**: Removed all search-related event listeners and setupSearchComponents() calls
+
+### 🔧 Technical Changes
+- **Script Loading**: Removed script tags for search-filter.js and search-dialog.js from index.html
+- **Event Handlers**: Removed search dialog button event listener and setupSearchComponents() call from event-handlers.js
+- **App Initialization**: Removed setupSearchComponents() call from app.js
+- **Graph Compatibility**: Removed GraphFilter and FilterStateManager imports and initialization from graph-compatibility.js
+- **Layer Filtering**: Stubbed out all layer filtering methods (getAllLayers, setActiveLayers, clearLayerFilter, etc.) for backward compatibility
+- **File Operations**: Removed filter state saving and loading from file-operations.js
+- **Module Exports**: Removed GraphFilter and FilterStateManager exports from index.js
+- **Graph Operations**: Removed updateSearchCount() call from graph-operations.js
+- **Distance Analysis**: Commented out applyLocalGraphFilter() call in distance-analysis.js
+
+### 📊 Codebase Impact
+- **Reduced Complexity**: Removed ~1,200+ lines of search and filter code
+- **Cleaner Architecture**: Simplified codebase by removing filtering dependencies
+- **Future Ready**: Codebase prepared for redesigned search and filter functionality
+- **Backward Compatibility**: Layer filtering method signatures preserved (stubbed out) to prevent breaking changes
+
+### 🎯 User Experience
+- **Temporary Limitation**: Search and filter functionality temporarily unavailable until redesign is complete
+- **No Data Loss**: Existing graphs and database files remain fully compatible
+- **Node Layers Preserved**: Nodes can still have layers assigned (data layer), only filtering UI removed
+- **Redesign Opportunity**: Clean slate for implementing improved search and filter system
+
+### 🐛 Bug Fixes
+- **ReferenceError Fix**: Fixed updateSearchCount undefined error by removing call from graph-operations.js
+
 ## [0.7.5] - 2025-01-XX
 
 ### 🗑️ Layer Management UI Removal

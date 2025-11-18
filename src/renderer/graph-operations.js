@@ -110,7 +110,6 @@ function updateGraphInfo() {
         appState.mode.charAt(0).toUpperCase() + appState.mode.slice(1);
     
     updateSelectionInfo();
-    updateSearchCount(0, graph.nodes.length);
 }
 
 // Update selection information
