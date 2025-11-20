@@ -1,22 +1,27 @@
 /**
- * ⚠️  DEPRECATED COMPATIBILITY LAYER ⚠️
+ * Graph - Main Graph Class Implementation
  * 
- * This file is a BACKWARD COMPATIBILITY LAYER only. It should NOT be extended.
- * All new features should be added to the modular components instead.
+ * This is the primary Graph class used throughout the application. It provides
+ * a unified API for graph operations, event handling, and rendering by composing
+ * modular components.
  * 
- * ❌ DO NOT ADD NEW METHODS HERE
- * ❌ DO NOT MODIFY EXISTING METHODS
- * ❌ DO NOT USE AS A BASE FOR NEW FEATURES
+ * Architecture:
+ * This class acts as a facade/wrapper that coordinates between specialized modules:
+ *   - GraphData: Manages graph data (nodes, edges, layers)
+ *   - GraphRenderer: Handles all rendering operations
+ *   - Geometry utilities: Hit detection and spatial calculations
+ *   - Algorithm utilities: Pathfinding and graph algorithms
  * 
- * ✅ Add new features to:
- *   - js/core/graph-data.js (data management)
- *   - js/rendering/graph-renderer.js (rendering)
- *   - js/analysis/pathfinding-engine.js (pathfinding algorithms)
+ * Key Features:
+ *   - Canvas interaction (pan, zoom, drag nodes)
+ *   - Multiple modes (select, node, edge)
+ *   - Event handling (mouse, wheel, context menu)
+ *   - Selection management
+ *   - Data import/export
  * 
- * This file will be removed in future versions. Use modular components directly.
- * 
- * Total modular codebase: ~465 lines vs original 1361 lines
- * Each module: 45-96 lines max - maintainable and testable
+ * Note: While this class coordinates the modules, new features should generally
+ * be added to the appropriate modular component rather than extending this class
+ * directly, to maintain separation of concerns.
  */
 import { GraphData } from './graph-data.js';
 import { GraphRenderer } from '../rendering/graph-renderer.js';
@@ -588,3 +593,4 @@ export class Graph {
         return this.graphData.getLayerUsage(layerName);
     }
 }
+

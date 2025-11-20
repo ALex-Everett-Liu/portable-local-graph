@@ -5,7 +5,7 @@
 
 // Core components
 export { GraphData } from './core/graph-data.js';
-export { Graph } from './core/graph-compatibility.js';
+export { Graph } from './core/graph.js';
 
 // Utility modules
 export * from './utils/constants.js';

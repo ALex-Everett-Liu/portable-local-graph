@@ -15,7 +15,7 @@
     <button onclick="clearHighlight()">Clear Highlight</button>
     
     <script type="module">
-        import { Graph } from './js/core/graph-compatibility.js';
+        import { Graph } from '../src/renderer/core/graph.js';
         
         window.canvas = document.getElementById('graph-canvas');
         window.graph = new Graph(window.canvas);

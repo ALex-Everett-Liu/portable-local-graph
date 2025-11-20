@@ -8,7 +8,7 @@
     'use strict';
     
     // This will be populated by the modular system
-    // The actual implementation is in js/core/graph-compatibility.js
+    // The actual implementation is in core/graph.js
     
     // Create placeholder until modules load
     if (typeof window !== 'undefined') {
@@ -19,7 +19,7 @@
     if (typeof module !== 'undefined' && module.exports) {
         try {
             // Node.js environment
-            const { Graph } = require('./js/core/graph-compatibility.js');
+            const { Graph } = require('./core/graph.js');
             module.exports = { Graph };
         } catch (e) {
             // Fallback for environments without module support

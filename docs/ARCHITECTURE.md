@@ -50,12 +50,12 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 │  └───────────────────────────────────────────────────────────┘  │
 │                              │                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │                Compatibility Layer                        │  │
+│  │                Main Graph Class                            │  │
 │  │  ┌─────────────────┐                                      │ │
-│  │  │ graph-compatibility.js                                │ │
-│  │  │ • 898 lines (DEPRECATED)                              │ │
-│  │  │ • Backward compatibility                              │ │
-│  │  │ • Migration bridge                                    │ │
+│  │  │ graph.js                                               │ │
+│  │  │ • 590 lines (ACTIVE)                                  │ │
+│  │  │ • Composes modular components                         │ │
+│  │  │ • Primary Graph implementation                        │ │
 │  │  └─────────────────┘                                      │ │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -117,7 +117,7 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 |-----------|--------|-------|---------|
 | **src/renderer/core** | graph-data.js | 96 | Event-driven data structure |
 | **src/renderer/core** | export-manager.js | 73 | Export functionality (JSON, SVG, CSV, GraphML) |
-| **src/renderer/core** | graph-compatibility.js | 898 | Backward compatibility layer (DEPRECATED) |
+| **src/renderer/core** | graph.js | 590 | Main Graph class implementation |
 | **src/renderer/rendering** | graph-renderer.js | 89 | Pure canvas rendering engine |
 | **src/renderer/filtering** | graph-filter.js | 67 | Local graph filtering algorithms |
 | **src/renderer/filtering** | filter-state-manager.js | 73 | Filter state management |
@@ -163,10 +163,10 @@ The Portable Local Graph is a lightweight, browser-based graph drawing applicati
 | **geometry.js** | 23 | Mathematical utilities | Distance calculations, line intersections |
 | **algorithms.js** | 28 | Graph algorithms | Dijkstra, BFS implementations |
 
-### Compatibility Layer (DEPRECATED)
+### Main Graph Class
 | Module | Lines | Purpose | Status |
 |--------|-------|---------|--------|
-| **graph-compatibility.js** | 898 | Backward compatibility | ⚠️ DO NOT EXTEND |
+| **graph.js** | 590 | Main Graph class (composes modular components) | ✅ Active |
 
 ### Legacy System Integration
 The following functions remain available through the compatibility layer for backward compatibility:
@@ -363,8 +363,8 @@ import { GraphRenderer } from './src/renderer/rendering/graph-renderer.js';
 const data = new GraphData();
 const renderer = new GraphRenderer(canvas);
 
-// Current compatibility usage
-import { Graph } from './src/renderer/core/graph-compatibility.js';
+// Main Graph class usage
+import { Graph } from './src/renderer/core/graph.js';
 const graph = new Graph(canvas);
 ```
 
@@ -495,8 +495,8 @@ export class GraphAnalysis {
 }
 ```
 
-### Compatibility Layer (src/renderer/core/graph-compatibility.js - 898 lines)
-**⚠️ DEPRECATED - Migration bridge only**
+### Main Graph Class (src/renderer/core/graph.js - 590 lines)
+**✅ Active - Primary Graph implementation**
 - Provides 100% backward compatibility
 - Internally uses modular components
 - **DO NOT EXTEND** - use modular components directly

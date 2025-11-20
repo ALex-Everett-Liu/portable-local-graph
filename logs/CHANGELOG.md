@@ -2,7 +2,7 @@
 
 > **Note**: For historical versions prior to 0.4.0, see [CHANGELOG-ARCHIVED.md](CHANGELOG-ARCHIVED.md)
 
-## [0.7.6] - 2025-01-XX
+## [0.7.6] - 2025-01-18
 
 ### 🗑️ Search & Filter System Removal
 - **Feature Removal**: Removed all search and filter functionality for future redesign
@@ -45,7 +45,7 @@
 ### 🐛 Bug Fixes
 - **ReferenceError Fix**: Fixed updateSearchCount undefined error by removing call from graph-operations.js
 
-## [0.7.5] - 2025-01-XX
+## [0.7.5] - 2025-01-18
 
 ### 🗑️ Layer Management UI Removal
 - **Feature Removal**: Removed all layer management UI functionality for future redesign
@@ -81,7 +81,7 @@
 - **Node Layers Preserved**: Nodes can still have layers assigned (data layer), only UI management removed
 - **Redesign Opportunity**: Clean slate for implementing improved layer management system
 
-## [0.7.4] - 2025-01-XX
+## [0.7.4] - 2025-01-18
 
 ### 🗑️ Graph Analysis Modules Removal
 - **Feature Removal**: Removed all graph analysis modules and centrality calculation functionality for future redesign
@@ -118,7 +118,7 @@
 - **Redesign Opportunity**: Clean slate for implementing improved graph analysis system with better algorithm understanding
 - **Pathfinding Preserved**: Pathfinding functionality (shortest path, k-shortest paths, etc.) remains available
 
-## [0.7.3] - 2025-01-XX
+## [0.7.3] - 2025-01-18
 
 ### ⌨️ Keyboard Shortcuts System Removal
 - **Feature Removal**: Removed all keyboard shortcuts and command palette functionality for future redesign

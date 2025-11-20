@@ -11,7 +11,7 @@ js/
 ├── core/
 │   ├── graph-data.js          # Core data structure
 │   ├── export-manager.js      # Export functionality
-│   └── graph-compatibility.js # Backward-compatible Graph class
+│   └── graph.js # Main Graph class implementation
 ├── utils/
 │   ├── constants.js           # Visual defaults
 │   ├── geometry.js            # Geometry utilities
@@ -78,7 +78,7 @@ No changes needed! The new `graph-updated.js` provides full backward compatibili
 #### For New Projects
 ```javascript
 // Recommended approach
-import { Graph } from './js/core/graph-compatibility.js';
+import { Graph } from './src/renderer/core/graph.js';
 const graph = new Graph(canvas, options);
 
 // Or use specific modules
