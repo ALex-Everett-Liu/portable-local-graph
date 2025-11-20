@@ -1,6 +1,13 @@
 /**
- * Graph.js - Legacy compatibility wrapper
- * This file provides backward compatibility by loading the modular architecture
+ * Graph Legacy Wrapper - CommonJS Compatibility Layer
+ * 
+ * This file provides backward compatibility for Node.js/CommonJS environments
+ * that need to require() the Graph class instead of using ES modules.
+ * 
+ * The actual Graph implementation is in core/graph.js
+ * 
+ * Note: This is primarily for Node.js environments. Browser environments
+ * should use the ES module import from './core/graph.js' directly.
  */
 
 // Load the modular Graph class
@@ -27,3 +34,4 @@
         }
     }
 })();
+

@@ -19,5 +19,5 @@ export * from './rendering/styles.js';
 // Analysis modules
 export { PathfindingEngine } from './analysis/pathfinding-engine.js';
 
-// Legacy compatibility
-export { Graph as LegacyGraph } from '../graph.js';
+// Legacy compatibility (CommonJS wrapper)
+export { Graph as LegacyGraph } from './graph-legacy-wrapper.js';
